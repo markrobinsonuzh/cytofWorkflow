@@ -1,0 +1,14 @@
+^data-raw$
+^vignettes/cytofWorkflow_cache$
+^vignettes/cytofWorkflow_files$
+^.*\.Rproj$
+^\.Rproj\.user$
+^.git$
+^.*\.toc$
+^.*\.aux$
+^.*\.log$
+^.*\.out$
+^.*\.tex$
+^.*\.gz$
+^.*\.blg$
+^.*\.bbl$

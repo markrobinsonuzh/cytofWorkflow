@@ -1,0 +1,15 @@
+Package: cytofWorkflow
+Title: Dummy Package
+Version: 0.0.1
+Authors@R: person("Malgorzata", "Nowicka", email = "gosia.nowicka@uzh.ch", role = c("aut", "cre"))
+Description: Dummy Package
+Depends: R (>= 3.3.0)
+License: Artistic-2.0
+Encoding: UTF-8
+LazyData: true
+VignetteBuilder: knitr
+biocViews: Workflows
+Imports: BiocStyle, knitr, rmarkdown,
+        pheatmap, RColorBrewer, ggplot2
+Suggests: knitcitations
+NeedsCompilation: no
