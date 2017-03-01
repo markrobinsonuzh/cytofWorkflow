@@ -6,5 +6,4 @@
 *.Rproj
 vignettes/*
 !vignettes/cytofWorkflow.Rmd
-!vignettes/cytofWorkflow.html
 !vignettes/bibliography.bib
