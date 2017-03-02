@@ -1,59 +1,9 @@
----
-title: "CyTOF workflow"
-author: 
-  - name: Malgorzata Nowicka
-    affiliation: a,b
-    email: gosia.nowicka@uzh.ch
-  - name: Mark D. Robinson
-    affiliation: a,b
-address:
-  - code: a
-    address: Institute for Molecular Life Sciences, University of Zurich, Zurich, 8057, Switzerland
-  - code: b
-    address: SIB Swiss Institute of Bioinformatics, University of Zurich, Zurich, 8057, Switzerland
-abstract: Abstract. 
-documentclass: extarticle
-fontsize: 10pt
-papersize: a4
-bibliography: bibliography.bib
-output: 
-  BiocStyle::html_document
-vignette: >
-  %\VignetteIndexEntry{CyTOF workflow}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8} 
----
 
-
-```{r setup_knitr, include=FALSE, cache=FALSE}
-library(knitr)
-opts_chunk$set(cache = TRUE, warning = FALSE)
-```
-
-
-# Introduction
-
-Describe what CyTOF is and its applications.
-
-Shortly explain what is presented in this workflow.
-
-# Data importing
-
-Currently, FCS, metadata and panel files are available in the `extdata` subdirectory of this package installation.
-
-In the future, all of them will be available on FlowRepository so I will have to describe how to download them.
-
-```{r, data_dir}
 library(cytofWorkflow)
 
 data_dir <- system.file("extdata", package = "cytofWorkflow")
 
-```
-
-
-Load metadata and panel files:
-
-```{r, load_metadata}
+## Load metadata
 md <- read.table(file.path(data_dir, "cytofWrokflow_metadata.txt"), header = TRUE, as.is = TRUE)
 
 ## Add colors 
@@ -63,27 +13,17 @@ md$colors <- factor(md$colors, labels = c("#B17BA6", "#882E72", "#7BAFDE", "#196
 color_samples <- as.character(md$color)
 names(color_samples) <- md$short_name
 
-md
-```
+## Load panel
 
-```{r, load_panel}
 panel <- read.table(file.path(data_dir, "cytofWrokflow_panel.txt"), header = TRUE, as.is = TRUE)
-head(panel)
-```
 
-Readin the raw FCS files:
-
-```{r, load_fcs}
+## Read the raw FCS files in
 library(flowCore)
 
 file_names <- file.path(data_dir, md$file_name)
 
 fcs_raw <- lapply(file_names, read.FCS)
-```
 
-Extract the expression data for markers with `panel$Use` equal to 1, and normalize it using the arcsinh transformation:
-
-```{r, arcsinh_normalization}
 ## Find which markers to use
 fcs_colnames <- colnames(fcs_raw[[1]])
 fcs_isotope <- as.numeric(gsub("[[:alpha:]]", "", fcs_colnames))
@@ -104,11 +44,9 @@ expr <- lapply(fcs_raw, function(x){
 expr <- do.call("rbind", expr)
 
 colnames(expr) <- panel$Antigen[panel$Use == 1]
-```
 
-For plotting the heatmaps normalize the expression data to 0-1:
+## For plotting the heatmaps normalize the expression data to 0-1
 
-```{r, 01_normalization}
 expr01 <- expr
 
 rng <- apply(expr01, 2, quantile, p = c(0.01, 0.99))
@@ -120,17 +58,12 @@ for(i in 1:ncol(expr01)){
 expr01[expr01 < 0] <- 0
 expr01[expr01 > 1] <- 1
 
-```
 
-Generate the sample information
+## Generate the sample information
 
-```{r, sample_ids}
 sample_ids <- rep(md$short_name, sapply(fcs_raw, nrow))
-```
 
-Plot distributions of marker expression 
-
-```{r, plot_merker_expression_distribution}
+## Plot distributions of marker expression 
 library(ggplot2)
 library(reshape2)
 
@@ -141,17 +74,14 @@ ggp <- ggplot(ggdf, aes(x = expression, color = sample_id)) +
   geom_density() +
   facet_wrap(~ antigen, nrow = 4, scales = "free") +
   theme_bw() +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1), legend.title = element_blank(), legend.position = "right") +
-  guides(color = guide_legend(ncol = 1)) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1), legend.title = element_blank(), legend.position = "bottom") +
+  guides(color = guide_legend(nrow = 4)) +
   scale_color_manual(values = color_samples)
 
 ggp
-```
 
+## Plot number of cells per sample
 
-Plot number of cells per sample
-
-```{r, plot_number_of_cells}
 cell_table <- table(sample_ids)
 
 ggdf <- data.frame(sample_id = names(cell_table), cell_counts = as.numeric(cell_table))
@@ -165,7 +95,6 @@ ggp <- ggplot(ggdf, aes(x = sample_id, y = cell_counts, fill = sample_id)) +
   scale_x_discrete(drop = FALSE)
 
 ggp
-```
 
 
 
@@ -178,19 +107,4 @@ ggp
 
 
 
-
-
-
-<!-- # Author contributions -->
-
-<!-- # Competing interests -->
-
-<!-- # Grant information -->
-
-<!-- # Acknowledgments -->
-
-
-
-
-# References
 

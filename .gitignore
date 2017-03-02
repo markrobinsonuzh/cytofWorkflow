@@ -7,3 +7,6 @@
 vignettes/*
 !vignettes/cytofWorkflow.Rmd
 !vignettes/bibliography.bib
+data-raw/*
+!data-raw/code_testing.R
+inst

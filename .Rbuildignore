@@ -1,4 +1,4 @@
-^data-raw$
+^data-raw
 ^vignettes/cytofWorkflow_cache$
 ^vignettes/cytofWorkflow_files$
 ^.*\.Rproj$
@@ -12,3 +12,6 @@
 ^.*\.gz$
 ^.*\.blg$
 ^.*\.bbl$
+^.*\.sty$
+^.*\.png$
+^.*\.R$
