@@ -27,7 +27,7 @@ vignette: >
 
 ```{r setup_knitr, include=FALSE, cache=FALSE}
 library(knitr)
-opts_chunk$set(cache = TRUE, warning = FALSE)
+knitr::opts_chunk$set(cache=TRUE, cache.lazy=FALSE, cache.path = "cache/", warning=FALSE)
 ```
 
 
@@ -37,13 +37,17 @@ Describe what CyTOF is and its applications.
 
 Shortly explain what is presented in this workflow.
 
-# Data importing
+# Data preprocessing
+
+Describe what was already done with the data. Doublets, debri removed, etc.? 
+
+# Data importing and normalization
 
 Currently, FCS, metadata and panel files are available in the `extdata` subdirectory of this package installation.
 
 In the future, all of them will be available on FlowRepository so I will have to describe how to download them.
 
-```{r, data_dir}
+```{r data_dir}
 library(cytofWorkflow)
 
 data_dir <- system.file("extdata", package = "cytofWorkflow")
@@ -53,7 +57,7 @@ data_dir <- system.file("extdata", package = "cytofWorkflow")
 
 Load metadata and panel files:
 
-```{r, load_metadata}
+```{r load_metadata}
 md <- read.table(file.path(data_dir, "cytofWrokflow_metadata.txt"), header = TRUE, as.is = TRUE)
 
 ## Add colors 
@@ -66,14 +70,14 @@ names(color_samples) <- md$short_name
 md
 ```
 
-```{r, load_panel}
+```{r load_panel}
 panel <- read.table(file.path(data_dir, "cytofWrokflow_panel.txt"), header = TRUE, as.is = TRUE)
 head(panel)
 ```
 
-Readin the raw FCS files:
+Load the raw FCS files:
 
-```{r, load_fcs}
+```{r load_fcs}
 library(flowCore)
 
 file_names <- file.path(data_dir, md$file_name)
@@ -83,7 +87,7 @@ fcs_raw <- lapply(file_names, read.FCS)
 
 Extract the expression data for markers with `panel$Use` equal to 1, and normalize it using the arcsinh transformation:
 
-```{r, arcsinh_normalization}
+```{r arcsinh_normalization}
 ## Find which markers to use
 fcs_colnames <- colnames(fcs_raw[[1]])
 fcs_isotope <- as.numeric(gsub("[[:alpha:]]", "", fcs_colnames))
@@ -108,7 +112,7 @@ colnames(expr) <- panel$Antigen[panel$Use == 1]
 
 For plotting the heatmaps normalize the expression data to 0-1:
 
-```{r, 01_normalization}
+```{r 01_normalization}
 expr01 <- expr
 
 rng <- apply(expr01, 2, quantile, p = c(0.01, 0.99))
@@ -124,53 +128,222 @@ expr01[expr01 > 1] <- 1
 
 Generate the sample information
 
-```{r, sample_ids}
+```{r sample_ids}
 sample_ids <- rep(md$short_name, sapply(fcs_raw, nrow))
 ```
 
 Plot distributions of marker expression 
 
-```{r, plot_merker_expression_distribution}
+```{r plot_merker_expression_distribution}
 library(ggplot2)
 library(reshape2)
 
 ggdf <- data.frame(sample_id = sample_ids, expr)
 ggdf <- melt(ggdf, id.var = "sample_id", value.name = "expression", variable.name = "antigen")
 
-ggp <- ggplot(ggdf, aes(x = expression, color = sample_id)) +
+ggplot(ggdf, aes(x = expression, color = sample_id)) +
   geom_density() +
   facet_wrap(~ antigen, nrow = 4, scales = "free") +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1), legend.title = element_blank(), legend.position = "right") +
   guides(color = guide_legend(ncol = 1)) +
   scale_color_manual(values = color_samples)
-
-ggp
 ```
 
 
 Plot number of cells per sample
 
-```{r, plot_number_of_cells}
+```{r plot_number_of_cells}
 cell_table <- table(sample_ids)
 
 ggdf <- data.frame(sample_id = names(cell_table), cell_counts = as.numeric(cell_table))
 
-ggp <- ggplot(ggdf, aes(x = sample_id, y = cell_counts, fill = sample_id)) +
+ggplot(ggdf, aes(x = sample_id, y = cell_counts, fill = sample_id)) +
   geom_bar(stat = "identity") +
   geom_text(aes(label = cell_counts), hjust=0.5, vjust=-0.5, size = 3) +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1), legend.position = "none") +
   scale_fill_manual(values = color_samples, drop = FALSE) +
   scale_x_discrete(drop = FALSE)
+```
 
-ggp
+
+# Marker ranking based on the non-redundancy score
+
+The non-redundancy score (NRS) [@Levine2015] based on the PCA analysis.
+
+```{r nrs_function}
+NRS <- function(x, ncomp = 3){
+  pr <- prcomp(x, center = TRUE, scale. = FALSE) 
+  score <- rowSums(outer(rep(1, ncol(x)), pr$sdev[1:ncomp]^2) * abs(pr$rotation[,1:ncomp]))
+  return(score)
+}
+```
+
+```{r nrs_calculate}
+## Split expression per sample
+expr_split <- split(data.frame(expr), sample_ids)
+
+nrs_sample <- sapply(expr_split, NRS)
+
+nrs <- rowMeans(nrs_sample, na.rm = TRUE)
+```
+
+
+```{r plot_nrs}
+## Plot NRS scores for ordered markers
+antigens_ordered <- names(sort(nrs, decreasing = TRUE))
+
+ggdf <- data.frame(antigen = factor(names(nrs), levels = antigens_ordered), nrs_score = nrs)
+
+ggplot(ggdf, aes(x = antigen, y = nrs_score)) +
+  geom_bar(stat = "identity") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+```
+
+
+# Cell population identification with FlowSOM
+
+We use a slight modification of the FlowSOM workflow presented in its vignette. We find it more flexible.
+
+```{r flowsom_som}
+library(FlowSOM)
+library(ConsensusClusterPlus)
+
+## Run SOM with 100 clusters
+set.seed(1234)
+fsom <- SOM(expr)
+```
+
+
+```{r flowsom_meta_clustering, message = FALSE}
+## Meta clustering into 20 clusters with ConsensusClusterPlus
+codes <- fsom$codes
+nmc <- 20
+plot_outdir <- "consensus_plots"
+
+mc <- ConsensusClusterPlus(t(codes), maxK = nmc, reps = 100, pItem = 0.9, pFeature = 1, title = plot_outdir, plot = "png", clusterAlg = "hc", innerLinkage = "average", finalLinkage = "average", distance = "euclidean", seed = 1234)
+
+## Get cluster ids for each cell
+fsom_mc <- mc[[nmc]]$consensusClass
+clustering <- fsom_mc[fsom$mapping[,1]]
+```
+
+One of the plots produced by `ConsensusClusterPlus` represents a score for each possible number of clusters from 2 to `r nmc`. It can be used for the elbow criterion to define the optimal number of clusters.
+
+![Delta area](consensus_plots/consensus022.png)
+
+You can also plot the SOM codes.
+
+```{r som_codes_size}
+## Get code sizes; sometimes not all the codes have mapped cells so they will have size 0
+code_sizes <- rep(0, nrow(codes))
+names(code_sizes) <- 1:nrow(codes)
+code_table <- table(fsom$mapping[, 1]) 
+code_sizes[names(code_table)] <- as.numeric(code_table)
+```
+
+```{r som_codes_dimension_reduction}
+## Dimension reduction 
+library(cytofkit)
+
+dr <- cytof_dimReduction(codes, method = "tsne", tsneSeed = 1234)
+colnames(dr) <- c("dim1", "dim2")
+```
+
+
+```{r plot_som_codes}
+ggdf <- data.frame(dr)
+ggdf$cluster <- factor(fsom_mc)
+ggdf$size <- code_sizes
+
+ggplot(ggdf,  aes(x = dim1, y = dim2, color = cluster, size = size)) +
+  geom_point(alpha = 0.7) +
+  theme_bw() +
+  guides(colour = guide_legend(override.aes = list(size = 3)))
+```
+
+## Plotting heatmaps
+
+```{r}
+# ggplot color palette
+gg_color_hue <- function(n) {
+  hues = seq(15, 375, length=n+1)
+  hcl(h=hues, l=60 , c=100)[1:n]
+}
+
+# Get the median expression
+expr_median <- aggregate(expr, by = list(clustering), FUN = median)
+
+# Get cluster frequencies
+clustering_table <- table(clustering)
+
+# This clustering is based on the markers that were used for the main clustering, and it is used in all the heatmaps
+expr_heat <- as.matrix(expr_median[, antigens_ordered])
+rownames(expr_heat) <- expr_median[, 1]
+
+cluster_rows <- hclust(dist(expr_heat), method = "average")
+
+labels_row <- paste0(rownames(expr_heat), " (", round(as.numeric(clustering_table)/sum(clustering_table)*100, 2), "%)")
+labels_col <- colnames(expr_heat)
+
+# Row annotation for the heatmap
+annotation_row <- data.frame(cluster = rownames(expr_heat))
+rownames(annotation_row) <- rownames(expr_heat)
+
+color_clusters <- gg_color_hue(nrow(expr_heat))
+names(color_clusters) <- rownames(expr_heat)
+annotation_colors <- list(cluster = color_clusters)
+
+
+library(RColorBrewer)
+color <- colorRampPalette(brewer.pal(n = 8, name = "YlGnBu"))(100)
+
+library(pheatmap)
+
+pheatmap(expr_heat, color = color, cellwidth = 24, cellheight = 24, cluster_cols = FALSE, cluster_rows = cluster_rows, labels_col = labels_col, labels_row = labels_row, display_numbers = TRUE, number_color = "black", fontsize_number = 8, fontsize_row = 14, fontsize_col = 14, fontsize = 12, annotation_row = annotation_row, annotation_colors = annotation_colors)
+
 ```
 
 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r sessionInfo}
+sessionInfo()
+```
 
 
 
