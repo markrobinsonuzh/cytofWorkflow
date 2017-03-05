@@ -1,9 +1,9 @@
-^data-raw
-^vignettes/cytofWorkflow_cache$
-^vignettes/cytofWorkflow_files$
+^vignettes/cache$
+^vignettes/figure$
 ^.*\.Rproj$
 ^\.Rproj\.user$
 ^.git$
+^.dropbox$
 ^.*\.toc$
 ^.*\.aux$
 ^.*\.log$

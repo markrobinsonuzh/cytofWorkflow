@@ -27,7 +27,7 @@ vignette: >
 
 ```{r setup_knitr, include=FALSE, cache=FALSE}
 library(knitr)
-knitr::opts_chunk$set(cache=TRUE, cache.lazy=FALSE, cache.path = "cache/", warning=FALSE)
+knitr::opts_chunk$set(cache=2, warning=FALSE, message = FALSE, cache.path = "cache/", fig.path = "figure/")
 ```
 
 
@@ -60,20 +60,31 @@ Load metadata and panel files:
 ```{r load_metadata}
 md <- read.table(file.path(data_dir, "cytofWrokflow_metadata.txt"), header = TRUE, as.is = TRUE)
 
-## Add colors 
-md$colors <- interaction(md$condition2, md$condition1, sep = "_", lex.order = TRUE)
-md$colors <- factor(md$colors, labels = c("#B17BA6", "#882E72", "#7BAFDE", "#1965B0"))
+rownames(md) <- md$short_name
+
+## Make sure condition variables are factors with the right levels
+md$condition1 <- factor(md$condition1, levels = c("Healthy", "Sick"))
+md$condition2 <- factor(md$condition2, levels = c("A", "B"))
+md$condition <- interaction(md$condition2, md$condition1, sep = "_", lex.order = TRUE)
+## Add colors
+md$color <- factor(md$condition, labels = c("#B17BA6", "#882E72", "#7BAFDE", "#1965B0"))
+md
 
 color_samples <- as.character(md$color)
 names(color_samples) <- md$short_name
 
-md
+colors <- unique(md[, c("condition", "color")])
+color_conditions <- as.character(colors$color)
+names(color_conditions) <- colors$condition
 ```
 
 ```{r load_panel}
 panel <- read.table(file.path(data_dir, "cytofWrokflow_panel.txt"), header = TRUE, as.is = TRUE)
 head(panel)
 ```
+
+
+An alternative to the approach below would be to use the `cytof_exprsMerge` function from `cytofkit`.
 
 Load the raw FCS files:
 
@@ -110,7 +121,7 @@ expr <- do.call("rbind", expr)
 colnames(expr) <- panel$Antigen[panel$Use == 1]
 ```
 
-For plotting the heatmaps normalize the expression data to 0-1:
+Normalize the expression data to 0-1. Useful when for plotting heatmaps.
 
 ```{r 01_normalization}
 expr01 <- expr
@@ -171,6 +182,8 @@ ggplot(ggdf, aes(x = sample_id, y = cell_counts, fill = sample_id)) +
 # Marker ranking based on the non-redundancy score
 
 The non-redundancy score (NRS) [@Levine2015] based on the PCA analysis.
+Explain in detail why we calculate it. Useful if we want to work with a subset of markers but here we run the analysis with all the markers. 
+
 
 ```{r nrs_function}
 NRS <- function(x, ncomp = 3){
@@ -205,6 +218,7 @@ ggplot(ggdf, aes(x = antigen, y = nrs_score)) +
 
 # Cell population identification with FlowSOM
 
+Explain that identifying meaningful clusters is one of the most challenging parts and all the downstream aanlysis depend on it.
 We use a slight modification of the FlowSOM workflow presented in its vignette. We find it more flexible.
 
 ```{r flowsom_som}
@@ -213,21 +227,21 @@ library(ConsensusClusterPlus)
 
 ## Run SOM with 100 clusters
 set.seed(1234)
-fsom <- SOM(expr)
+som <- SOM(expr)
 ```
 
 
 ```{r flowsom_meta_clustering, message = FALSE}
 ## Meta clustering into 20 clusters with ConsensusClusterPlus
-codes <- fsom$codes
-nmc <- 20
+codes <- som$codes
 plot_outdir <- "consensus_plots"
+nmc <- 20
 
 mc <- ConsensusClusterPlus(t(codes), maxK = nmc, reps = 100, pItem = 0.9, pFeature = 1, title = plot_outdir, plot = "png", clusterAlg = "hc", innerLinkage = "average", finalLinkage = "average", distance = "euclidean", seed = 1234)
 
 ## Get cluster ids for each cell
-fsom_mc <- mc[[nmc]]$consensusClass
-clustering <- fsom_mc[fsom$mapping[,1]]
+code_clustering <- mc[[nmc]]$consensusClass
+cell_clustering <- code_clustering[som$mapping[,1]]
 ```
 
 One of the plots produced by `ConsensusClusterPlus` represents a score for each possible number of clusters from 2 to `r nmc`. It can be used for the elbow criterion to define the optimal number of clusters.
@@ -240,44 +254,58 @@ You can also plot the SOM codes.
 ## Get code sizes; sometimes not all the codes have mapped cells so they will have size 0
 code_sizes <- rep(0, nrow(codes))
 names(code_sizes) <- 1:nrow(codes)
-code_table <- table(fsom$mapping[, 1]) 
+code_table <- table(som$mapping[, 1]) 
 code_sizes[names(code_table)] <- as.numeric(code_table)
 ```
 
 ```{r som_codes_dimension_reduction}
-## Dimension reduction 
-library(cytofkit)
+## t-SNE dimension reduction with cytofkit when setting pca = FALSE does not work!
+## So we use the Rtsne package directly.
 
-dr <- cytof_dimReduction(codes, method = "tsne", tsneSeed = 1234)
-colnames(dr) <- c("dim1", "dim2")
+# library(cytofkit)
+# 
+# codes_dr <- cytof_dimReduction(codes, method = "tsne", tsneSeed = 1234)
+# colnames(codes_dr) <- c("dim1", "dim2")
+
+## Run t-SNE
+library(Rtsne)
+
+set.seed(1234)
+tsne_out <- Rtsne(codes, pca = FALSE)
+
+codes_dr <- tsne_out$Y[, 1:2]
+colnames(codes_dr) <- c("dim1", "dim2")
 ```
 
 
 ```{r plot_som_codes}
-ggdf <- data.frame(dr)
-ggdf$cluster <- factor(fsom_mc)
-ggdf$size <- code_sizes
+codes_dr <- data.frame(codes_dr)
+codes_dr$cluster <- factor(code_clustering)
+codes_dr$size <- code_sizes
 
-ggplot(ggdf,  aes(x = dim1, y = dim2, color = cluster, size = size)) +
+ggplot(codes_dr,  aes(x = dim1, y = dim2, color = cluster, size = size)) +
   geom_point(alpha = 0.7) +
   theme_bw() +
-  guides(colour = guide_legend(override.aes = list(size = 3)))
+  guides(color = guide_legend(override.aes = list(size = 4), ncol = 2))
 ```
 
 ## Plotting heatmaps
 
-```{r}
+```{r ggplot_color_palette}
 # ggplot color palette
 gg_color_hue <- function(n) {
   hues = seq(15, 375, length=n+1)
   hcl(h=hues, l=60 , c=100)[1:n]
 }
+```
 
+
+```{r plot_heatmap}
 # Get the median expression
-expr_median <- aggregate(expr, by = list(clustering), FUN = median)
+expr_median <- aggregate(expr, by = list(cell_clustering), FUN = median)
 
 # Get cluster frequencies
-clustering_table <- table(clustering)
+clustering_table <- table(cell_clustering)
 
 # This clustering is based on the markers that were used for the main clustering, and it is used in all the heatmaps
 expr_heat <- as.matrix(expr_median[, antigens_ordered])
@@ -285,7 +313,7 @@ rownames(expr_heat) <- expr_median[, 1]
 
 cluster_rows <- hclust(dist(expr_heat), method = "average")
 
-labels_row <- paste0(rownames(expr_heat), " (", round(as.numeric(clustering_table)/sum(clustering_table)*100, 2), "%)")
+labels_row <- paste0(rownames(expr_heat), " (", round(as.numeric(clustering_table) / sum(clustering_table) * 100, 2), "%)")
 labels_col <- colnames(expr_heat)
 
 # Row annotation for the heatmap
@@ -296,13 +324,350 @@ color_clusters <- gg_color_hue(nrow(expr_heat))
 names(color_clusters) <- rownames(expr_heat)
 annotation_colors <- list(cluster = color_clusters)
 
-
+# Colors for the heatmap
 library(RColorBrewer)
 color <- colorRampPalette(brewer.pal(n = 8, name = "YlGnBu"))(100)
 
 library(pheatmap)
 
-pheatmap(expr_heat, color = color, cellwidth = 24, cellheight = 24, cluster_cols = FALSE, cluster_rows = cluster_rows, labels_col = labels_col, labels_row = labels_row, display_numbers = TRUE, number_color = "black", fontsize_number = 8, fontsize_row = 14, fontsize_col = 14, fontsize = 12, annotation_row = annotation_row, annotation_colors = annotation_colors)
+pheatmap(expr_heat, color = color, cluster_cols = FALSE, cluster_rows = cluster_rows, labels_col = labels_col, labels_row = labels_row, display_numbers = TRUE, number_color = "black", fontsize_number = 4, annotation_row = annotation_row, annotation_colors = annotation_colors)
+```
+
+
+# Dimension reduction with t-SNE
+
+Using only a subset of cells.
+
+```{r tsne_duplicates_subsampling}
+## Find and skip duplicates
+dups <- which(!duplicated(expr))
+
+## Data subsampling
+## Create indices by sample
+inds <- split(1:length(sample_ids), sample_ids) 
+
+## How many cells to downsample per-sample
+tsne_ncells <- pmin(table(sample_ids), 2000)  
+
+## Get subsampled indices
+set.seed(1234)
+tsne_inds <- lapply(names(inds), function(i){
+  s <- sample(inds[[i]], tsne_ncells[i], replace = FALSE)
+  intersect(s, dups)
+})
+
+tsne_inds <- unlist(tsne_inds)
+
+tsne_expr <- expr[tsne_inds, ]
+```
+
+```{r tsne_run}
+## Run t-SNE
+library(Rtsne)
+
+set.seed(1234)
+tsne_out <- Rtsne(tsne_expr, check_duplicates = FALSE, pca = FALSE)
+
+dr <- tsne_out$Y[, 1:2]
+colnames(dr) <- c("dim1", "dim2")
+```
+
+
+```{r tsne_plot_one}
+## Plot t-SNE
+ggdf <- data.frame(dr)
+ggdf$sample_id <- sample_ids[tsne_inds]
+ggdf$cell_clustering <- factor(cell_clustering[tsne_inds], levels = 1:nmc)
+
+## One plot 
+ggp <- ggplot(ggdf,  aes(x = dim1, y = dim2, color = cell_clustering)) +
+  geom_point() +
+  theme_bw() +
+  guides(color = guide_legend(override.aes = list(size = 4), ncol = 2))
+ggp
+```
+
+```{r tsne_plot_facet_sample}
+## Facet per sample
+ggp + 
+facet_wrap(~ sample_id) 
+```
+
+
+# Cluster reduction/merging and annotation
+
+
+## Rerunning ConsensusClusterPlus with identified number of clusters
+
+Applying the elbow criterion to the detla area Figure 1, we could deduce that there are 6 main clusters present in this dataset.
+
+```{r flowsom_meta_clustering2, message = FALSE}
+nmc2 <- 6
+
+mc2 <- ConsensusClusterPlus(t(codes), maxK = nmc2, reps = 100, pItem = 0.9, pFeature = 1, title = plot_outdir, plot = "png", clusterAlg = "hc", innerLinkage = "average", finalLinkage = "average", distance = "euclidean", seed = 1234)
+
+## Get cluster ids for each cell
+code_clustering2 <- mc2[[nmc2]]$consensusClass
+cell_clustering2 <- code_clustering2[som$mapping[,1]]
+```
+
+
+```{r plot_som_codes2}
+## Plot new clustering2
+codes_dr$cluster2 <- factor(code_clustering2)
+
+ggplot(codes_dr,  aes(x = dim1, y = dim2, color = cluster2, size = size)) +
+  geom_point(alpha = 0.7) +
+  theme_bw() +
+  guides(color = guide_legend(override.aes = list(size = 4)))
+```
+
+
+```{r plot_heatmap2}
+# Get the median expression
+expr_median2 <- aggregate(expr, by = list(cell_clustering2), FUN = median)
+
+# Get cluster frequencies
+clustering_table2 <- table(cell_clustering2)
+
+# This clustering is based on the markers that were used for the main clustering, and it is used in all the heatmaps
+expr_heat2 <- as.matrix(expr_median2[, antigens_ordered])
+rownames(expr_heat2) <- expr_median2[, 1]
+
+cluster_rows <- hclust(dist(expr_heat2), method = "average")
+
+labels_row <- paste0(rownames(expr_heat2), " (", round(as.numeric(clustering_table2) / sum(clustering_table2) * 100, 2), "%)")
+labels_col <- colnames(expr_heat2)
+
+# Row annotation for the heatmap
+annotation_row <- data.frame(cluster = rownames(expr_heat2))
+rownames(annotation_row) <- rownames(expr_heat2)
+
+color_clusters <- gg_color_hue(nrow(expr_heat2))
+names(color_clusters) <- rownames(expr_heat2)
+annotation_colors <- list(cluster = color_clusters)
+
+pheatmap(expr_heat2, color = color, cluster_cols = FALSE, cluster_rows = cluster_rows, labels_col = labels_col, labels_row = labels_row, display_numbers = TRUE, number_color = "black", fontsize_number = 4, annotation_row = annotation_row, annotation_colors = annotation_colors)
+```
+
+
+## Manual cluster merging based on the heatmap
+
+(Should I rather use the `cutree()` function to get an 'automated' method for identifying clusters?)
+
+```{r cluster_merging}
+cluster_merging <- data.frame(original_cluster = 1:20, new_cluster = c("clA", "clH", "clH", "clF", "clH", "clE", "clB", "clF", "clG", "clB", "clE", "clE", "clG", "clD", "clB", "clC", "clD", "clB", "clB", "clC"))
+cluster_merging
+
+## New clustering3
+mm <- match(cell_clustering, cluster_merging$original_cluster)
+cell_clustering3 <- cluster_merging$new_cluster[mm]
+
+mm <- match(code_clustering, cluster_merging$original_cluster)
+code_clustering3 <- cluster_merging$new_cluster[mm]
+```
+
+
+```{r plot_som_codes3}
+## Plot new clustering3
+codes_dr$cluster3 <- factor(code_clustering3)
+
+ggplot(codes_dr,  aes(x = dim1, y = dim2, color = cluster3, size = size)) +
+  geom_point(alpha = 0.7) +
+  theme_bw() +
+  guides(color = guide_legend(override.aes = list(size = 4)))
+```
+
+
+```{r plot_heatmap3, fig.cap='Heatmap for clustering3.'}
+# Get the median expression
+expr_median3 <- aggregate(expr, by = list(cell_clustering3), FUN = median)
+
+# Get cluster frequencies
+clustering_table3 <- table(cell_clustering3)
+
+# This clustering is based on the markers that were used for the main clustering, and it is used in all the heatmaps
+expr_heat3 <- as.matrix(expr_median3[, antigens_ordered])
+rownames(expr_heat3) <- expr_median3[, 1]
+
+cluster_rows <- hclust(dist(expr_heat3), method = "average")
+
+labels_row <- paste0(rownames(expr_heat3), " (", round(as.numeric(clustering_table3) / sum(clustering_table3) * 100, 2), "%)")
+labels_col <- colnames(expr_heat3)
+
+# Row annotation for the heatmap
+annotation_row <- data.frame(cluster = rownames(expr_heat3))
+rownames(annotation_row) <- rownames(expr_heat3)
+
+color_clusters <- gg_color_hue(nrow(expr_heat3))
+names(color_clusters) <- rownames(expr_heat3)
+annotation_colors <- list(cluster = color_clusters)
+
+pheatmap(expr_heat3, color = color, cluster_cols = FALSE, cluster_rows = cluster_rows, labels_col = labels_col, labels_row = labels_row, display_numbers = TRUE, number_color = "black", fontsize_number = 4, annotation_row = annotation_row, annotation_colors = annotation_colors)
+
+```
+
+
+# Differential analysis
+
+Explain in details why we use GLMM.
+
+Calculate cell frequencies in each cluster and sample
+
+
+```{r diff_freqs}
+freq_table <- table(cell_clustering3, sample_ids)
+prop_table <- t(t(freq_table) / colSums(freq_table)) * 100
+
+freq <- as.data.frame.matrix(freq_table)
+prop <- as.data.frame.matrix(prop_table)
+```
+
+Fit a GLMM binomial with interactions and test contrasts.
+
+```{r diff_define_model}
+library(lme4)
+library(multcomp)
+
+## Define the model formula
+model.matrix( ~ condition1 + condition2 + condition1:condition2, data = md)
+
+## Create contrasts
+contrast_names <- c("HvsS_A", "HvsS_B", "H_AvsS_B")
+k1 <- c(0, 1, 0, 0)
+k2 <- c(0, 1, 0, 1)
+k3 <- c(0, 1, 1, 1)
+K <- matrix(c(k1, k2, k3), nrow = 3, byrow = TRUE)
+rownames(K) <- contrast_names
+K
+
+formula_glmer_binomial <- y/total ~ condition1 + condition2 + condition1:condition2 + (1|patient_id)
+```
+
+
+This approach works also when the experiment is not paired, i.e., there are unique patient IDs for each sample.
+
+```{r diff_fit_model}
+ntot <- colSums(freq)
+
+### Fit the GLMM for each cluster separately
+fit <- lapply(1:nrow(freq), function(i){
+  # i = 1
+
+  data_tmp <- data.frame(y = as.numeric(freq[i, md$short_name]), total = ntot, md)
+
+  fit_tmp <- glmer(formula_glmer_binomial, weights = total, family = binomial, data = data_tmp)
+
+  ## Fit contrasts one by one
+  out <- apply(K, 1, function(k){
+
+    contr_tmp <- glht(fit_tmp, linfct = matrix(k, 1))
+    summ_tmp <- summary(contr_tmp)
+    pval <- summ_tmp$test$pvalues
+    return(pval)
+
+  })
+
+  return(out)
+  
+})
+
+pvals <- do.call(rbind, fit)
+colnames(pvals) <- paste0("pval_", contrast_names)
+rownames(pvals) <- rownames(freq)
+
+## Adjust the p-values
+adjp <- apply(pvals, 2, p.adjust, method = "BH")
+colnames(adjp) <- paste0("adjp_", contrast_names)
+adjp
+```
+
+## Plot proportions for all the clusters
+
+We plot the proportions for contrast `"HvsS_A"`.
+
+```{r diff_plot_props}
+ggdf <- melt(data.frame(cluster = rownames(prop), prop), id.vars = "cluster", value.name = "proportion", variable.name = "sample_id")
+
+## Add info about samples
+mm <- match(ggdf$sample_id, md$short_name)
+ggdf$condition1 <- factor(md$condition1[mm])
+ggdf$condition2 <- factor(md$condition2[mm])
+ggdf$condition <- factor(md$condition[mm])
+
+## Plot for condition A
+ggplot(ggdf[ggdf$condition2 == "A", , drop = FALSE]) +
+  geom_boxplot(aes(x = condition, y = proportion, color = condition, fill = condition), position = position_dodge(), alpha = 0.5, outlier.color = NA) +
+  geom_point(aes(x = condition, y = proportion, color = condition), alpha = 0.8, position = position_jitterdodge()) +
+  facet_wrap(~ cluster, scales = "free", nrow = 2) +
+  theme_bw() +
+  theme(axis.text.x = element_blank(), 
+  	axis.ticks.x = element_blank(),
+  	panel.grid.major = element_blank(), 
+    panel.grid.minor = element_blank(), 
+    panel.border = element_blank(), 
+    axis.line.x = element_line(size = 0.5, linetype = "solid", color = "black"), 
+    axis.line.y = element_line(size = 0.5, linetype = "solid", color = "black"),
+    legend.title = element_blank(), legend.position = "right", legend.key = element_blank(),
+    strip.background = element_blank()) +
+  scale_color_manual(values = color_conditions) +
+  scale_fill_manual(values = color_conditions)
+
+```
+
+
+## Plot heatmap with significant proportions
+
+We plot the proportions for contrast `"HvsS_A"`.
+
+```{r diff_asin_sqrt_transformation}
+## Apply the arcsine-square-root transformation
+asin_table <- asin(sqrt((t(t(freq_table) / colSums(freq_table)))))
+asin <- as.data.frame.matrix(asin_table)
+
+## Keep significant clusters for condition A and sort them by significance
+FDR_cutoff <- 0.05
+sign_clusters <- names(which(sort(adjp[, "adjp_HvsS_A"]) < FDR_cutoff))
+
+## Keep samples for condition A and normalize to mean = 0 and sd = 1
+th <- 2.5
+asin_norm <- apply(asin[sign_clusters, md$short_name[md$condition2 == "A"]], 1, function(x){ 
+  
+  sdx <- sd(x, na.rm = TRUE)
+  if(sdx == 0)
+    x <- (x - mean(x, na.rm = TRUE))
+  else 
+    x <- (x - mean(x, na.rm = TRUE)) / sdx
+  
+  x[x > th] <- th
+  x[x < -th] <- -th
+  
+  return(x)
+})
+
+asin_norm <- t(asin_norm)
+
+## Get the adjusted p-values
+sign_adjp <- adjp[sign_clusters , "adjp_HvsS_A"]
+```
+
+
+
+```{r diff_plot_heatmap_with_significant_clusters}
+## Plot a heatmap
+labels_row <- paste0(sign_clusters, " (", sprintf( "%.02e", sign_adjp), ")")
+labels_col <- colnames(asin_norm)
+
+annotation_col <- data.frame(condition = factor(md[colnames(asin_norm), "condition"]))
+rownames(annotation_col) <- colnames(asin_norm)
+annotation_colors <- list(condition = color_conditions)
+
+color <- colorRampPalette(c("#87CEFA", "#56B4E9", "#0072B2", "#000000", "#D55E00", "#E69F00", "#FFD700"), space = "Lab")(100)
+breaks = seq(from = -th, to = th, length.out = 101)
+legend_breaks = seq(from = -round(th), to = round(th), by = 1)
+gaps_col <- as.numeric(table(annotation_col$condition))
+
+pheatmap(asin_norm, color = color, breaks = breaks, legend_breaks = legend_breaks, cluster_cols = FALSE, cluster_rows = FALSE, labels_col = labels_col, labels_row = labels_row, gaps_col = gaps_col, annotation_col = annotation_col, annotation_colors = annotation_colors, annotation_legend = FALSE)
 
 ```
 
@@ -311,34 +676,16 @@ pheatmap(expr_heat, color = color, cellwidth = 24, cellheight = 24, cluster_cols
 
 
 
+# Further analysis of specific subpopulations 
+
+Describe that one could extract cell populations of interest and rerun this pipeline again.
 
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# Session Info
 
 
 ```{r sessionInfo}
