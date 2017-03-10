@@ -24,10 +24,18 @@ vignette: >
   %\VignetteEncoding{UTF-8} 
 ---
 
+<!-- To render this document: -->
+
+<!-- cd cytofWorkflow/vignettes -->
+
+<!-- rmarkdown::render('cytofWorkflow.Rmd') -->
+
+<!-- knitr::purl('cytofWorkflow.Rmd') -->
+
 
 ```{r setup_knitr, include=FALSE, cache=FALSE}
 library(knitr)
-knitr::opts_chunk$set(cache=2, warning=FALSE, message = FALSE, cache.path = "cache/", fig.path = "figure/")
+knitr::opts_chunk$set(cache = 2, warning = FALSE, message = FALSE, cache.path = "cache/", fig.path = "figure/")
 ```
 
 
@@ -39,7 +47,9 @@ Shortly explain what is presented in this workflow.
 
 # Data preprocessing
 
-Describe what was already done with the data. Doublets, debri removed, etc.? 
+From Carsten:
+
+PBMC staining and acquisition by mass cytometry were performed as described previously (Hartmann et al. 2017). Data was normalized using the standalone MATLAB normalizer (Version 2013b; Finck et al. 2013), marker expression was controlled in FlowJo (Version10.1r5) by using a biologic positive and negative control and patient samples were de-barcoded using Boolean gating.
 
 # Data importing and normalization
 
@@ -58,7 +68,7 @@ data_dir <- system.file("extdata", package = "cytofWorkflow")
 Load metadata and panel files:
 
 ```{r load_metadata}
-md <- read.table(file.path(data_dir, "cytofWrokflow_metadata.txt"), header = TRUE, as.is = TRUE)
+md <- read.table(file.path(data_dir, "cytofWorkflow_metadata.xls"), header = TRUE, as.is = TRUE)
 
 rownames(md) <- md$short_name
 
@@ -79,7 +89,7 @@ names(color_conditions) <- colors$condition
 ```
 
 ```{r load_panel}
-panel <- read.table(file.path(data_dir, "cytofWrokflow_panel.txt"), header = TRUE, as.is = TRUE)
+panel <- read.table(file.path(data_dir, "cytofWorkflow_panel.xls"), header = TRUE, as.is = TRUE)
 head(panel)
 ```
 
@@ -92,58 +102,44 @@ Load the raw FCS files:
 library(flowCore)
 
 file_names <- file.path(data_dir, md$file_name)
-
-fcs_raw <- lapply(file_names, read.FCS)
+fcs_raw <- read.flowSet(file_names)
 ```
 
 Extract the expression data for markers with `panel$Use` equal to 1, and normalize it using the arcsinh transformation:
 
 ```{r arcsinh_normalization}
 ## Find which markers to use
-fcs_colnames <- colnames(fcs_raw[[1]])
+fcs_colnames <- colnames(fcs_raw)
 fcs_isotope <- as.numeric(gsub("[[:alpha:]]", "", fcs_colnames))
-
 mm <- match(panel$Isotope, fcs_isotope)
-
 panel$fcs_colnames <- fcs_colnames[mm]
-
 keep <- panel$fcs_colnames[panel$Use == 1]
 
 ## Extract expression + arcsineh normalization
-
-expr <- lapply(fcs_raw, function(x){
-  e <- exprs(x)[, keep]
-  asinh(e / 5)
-})
-
-expr <- do.call("rbind", expr)
-
+expr <- fsApply(fcs_raw, exprs)
+expr <- asinh(expr[, keep] / 5)
 colnames(expr) <- panel$Antigen[panel$Use == 1]
 ```
 
 Normalize the expression data to 0-1. Useful when for plotting heatmaps.
 
 ```{r 01_normalization}
-expr01 <- expr
+rng <- apply(expr, 2, quantile, p = c(0.01, 0.99))
 
-rng <- apply(expr01, 2, quantile, p = c(0.01, 0.99))
-
-for(i in 1:ncol(expr01)){
-  expr01[,i] <- (expr01[, i] - rng[1, i]) / (rng[2, i] - rng[1, i])
-}
+expr01 <- t((t(expr) - rng[1, ]) / (rng[2, ] - rng[1, ]))
 
 expr01[expr01 < 0] <- 0
 expr01[expr01 > 1] <- 1
 
 ```
 
-Generate the sample information
+Generate a variable with sample IDs.
 
 ```{r sample_ids}
-sample_ids <- rep(md$short_name, sapply(fcs_raw, nrow))
+sample_ids <- rep(md$short_name, fsApply(fcs_raw, nrow))
 ```
 
-Plot distributions of marker expression 
+Plot distributions of marker expression.
 
 ```{r plot_merker_expression_distribution}
 library(ggplot2)
@@ -151,14 +147,17 @@ library(reshape2)
 
 ggdf <- data.frame(sample_id = sample_ids, expr)
 ggdf <- melt(ggdf, id.var = "sample_id", value.name = "expression", variable.name = "antigen")
+mm <- match(ggdf$sample_id, md$short_name)
+ggdf$condition <- md$condition[mm]
 
-ggplot(ggdf, aes(x = expression, color = sample_id)) +
+ggplot(ggdf, aes(x = expression, color = condition, group = sample_id)) +
   geom_density() +
   facet_wrap(~ antigen, nrow = 4, scales = "free") +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1), legend.title = element_blank(), legend.position = "right") +
   guides(color = guide_legend(ncol = 1)) +
-  scale_color_manual(values = color_samples)
+  scale_color_manual(values = color_conditions)
+
 ```
 
 
@@ -207,18 +206,57 @@ nrs <- rowMeans(nrs_sample, na.rm = TRUE)
 ## Plot NRS scores for ordered markers
 antigens_ordered <- names(sort(nrs, decreasing = TRUE))
 
-ggdf <- data.frame(antigen = factor(names(nrs), levels = antigens_ordered), nrs_score = nrs)
+nrs_sample <- data.frame(nrs_sample)
+nrs_sample$antigen <- rownames(nrs_sample)
 
-ggplot(ggdf, aes(x = antigen, y = nrs_score)) +
-  geom_bar(stat = "identity") +
+ggdf <- melt(nrs_sample, id.var = "antigen", value.name = "nrs", variable.name = "sample_id")
+ggdf$antigen <- factor(ggdf$antigen, levels = antigens_ordered)
+mm <- match(ggdf$sample_id, md$short_name)
+ggdf$condition <- md$condition[mm]
+
+ggplot(ggdf, aes(x = antigen, y = nrs)) +
+geom_point(aes(color = condition), alpha = 0.8, position = position_jitter(width = 0.3, height = 0)) +
+  geom_boxplot(outlier.size = NA, fill = NA) +
+  stat_summary(fun.y = "mean", geom = "point", shape = 21, fill = "white") +
   theme_bw() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
+  scale_color_manual(values = color_conditions) 
+
+```
+
+# MDS plot
+
+```{r mds_median_expression}
+# Get the median marker expression per sample
+expr_median_sample <- aggregate(expr, by = list(sample_id = sample_ids), FUN = median)
+rownames(expr_median_sample) <- expr_median_sample[, 1]
+expr_median_sample <- t(expr_median_sample[, -1])
+```
+
+```{r mds_plotMDS}
+library(limma)
+mds <- plotMDS(expr_median_sample, plot = FALSE)
+```
+
+
+```{r mds_plot}
+ggdf <- data.frame(PCA1 = mds$x, PCA2 = mds$y, sample_id = colnames(expr_median_sample))
+mm <- match(ggdf$sample_id, md$short_name)
+ggdf$condition <- md$condition[mm]
+
+ggplot(ggdf, aes(x = PCA1, y = PCA2, color = condition)) +
+	geom_point(size = 2) +
+	geom_text(aes(label = sample_id), vjust = -0.5) +
+	xlim(-1.2, 1.2) +
+	theme_bw() +
+	scale_color_manual(values = color_conditions) 
+
 ```
 
 
 # Cell population identification with FlowSOM
 
-Explain that identifying meaningful clusters is one of the most challenging parts and all the downstream aanlysis depend on it.
+Explain that identifying meaningful clusters is one of the most challenging parts and all the downstream analysis depend on it.
 We use a slight modification of the FlowSOM workflow presented in its vignette. We find it more flexible.
 
 ```{r flowsom_som}
@@ -252,10 +290,9 @@ You can also plot the SOM codes.
 
 ```{r som_codes_size}
 ## Get code sizes; sometimes not all the codes have mapped cells so they will have size 0
-code_sizes <- rep(0, nrow(codes))
-names(code_sizes) <- 1:nrow(codes)
-code_table <- table(som$mapping[, 1]) 
-code_sizes[names(code_table)] <- as.numeric(code_table)
+code_sizes <- table(factor(som$mapping[, 1], levels = 1:nrow(codes))) 
+code_sizes <- as.numeric(code_sizes)
+
 ```
 
 ```{r som_codes_dimension_reduction}
@@ -273,64 +310,70 @@ library(Rtsne)
 set.seed(1234)
 tsne_out <- Rtsne(codes, pca = FALSE)
 
-codes_dr <- tsne_out$Y[, 1:2]
-colnames(codes_dr) <- c("dim1", "dim2")
+```
+
+
+```{r color_clusters}
+color_clusters <- c("#DC050C", "#FB8072", "#1965B0", "#7BAFDE", "#882E72", "#B17BA6", "#FF7F00", "#FDB462", "#E7298A", "#E78AC3", "#4EB265", "#90C987", "#55A1B1", "#8DD3C7", "#A6761D", "#E6AB02", "#7570B3", "#BEAED4", "#666666", "#999999")
+
 ```
 
 
 ```{r plot_som_codes}
-codes_dr <- data.frame(codes_dr)
+codes_dr <- data.frame(tSNE1 = tsne_out$Y[, 1], tSNE2 = tsne_out$Y[, 2])
 codes_dr$cluster <- factor(code_clustering)
 codes_dr$size <- code_sizes
 
-ggplot(codes_dr,  aes(x = dim1, y = dim2, color = cluster, size = size)) +
-  geom_point(alpha = 0.7) +
+ggplot(codes_dr,  aes(x = tSNE1, y = tSNE2, color = cluster, size = size)) +
+  geom_point(alpha = 0.9) +
   theme_bw() +
+  scale_color_manual(values = color_clusters) +
   guides(color = guide_legend(override.aes = list(size = 4), ncol = 2))
+
 ```
 
 ## Plotting heatmaps
 
-```{r ggplot_color_palette}
-# ggplot color palette
-gg_color_hue <- function(n) {
-  hues = seq(15, 375, length=n+1)
-  hcl(h=hues, l=60 , c=100)[1:n]
-}
-```
-
 
 ```{r plot_heatmap}
-# Get the median expression
-expr_median <- aggregate(expr, by = list(cell_clustering), FUN = median)
-
-# Get cluster frequencies
-clustering_table <- table(cell_clustering)
-
-# This clustering is based on the markers that were used for the main clustering, and it is used in all the heatmaps
-expr_heat <- as.matrix(expr_median[, antigens_ordered])
-rownames(expr_heat) <- expr_median[, 1]
-
-cluster_rows <- hclust(dist(expr_heat), method = "average")
-
-labels_row <- paste0(rownames(expr_heat), " (", round(as.numeric(clustering_table) / sum(clustering_table) * 100, 2), "%)")
-labels_col <- colnames(expr_heat)
-
-# Row annotation for the heatmap
-annotation_row <- data.frame(cluster = rownames(expr_heat))
-rownames(annotation_row) <- rownames(expr_heat)
-
-color_clusters <- gg_color_hue(nrow(expr_heat))
-names(color_clusters) <- rownames(expr_heat)
-annotation_colors <- list(cluster = color_clusters)
-
-# Colors for the heatmap
 library(RColorBrewer)
-color <- colorRampPalette(brewer.pal(n = 8, name = "YlGnBu"))(100)
-
 library(pheatmap)
 
-pheatmap(expr_heat, color = color, cluster_cols = FALSE, cluster_rows = cluster_rows, labels_col = labels_col, labels_row = labels_row, display_numbers = TRUE, number_color = "black", fontsize_number = 4, annotation_row = annotation_row, annotation_colors = annotation_colors)
+plot_clustering_heatmap_wrapper <- function(expr, expr01, cell_clustering, color_clusters){
+  
+  # Get the median expression
+  expr_median <- aggregate(expr, by = list(cell_clustering), FUN = median)
+  expr01_median <- aggregate(expr01, by = list(cell_clustering), FUN = median)
+  
+  # Get cluster frequencies
+  clustering_table <- as.numeric(table(cell_clustering))
+  
+  # This clustering is based on the markers that were used for the main clustering
+  d <- dist(expr_median[, antigens_ordered], method = "euclidean")
+  cluster_rows <- hclust(d, method = "average")
+  
+  expr_heat <- as.matrix(expr01_median[, antigens_ordered])
+  rownames(expr_heat) <- expr01_median[, 1]
+  
+  labels_row <- paste0(rownames(expr_heat), " (", round(clustering_table / sum(clustering_table) * 100, 2), "%)")
+  labels_col <- colnames(expr_heat)
+  
+  # Row annotation for the heatmap
+  annotation_row <- data.frame(cluster = rownames(expr_heat))
+  rownames(annotation_row) <- rownames(expr_heat)
+  
+  names(color_clusters) <- rownames(expr_heat)
+  annotation_colors <- list(cluster = color_clusters)
+  
+  # Colors for the heatmap
+  color <- colorRampPalette(rev(brewer.pal(n = 8, name = "RdYlBu")))(100)
+  
+  pheatmap(expr_heat, color = color, cluster_cols = FALSE, cluster_rows = cluster_rows, labels_col = labels_col, labels_row = labels_row, display_numbers = TRUE, number_color = "black", fontsize_number = 4, annotation_row = annotation_row, annotation_colors = annotation_colors)
+  
+}
+
+plot_clustering_heatmap_wrapper(expr, expr01, cell_clustering, color_clusters)
+
 ```
 
 
@@ -368,21 +411,20 @@ library(Rtsne)
 set.seed(1234)
 tsne_out <- Rtsne(tsne_expr, check_duplicates = FALSE, pca = FALSE)
 
-dr <- tsne_out$Y[, 1:2]
-colnames(dr) <- c("dim1", "dim2")
 ```
 
 
 ```{r tsne_plot_one}
 ## Plot t-SNE
-ggdf <- data.frame(dr)
-ggdf$sample_id <- sample_ids[tsne_inds]
-ggdf$cell_clustering <- factor(cell_clustering[tsne_inds], levels = 1:nmc)
+dr <- data.frame(tSNE1 = tsne_out$Y[, 1], tSNE2 = tsne_out$Y[, 2])
+dr$sample_id <- sample_ids[tsne_inds]
+dr$cell_clustering <- factor(cell_clustering[tsne_inds], levels = 1:nmc)
 
 ## One plot 
-ggp <- ggplot(ggdf,  aes(x = dim1, y = dim2, color = cell_clustering)) +
+ggp <- ggplot(dr,  aes(x = tSNE1, y = tSNE2, color = cell_clustering)) +
   geom_point() +
   theme_bw() +
+  scale_color_manual(values = color_clusters) +
   guides(color = guide_legend(override.aes = list(size = 4), ncol = 2))
 ggp
 ```
@@ -402,13 +444,10 @@ facet_wrap(~ sample_id)
 Applying the elbow criterion to the detla area Figure 1, we could deduce that there are 6 main clusters present in this dataset.
 
 ```{r flowsom_meta_clustering2, message = FALSE}
-nmc2 <- 6
-
-mc2 <- ConsensusClusterPlus(t(codes), maxK = nmc2, reps = 100, pItem = 0.9, pFeature = 1, title = plot_outdir, plot = "png", clusterAlg = "hc", innerLinkage = "average", finalLinkage = "average", distance = "euclidean", seed = 1234)
-
 ## Get cluster ids for each cell
-code_clustering2 <- mc2[[nmc2]]$consensusClass
-cell_clustering2 <- code_clustering2[som$mapping[,1]]
+nmc2 <- 6
+code_clustering2 <- mc[[nmc2]]$consensusClass
+cell_clustering2 <- code_clustering2[som$mapping[, 1]]
 ```
 
 
@@ -416,38 +455,18 @@ cell_clustering2 <- code_clustering2[som$mapping[,1]]
 ## Plot new clustering2
 codes_dr$cluster2 <- factor(code_clustering2)
 
-ggplot(codes_dr,  aes(x = dim1, y = dim2, color = cluster2, size = size)) +
-  geom_point(alpha = 0.7) +
+ggplot(codes_dr,  aes(x = tSNE1, y = tSNE2, color = cluster2, size = size)) +
+  geom_point(alpha = 0.9) +
   theme_bw() +
-  guides(color = guide_legend(override.aes = list(size = 4)))
+  scale_color_manual(values = color_clusters) +
+  guides(color = guide_legend(override.aes = list(size = 4), ncol = 2))
+
 ```
 
 
 ```{r plot_heatmap2}
-# Get the median expression
-expr_median2 <- aggregate(expr, by = list(cell_clustering2), FUN = median)
+plot_clustering_heatmap_wrapper(expr, expr01, cell_clustering2, color_clusters[1:nmc2])
 
-# Get cluster frequencies
-clustering_table2 <- table(cell_clustering2)
-
-# This clustering is based on the markers that were used for the main clustering, and it is used in all the heatmaps
-expr_heat2 <- as.matrix(expr_median2[, antigens_ordered])
-rownames(expr_heat2) <- expr_median2[, 1]
-
-cluster_rows <- hclust(dist(expr_heat2), method = "average")
-
-labels_row <- paste0(rownames(expr_heat2), " (", round(as.numeric(clustering_table2) / sum(clustering_table2) * 100, 2), "%)")
-labels_col <- colnames(expr_heat2)
-
-# Row annotation for the heatmap
-annotation_row <- data.frame(cluster = rownames(expr_heat2))
-rownames(annotation_row) <- rownames(expr_heat2)
-
-color_clusters <- gg_color_hue(nrow(expr_heat2))
-names(color_clusters) <- rownames(expr_heat2)
-annotation_colors <- list(cluster = color_clusters)
-
-pheatmap(expr_heat2, color = color, cluster_cols = FALSE, cluster_rows = cluster_rows, labels_col = labels_col, labels_row = labels_row, display_numbers = TRUE, number_color = "black", fontsize_number = 4, annotation_row = annotation_row, annotation_colors = annotation_colors)
 ```
 
 
@@ -472,43 +491,21 @@ code_clustering3 <- cluster_merging$new_cluster[mm]
 ## Plot new clustering3
 codes_dr$cluster3 <- factor(code_clustering3)
 
-ggplot(codes_dr,  aes(x = dim1, y = dim2, color = cluster3, size = size)) +
-  geom_point(alpha = 0.7) +
+ggplot(codes_dr,  aes(x = tSNE1, y = tSNE2, color = cluster3, size = size)) +
+  geom_point(alpha = 0.9) +
   theme_bw() +
-  guides(color = guide_legend(override.aes = list(size = 4)))
+  scale_color_manual(values = color_clusters) +
+  guides(color = guide_legend(override.aes = list(size = 4), ncol = 2))
 ```
 
 
 ```{r plot_heatmap3, fig.cap='Heatmap for clustering3.'}
-# Get the median expression
-expr_median3 <- aggregate(expr, by = list(cell_clustering3), FUN = median)
-
-# Get cluster frequencies
-clustering_table3 <- table(cell_clustering3)
-
-# This clustering is based on the markers that were used for the main clustering, and it is used in all the heatmaps
-expr_heat3 <- as.matrix(expr_median3[, antigens_ordered])
-rownames(expr_heat3) <- expr_median3[, 1]
-
-cluster_rows <- hclust(dist(expr_heat3), method = "average")
-
-labels_row <- paste0(rownames(expr_heat3), " (", round(as.numeric(clustering_table3) / sum(clustering_table3) * 100, 2), "%)")
-labels_col <- colnames(expr_heat3)
-
-# Row annotation for the heatmap
-annotation_row <- data.frame(cluster = rownames(expr_heat3))
-rownames(annotation_row) <- rownames(expr_heat3)
-
-color_clusters <- gg_color_hue(nrow(expr_heat3))
-names(color_clusters) <- rownames(expr_heat3)
-annotation_colors <- list(cluster = color_clusters)
-
-pheatmap(expr_heat3, color = color, cluster_cols = FALSE, cluster_rows = cluster_rows, labels_col = labels_col, labels_row = labels_row, display_numbers = TRUE, number_color = "black", fontsize_number = 4, annotation_row = annotation_row, annotation_colors = annotation_colors)
+plot_clustering_heatmap_wrapper(expr, expr01, cell_clustering3, color_clusters[1:nlevels(cell_clustering3)])
 
 ```
 
 
-# Differential analysis
+# Differential analysis of cell population frequencies
 
 Explain in details why we use GLMM.
 
@@ -525,7 +522,7 @@ prop <- as.data.frame.matrix(prop_table)
 
 Fit a GLMM binomial with interactions and test contrasts.
 
-```{r diff_define_model}
+```{r diff_freqs_define_model}
 library(lme4)
 library(multcomp)
 
@@ -547,12 +544,11 @@ formula_glmer_binomial <- y/total ~ condition1 + condition2 + condition1:conditi
 
 This approach works also when the experiment is not paired, i.e., there are unique patient IDs for each sample.
 
-```{r diff_fit_model}
+```{r diff_freqs_fit_model}
 ntot <- colSums(freq)
 
 ### Fit the GLMM for each cluster separately
-fit <- lapply(1:nrow(freq), function(i){
-  # i = 1
+fit_binomial <- lapply(1:nrow(freq), function(i){
 
   data_tmp <- data.frame(y = as.numeric(freq[i, md$short_name]), total = ntot, md)
 
@@ -560,19 +556,17 @@ fit <- lapply(1:nrow(freq), function(i){
 
   ## Fit contrasts one by one
   out <- apply(K, 1, function(k){
-
     contr_tmp <- glht(fit_tmp, linfct = matrix(k, 1))
     summ_tmp <- summary(contr_tmp)
     pval <- summ_tmp$test$pvalues
     return(pval)
-
   })
 
   return(out)
   
 })
 
-pvals <- do.call(rbind, fit)
+pvals <- do.call(rbind, fit_binomial)
 colnames(pvals) <- paste0("pval_", contrast_names)
 rownames(pvals) <- rownames(freq)
 
@@ -586,7 +580,7 @@ adjp
 
 We plot the proportions for contrast `"HvsS_A"`.
 
-```{r diff_plot_props}
+```{r diff_freqs_plot_props}
 ggdf <- melt(data.frame(cluster = rownames(prop), prop), id.vars = "cluster", value.name = "proportion", variable.name = "sample_id")
 
 ## Add info about samples
@@ -602,25 +596,43 @@ ggplot(ggdf[ggdf$condition2 == "A", , drop = FALSE]) +
   facet_wrap(~ cluster, scales = "free", nrow = 2) +
   theme_bw() +
   theme(axis.text.x = element_blank(), 
-  	axis.ticks.x = element_blank(),
-  	panel.grid.major = element_blank(), 
-    panel.grid.minor = element_blank(), 
-    panel.border = element_blank(), 
-    axis.line.x = element_line(size = 0.5, linetype = "solid", color = "black"), 
-    axis.line.y = element_line(size = 0.5, linetype = "solid", color = "black"),
-    legend.title = element_blank(), legend.position = "right", legend.key = element_blank(),
-    strip.background = element_blank()) +
+  	axis.ticks.x = element_blank()) +
   scale_color_manual(values = color_conditions) +
   scale_fill_manual(values = color_conditions)
 
 ```
 
 
-## Plot heatmap with significant proportions
+## Plot heatmap with significant cell populations
 
 We plot the proportions for contrast `"HvsS_A"`.
 
-```{r diff_asin_sqrt_transformation}
+```{r normalization_wrapper}
+normalization_wrapper <- function(expr, th = 2.5){
+  
+  expr_norm <- apply(expr, 1, function(x){ 
+    
+    sdx <- sd(x, na.rm = TRUE)
+    if(sdx == 0)
+      x <- (x - mean(x, na.rm = TRUE))
+    else 
+      x <- (x - mean(x, na.rm = TRUE)) / sdx
+    
+    x[x > th] <- th
+    x[x < -th] <- -th
+    
+    return(x)
+  })
+  
+  expr_norm <- t(expr_norm)
+  
+}
+
+```
+
+
+
+```{r diff_freqs_asin_sqrt_transformation}
 ## Apply the arcsine-square-root transformation
 asin_table <- asin(sqrt((t(t(freq_table) / colSums(freq_table)))))
 asin <- as.data.frame.matrix(asin_table)
@@ -630,22 +642,7 @@ FDR_cutoff <- 0.05
 sign_clusters <- names(which(sort(adjp[, "adjp_HvsS_A"]) < FDR_cutoff))
 
 ## Keep samples for condition A and normalize to mean = 0 and sd = 1
-th <- 2.5
-asin_norm <- apply(asin[sign_clusters, md$short_name[md$condition2 == "A"]], 1, function(x){ 
-  
-  sdx <- sd(x, na.rm = TRUE)
-  if(sdx == 0)
-    x <- (x - mean(x, na.rm = TRUE))
-  else 
-    x <- (x - mean(x, na.rm = TRUE)) / sdx
-  
-  x[x > th] <- th
-  x[x < -th] <- -th
-  
-  return(x)
-})
-
-asin_norm <- t(asin_norm)
+asin_norm <- normalization_wrapper(asin[sign_clusters, md$short_name[md$condition2 == "A"]])
 
 ## Get the adjusted p-values
 sign_adjp <- adjp[sign_clusters , "adjp_HvsS_A"]
@@ -653,23 +650,226 @@ sign_adjp <- adjp[sign_clusters , "adjp_HvsS_A"]
 
 
 
-```{r diff_plot_heatmap_with_significant_clusters}
-## Plot a heatmap
-labels_row <- paste0(sign_clusters, " (", sprintf( "%.02e", sign_adjp), ")")
-labels_col <- colnames(asin_norm)
+```{r diff_freqs_plot_heatmap_with_significant_clusters}
 
-annotation_col <- data.frame(condition = factor(md[colnames(asin_norm), "condition"]))
-rownames(annotation_col) <- colnames(asin_norm)
-annotation_colors <- list(condition = color_conditions)
+plot_differential_heatmap_wrapper <- function(expr_norm, sign_adjp, condition, color_conditions, th = 2.5){
+  
+  ## Plot a heatmap
+  labels_row <- paste0(rownames(expr_norm), " (", sprintf( "%.02e", sign_adjp), ")")
+  labels_col <- colnames(expr_norm)
+  
+  annotation_col <- data.frame(condition = factor(condition))
+  rownames(annotation_col) <- colnames(expr_norm)
+  annotation_colors <- list(condition = color_conditions)
+  
+  color <- colorRampPalette(c("#87CEFA", "#56B4E9", "#0072B2", "#000000", "#D55E00", "#E69F00", "#FFD700"), space = "Lab")(100)
+  breaks = seq(from = -th, to = th, length.out = 101)
+  legend_breaks = seq(from = -round(th), to = round(th), by = 1)
+  gaps_col <- as.numeric(table(annotation_col$condition))
+  
+  pheatmap(expr_norm, color = color, breaks = breaks, legend_breaks = legend_breaks, cluster_cols = FALSE, cluster_rows = FALSE, labels_col = labels_col, labels_row = labels_row, gaps_col = gaps_col, annotation_col = annotation_col, annotation_colors = annotation_colors, annotation_legend = FALSE)
+  
+  
+}
 
-color <- colorRampPalette(c("#87CEFA", "#56B4E9", "#0072B2", "#000000", "#D55E00", "#E69F00", "#FFD700"), space = "Lab")(100)
-breaks = seq(from = -th, to = th, length.out = 101)
-legend_breaks = seq(from = -round(th), to = round(th), by = 1)
-gaps_col <- as.numeric(table(annotation_col$condition))
-
-pheatmap(asin_norm, color = color, breaks = breaks, legend_breaks = legend_breaks, cluster_cols = FALSE, cluster_rows = FALSE, labels_col = labels_col, labels_row = labels_row, gaps_col = gaps_col, annotation_col = annotation_col, annotation_colors = annotation_colors, annotation_legend = FALSE)
+plot_differential_heatmap_wrapper(expr_norm = asin_norm, sign_adjp = sign_adjp, condition = md[colnames(asin_norm), "condition"], color_conditions = color_conditions)
 
 ```
+
+
+
+# Differential analysis of marker expression
+
+## Overall marker expression
+
+Using the `glmer` function with `family = gaussian` as shortcut to `lmer` is deparacated. One should use `lmer` directly.
+`lmer` does not allow that the random effect is a variable that has unique values for each sample. Thus, sample IDs could not be used as a random effect.
+
+```{r diff_expr1_fit_model}
+formula_lmer <- y ~ condition1 + condition2 + condition1:condition2 + (1|patient_id)
+
+### Fit the LMM for each marker separately
+fit_gaussian <- lapply(1:nrow(expr_median_sample), function(i){
+	# i = 1
+  data_tmp <- data.frame(y = as.numeric(expr_median_sample[i, md$short_name]), md)
+
+  fit_tmp <- lmer(formula_lmer, data = data_tmp)
+
+  ## Fit contrasts one by one
+  out <- apply(K, 1, function(k){
+    contr_tmp <- glht(fit_tmp, linfct = matrix(k, 1))
+    summ_tmp <- summary(contr_tmp)
+    pval <- summ_tmp$test$pvalues
+    return(pval)
+  })
+
+  return(out)
+  
+})
+
+pvals <- do.call(rbind, fit_gaussian)
+colnames(pvals) <- paste0("pval_", contrast_names)
+rownames(pvals) <- rownames(expr_median_sample)
+
+## Adjust the p-values
+adjp <- apply(pvals, 2, p.adjust, method = "BH")
+colnames(adjp) <- paste0("adjp_", contrast_names)
+adjp
+```
+
+
+### Plot mediam expression of all the markers
+
+Sorted by significance
+
+```{r diff_expr1_plot_median_expr}
+ggdf <- melt(data.frame(antigen = rownames(expr_median_sample), expr_median_sample), id.vars = "antigen", value.name = "median_expression", variable.name = "sample_id")
+
+## Sort antigen by significance
+ggdf$antigen <- factor(ggdf$antigen, levels = names(sort(adjp[, "adjp_HvsS_A"])))
+
+## Add info about samples
+mm <- match(ggdf$sample_id, md$short_name)
+ggdf$condition1 <- factor(md$condition1[mm])
+ggdf$condition2 <- factor(md$condition2[mm])
+ggdf$condition <- factor(md$condition[mm])
+
+## Plot for condition A
+ggplot(ggdf[ggdf$condition2 == "A", , drop = FALSE]) +
+  geom_boxplot(aes(x = antigen, y = median_expression, color = condition, fill = condition), position = position_dodge(), alpha = 0.5, outlier.color = NA) +
+  geom_point(aes(x = antigen, y = median_expression, color = condition), alpha = 0.8, position = position_jitterdodge()) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
+  scale_color_manual(values = color_conditions) +
+  scale_fill_manual(values = color_conditions)
+
+```
+
+
+### Plot heatmap with significant markers
+
+```{r diff_expr1_plot_heatmap_with_significant_markers}
+## Keep significant markers for condition A and sort them by significance
+sign_markers <- names(which(sort(adjp[, "adjp_HvsS_A"]) < FDR_cutoff))
+
+## Keep samples for condition A and normalize to mean = 0 and sd = 1
+expr_median_sample_norm <- normalization_wrapper(expr_median_sample[sign_markers, md$short_name[md$condition2 == "A"]])
+
+## Get the adjusted p-values
+sign_adjp <- adjp[sign_markers , "adjp_HvsS_A"]
+
+plot_differential_heatmap_wrapper(expr_norm = expr_median_sample_norm, sign_adjp = sign_adjp, condition = md[colnames(expr_median_sample_norm), "condition"], color_conditions = color_conditions)
+
+```
+
+
+## Marker expression stratified by cell population
+
+There maight be samples that have no cells assigned to a cluster or the number of cells is very low. This can be a problem as it introduces NAs because the median expression can not be calculated for such a sample or the median expression is calculated based on few cells which leads to higher uncertainty of this estimate.
+
+We remove clusters which have too low counts.  
+
+```{r diff_expr2_median_expression}
+
+expr_median_sample_cluster <- aggregate(expr, by = list(sample_id = sample_ids, cluster = cell_clustering3), FUN = median, drop = FALSE)
+expr_median_sample_cluster_melt <- melt(expr_median_sample_cluster, id.vars = c("sample_id", "cluster"), value.name = "median_expression", variable.name = "antigen")
+expr_median_sample_cluster <- dcast(expr_median_sample_cluster_melt, cluster + antigen ~ sample_id, value.var = "median_expression")
+rownames(expr_median_sample_cluster) <- paste0(expr_median_sample_cluster$cluster, "_", expr_median_sample_cluster$antigen)
+
+clusters_keep <- names(which((rowSums(freq < 5) == 0)))
+
+expr_median_sample_cluster <- expr_median_sample_cluster[expr_median_sample_cluster$cluster %in% clusters_keep, ]
+
+expr_median_sample_cluster <- expr_median_sample_cluster[rowSums(expr_median_sample_cluster[, md$short_name]) > 0, ]
+
+
+```
+
+
+
+```{r diff_expr2_fit_model}
+### Fit the LMM for each marker separately
+fit_gaussian2 <- lapply(1:nrow(expr_median_sample_cluster), function(i){
+  # i = 1
+  data_tmp <- data.frame(y = as.numeric(expr_median_sample_cluster[i, md$short_name]), md)
+  
+  fit_tmp <- lmer(formula_lmer, data = data_tmp)
+  
+  ## Fit contrasts one by one
+  out <- apply(K, 1, function(k){
+    contr_tmp <- glht(fit_tmp, linfct = matrix(k, 1))
+    summ_tmp <- summary(contr_tmp)
+    pval <- summ_tmp$test$pvalues
+    return(pval)
+  })
+  
+  return(out)
+  
+})
+
+pvals <- do.call(rbind, fit_gaussian2)
+colnames(pvals) <- paste0("pval_", contrast_names)
+rownames(pvals) <- paste0(expr_median_sample_cluster$cluster, "_", expr_median_sample_cluster$antigen)
+
+## Adjust the p-values
+adjp <- apply(pvals, 2, p.adjust, method = "BH")
+colnames(adjp) <- paste0("adjp_", contrast_names)
+head(adjp)
+
+```
+
+
+### Plot mediam expression of all the markers in each cluster
+
+
+```{r diff_expr2_plot_median_expr}
+ggdf <- expr_median_sample_cluster_melt
+
+## Add info about samples
+mm <- match(ggdf$sample_id, md$short_name)
+ggdf$condition1 <- factor(md$condition1[mm])
+ggdf$condition2 <- factor(md$condition2[mm])
+ggdf$condition <- factor(md$condition[mm])
+
+## Plot for condition A
+ggplot(ggdf[ggdf$condition2 == "A", , drop = FALSE]) +
+  geom_boxplot(aes(x = antigen, y = median_expression, color = condition, fill = condition), position = position_dodge(), alpha = 0.5, outlier.color = NA) +
+  geom_point(aes(x = antigen, y = median_expression, color = condition), alpha = 0.8, position = position_jitterdodge()) +
+  facet_wrap(~ cluster) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
+  scale_color_manual(values = color_conditions) +
+  scale_fill_manual(values = color_conditions)
+
+```
+
+
+### Plot heatmap with significant markers
+
+```{r diff_expr2_plot_heatmap_with_significant_markers}
+## Keep significant markers for condition A and sort them by significance
+sign_clusters_markers <- names(which(sort(adjp[, "adjp_HvsS_A"]) < FDR_cutoff))
+
+## Keep samples for condition A and normalize to mean = 0 and sd = 1
+expr_median_sample_cluster_norm <- normalization_wrapper(expr_median_sample_cluster[sign_clusters_markers, md$short_name[md$condition2 == "A"]])
+
+## Get the adjusted p-values
+sign_adjp <- adjp[sign_clusters_markers , "adjp_HvsS_A"]
+
+plot_differential_heatmap_wrapper(expr_norm = expr_median_sample_cluster_norm, sign_adjp = sign_adjp, condition = md[colnames(expr_median_sample_cluster_norm), "condition"], color_conditions = color_conditions)
+
+```
+
+
+
+
+
+
+
+
+
+
+
 
 
 

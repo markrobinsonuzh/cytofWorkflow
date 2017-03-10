@@ -3,7 +3,6 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
 ^.git$
-^.dropbox$
 ^.*\.toc$
 ^.*\.aux$
 ^.*\.log$
