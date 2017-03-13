@@ -41,15 +41,72 @@ knitr::opts_chunk$set(cache = 2, warning = FALSE, message = FALSE, cache.path = 
 
 # Introduction
 
-Describe what CyTOF is and its applications.
+<!-- Describe what CyTOF and Flow Cytometry are and what are the differences -->
 
-Shortly explain what is presented in this workflow.
+Flow cytometry and more recently introduced CyTOF (cytometry by time-of-flight mass spectrometry or mass cytometry) are technologies that measure abundance of proteins expressed on the surface or inside cells at the high-throughput single cell level. 
+In flow cytometry, antibodies are labeled with fluorescent dyes. For each cell, the intensity of fluorescent parameters is measured using lasers and photodetectors. 
+CyTOF utilizes an entirely different technique. Transition element isotopes are used to label antibodies and the intensity read out of isotopes bound to each cell is analyzed with a time-of-flight mass spectrometer. 
+In both cases, the intensity of either fluorescent dyes or isotopes is assumed to be proportional to the expression level of antibody-targeted antigens of interest.
+
+Due to the huge differences in these techniques other distinct characteristics are observed.
+Classical fluorophore-based flow cytometry is non-destructive and can be also used for cell sorting allowing further analysis on cell populations. Because of the spectral overlap between fluorophores, the compensation analysis has to be performed and a limited number of parameters can be measured at once. A routine experiment measures around 18 parameters with recent increase to up to 50 parameters. On the other hand, flow cytometry offers a high throughput with 10,000 cells measured per second at relatively low operating costs per sample.
+
+By using rare metal isotopes in CyTOF, there is no problem of cell autofluorescence which is a limitation in the classical flow cytometry. As the spectral overlap is greatly reduced, there is almost no need for compensation and a greater number of parameters per cell can be detected. Currently, around 40 parameters can be detected with mass cytometry and theoretically this number could be increased to more than 100 parameters. However, the throughput of CyTOF is lower which is at the rate of hundreds of cells per second and cells can not be collected after an experiment as they are destroyed during the mass spectrometry step.
+
+
+<!-- Application -->
+
+The ability of flow cytometry and mass cytometry to analyze individual cells at such a high-throughput resulted in a wide range of biological and medical applications. In immunology, they are used to detect and quantify cell populations of interest, to characterize unknown cell populations and to compare population abundance between different conditions, such as different patient groups, resulting in disease biomarker identification.
+
+<!-- Explain what is presented in this workflow -->
+
+In this workflow, we present an analysis of CyTOF data where the goal is to first, identify cell populations of interest and second, determine which of the cell subpopulations and protein markers could be used as biomarkers to distinguish between healthy and sick patients. We present how to visualize the obtained cell populations with t-SNE as a dimension reduction technique from `r CRANpkg("Rtsne")`. We use `r CRANpkg("pheatmap")` to plot heatmaps that represent characteristics of cell populations and biomarkers. 
+
+The CyTOF data used here is already pre-processed meaning that the normalization and debarcoding as well as removal of doublets, debris and dead cells were already performed, see Section [Data preprocessing](#data-preprocessing).
+This workflow is equally applicable to any flow cytometry data for which the pre-processing including compensation and the steps listed above were performed. 
+
+Cell population identification often has been carried out by manual gating a method based on visual inspection of two-dimensional scatterplots, where at each step a subset of cells, which is positive or negative for the given two markers, is selected and further stratified in the next iteration until a population with given marker characteristics is selected. Despite its popularity, manual gating has many drawbacks such as subjectivity, bias toward the favorite cell types, high time workload and inefficiency when analyzing large datasets, which all contribute to the fact that manual gating is hard to reproduce [@Saeys2016].
+Large effort has been carried out to improve and automate cell population identification and many methods are currently available that address this question by the means of unsupervised clustering of cells [@Weber2016]. 
+
+In this pipeline, cell clustering is conducted with `r Biocpkg("FlowSOM")` and `r CRANpkg("ConsensusClusterPlus")` packages, one of the best performing clustering approaches [@Weber2016]. 
+
+<!-- Should I mention that there are the following methods: classification, regression and survival analysis? -->
+
+Biomarker discovery aims to identify cell subpopulations for which the abundances change between the biological conditions giving an insight into the cause or effect of the phenotypic differences.
+There are two main approaches to biomarker identification [@Saeys2016]. First, clustering and then performing a statistical test, which is presented in this workflow. Second, strong over-clustering plus feature selection to detect the most relevant subpopulations. 
+In addition to differentially abundant subpopulations, we identify protein markers for which the expression changes between the biological conditions.
+
+We conduct the differential analysis of cell population abundances and marker intensities using the generalized linear mixed models (GLMM) and linear mixed models (LMM), respectively, which allow for modeling more complex designs that can account for batch effects and paired experiments. The analysis are performed using the `r CRANpkg("lme4")` and `r CRANpkg("multcomp")` packages.
+
+Cell population abundances are represented as counts of cells in a given cluster and sample. Our goal is to compare the relative abundance, meaning the ratios, of cell subpopulations and not the absolute counts. 
+This can be done with the binomial model, which naturally accounts for the higher uncertainty of proportions based on lower counts, and which is not the case when proportions are modeled directly.
+However, as in the genomic data analysis [@Jia2014, @Zhao2013], the pure logistic regression is not able to model the overdispersion which we have also observed in this type of data. 
+A more suitable model would be based on the beta-binomial distribution, or similar results can be achieved by modeling the extra variance of relative ratios as random effects for each individual sample in the generalized linear mixed models (GLMM).
+
+The differential analysis of marker expression are performed using the median expression from each sample as a dependent variable in the linear model (LM). 
+One drawback of this approach is that all the other characteristics of the protein marker intensity distribution, such as bimodality, skewness and variance, are ignored. 
+On the other hand, considering only median results in a simple, easy to interpret approach which in many cases is sufficient for the exploratory analysis. 
+Other issue that arises when using a summary statistic of a distribution is its uncertainty which increases as the number of cells used to calculate the median decreases. 
+This problem can be handled in the linear model by assigning weights to the median expression which are proportional to the number of cells.  
+
+The data analyzed in this workflow originates from a paired experiment. Samples from the same patients were taken in condition A and B. This is a classic example where one would choose mixed models over the traditional models, and patients would be treated as a random effect. Due to this we introduce some modifications to the approaches described above. 
+In the differential cell population abundance analysis, in the GLMM, we use patient IDs as a random effect instead of the sample IDs. In the differential median marker expression analysis, we use a linear mixed model (LMM) with patient IDs as a random effect instead of the LM.
+
+
+The workflow is not fully automatic, it involves a step where the user can manually merge and annotate clusters, see Section [Cluster merging and annotation](#cluster-merging-and-annotation), but it is entirely and easily reproducible.
+
+# Data description
+
+The dataset used here is not yet publicly available. For this reason, we had to anonymize conditions for which samples were collected and antigens used in the panel. The two conditions are called A and B and in both of them samples were obtained from healthy and sick patients. The antigen names were changed to "M1", "M2",..., "M23". 
 
 # Data preprocessing
 
-From Carsten:
+<!-- From Carsten: -->
 
-PBMC staining and acquisition by mass cytometry were performed as described previously (Hartmann et al. 2017). Data was normalized using the standalone MATLAB normalizer (Version 2013b; Finck et al. 2013), marker expression was controlled in FlowJo (Version10.1r5) by using a biologic positive and negative control and patient samples were de-barcoded using Boolean gating.
+Peripheral blood mononuclear cell (PBMC) staining and acquisition by mass cytometry were performed as described previously (Hartmann et al. 2017 ???). Data was normalized using the standalone MATLAB normalizer (Version 2013b) [@Finck2013], marker expression was controlled in FlowJo (Version10.1r5) by using a biologic positive and negative control and patient samples were debarcoded using Boolean gating.
+
+(TODO? Description of how the pre-processing could be done. Reference to the CATALYST package.)
+
 
 # Data importing and normalization
 
@@ -68,7 +125,9 @@ data_dir <- system.file("extdata", package = "cytofWorkflow")
 Load metadata and panel files:
 
 ```{r load_metadata}
-md <- read.table(file.path(data_dir, "cytofWorkflow_metadata.xls"), header = TRUE, as.is = TRUE)
+library(gdata)
+
+md <- read.xls(file.path(data_dir, "cytofWorkflow_metadata.xls"), stringsAsFactors = FALSE)
 
 rownames(md) <- md$short_name
 
@@ -77,7 +136,7 @@ md$condition1 <- factor(md$condition1, levels = c("Healthy", "Sick"))
 md$condition2 <- factor(md$condition2, levels = c("A", "B"))
 md$condition <- interaction(md$condition2, md$condition1, sep = "_", lex.order = TRUE)
 ## Add colors
-md$color <- factor(md$condition, labels = c("#B17BA6", "#882E72", "#7BAFDE", "#1965B0"))
+md$color <- factor(md$condition, labels = c("#BC80BD", "#984EA3", "#80B1D3", "#FF7F00"))
 md
 
 color_samples <- as.character(md$color)
@@ -89,7 +148,7 @@ names(color_conditions) <- colors$condition
 ```
 
 ```{r load_panel}
-panel <- read.table(file.path(data_dir, "cytofWorkflow_panel.xls"), header = TRUE, as.is = TRUE)
+panel <- read.xls(file.path(data_dir, "cytofWorkflow_panel.xls"), stringsAsFactors = FALSE)
 head(panel)
 ```
 
@@ -245,11 +304,11 @@ mm <- match(ggdf$sample_id, md$short_name)
 ggdf$condition <- md$condition[mm]
 
 ggplot(ggdf, aes(x = PCA1, y = PCA2, color = condition)) +
-	geom_point(size = 2) +
-	geom_text(aes(label = sample_id), vjust = -0.5) +
-	xlim(-1.2, 1.2) +
-	theme_bw() +
-	scale_color_manual(values = color_conditions) 
+  geom_point(size = 2) +
+  geom_text(aes(label = sample_id), vjust = -0.5) +
+  xlim(-1.2, 1.2) +
+  theme_bw() +
+  scale_color_manual(values = color_conditions) 
 
 ```
 
@@ -314,7 +373,7 @@ tsne_out <- Rtsne(codes, pca = FALSE)
 
 
 ```{r color_clusters}
-color_clusters <- c("#DC050C", "#FB8072", "#1965B0", "#7BAFDE", "#882E72", "#B17BA6", "#FF7F00", "#FDB462", "#E7298A", "#E78AC3", "#4EB265", "#90C987", "#55A1B1", "#8DD3C7", "#A6761D", "#E6AB02", "#7570B3", "#BEAED4", "#666666", "#999999")
+color_clusters <- c("#DC050C", "#FB8072", "#1965B0", "#7BAFDE", "#882E72", "#B17BA6", "#FF7F00", "#FDB462", "#E7298A", "#E78AC3", "#33A02C", "#B2DF8A", "#55A1B1", "#8DD3C7", "#A6761D", "#E6AB02", "#7570B3", "#BEAED4", "#666666", "#999999")
 
 ```
 
@@ -436,12 +495,12 @@ facet_wrap(~ sample_id)
 ```
 
 
-# Cluster reduction/merging and annotation
+# Cluster merging and annotation
 
 
 ## Rerunning ConsensusClusterPlus with identified number of clusters
 
-Applying the elbow criterion to the detla area Figure 1, we could deduce that there are 6 main clusters present in this dataset.
+Applying the elbow criterion to the delta area Figure 1, we could deduce that there are 6 main clusters present in this dataset.
 
 ```{r flowsom_meta_clustering2, message = FALSE}
 ## Get cluster ids for each cell
@@ -596,7 +655,7 @@ ggplot(ggdf[ggdf$condition2 == "A", , drop = FALSE]) +
   facet_wrap(~ cluster, scales = "free", nrow = 2) +
   theme_bw() +
   theme(axis.text.x = element_blank(), 
-  	axis.ticks.x = element_blank()) +
+    axis.ticks.x = element_blank()) +
   scale_color_manual(values = color_conditions) +
   scale_fill_manual(values = color_conditions)
 
@@ -606,6 +665,7 @@ ggplot(ggdf[ggdf$condition2 == "A", , drop = FALSE]) +
 ## Plot heatmap with significant cell populations
 
 We plot the proportions for contrast `"HvsS_A"`.
+Enriched and depleted compartments.
 
 ```{r normalization_wrapper}
 normalization_wrapper <- function(expr, th = 2.5){
@@ -690,7 +750,7 @@ formula_lmer <- y ~ condition1 + condition2 + condition1:condition2 + (1|patient
 
 ### Fit the LMM for each marker separately
 fit_gaussian <- lapply(1:nrow(expr_median_sample), function(i){
-	# i = 1
+  # i = 1
   data_tmp <- data.frame(y = as.numeric(expr_median_sample[i, md$short_name]), md)
 
   fit_tmp <- lmer(formula_lmer, data = data_tmp)
@@ -714,11 +774,11 @@ rownames(pvals) <- rownames(expr_median_sample)
 ## Adjust the p-values
 adjp <- apply(pvals, 2, p.adjust, method = "BH")
 colnames(adjp) <- paste0("adjp_", contrast_names)
-adjp
+head(adjp)
 ```
 
 
-### Plot mediam expression of all the markers
+### Plot median expression of all the markers
 
 Sorted by significance
 
@@ -765,7 +825,7 @@ plot_differential_heatmap_wrapper(expr_norm = expr_median_sample_norm, sign_adjp
 
 ## Marker expression stratified by cell population
 
-There maight be samples that have no cells assigned to a cluster or the number of cells is very low. This can be a problem as it introduces NAs because the median expression can not be calculated for such a sample or the median expression is calculated based on few cells which leads to higher uncertainty of this estimate.
+There might be samples that have no cells assigned to a cluster or the number of cells is very low. This can be a problem as it introduces NAs because the median expression can not be calculated for such a sample or the median expression is calculated based on few cells which leads to higher uncertainty of this estimate.
 
 We remove clusters which have too low counts.  
 
@@ -819,7 +879,7 @@ head(adjp)
 ```
 
 
-### Plot mediam expression of all the markers in each cluster
+### Plot median expression of all the markers in each cluster
 
 
 ```{r diff_expr2_plot_median_expr}
