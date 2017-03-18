@@ -17,7 +17,9 @@ fontsize: 10pt
 papersize: a4
 bibliography: bibliography.bib
 output: 
-  BiocStyle::html_document
+  BiocStyle::html_document:
+    fig_caption: true
+    self_contained: no
 vignette: >
   %\VignetteIndexEntry{CyTOF workflow}
   %\VignetteEngine{knitr::rmarkdown}
@@ -25,8 +27,6 @@ vignette: >
 ---
 
 <!-- To render this document: -->
-
-<!-- cd cytofWorkflow/vignettes -->
 
 <!-- rmarkdown::render('cytofWorkflow.Rmd') -->
 
@@ -51,7 +51,7 @@ In both cases, the intensity of either fluorescent dyes or isotopes is assumed t
 Due to the huge differences in these techniques other distinct characteristics are observed.
 Classical fluorophore-based flow cytometry is non-destructive and can be also used for cell sorting allowing further analysis on cell populations. Because of the spectral overlap between fluorophores, the compensation analysis has to be performed and a limited number of parameters can be measured at once. A routine experiment measures around 18 parameters with recent increase to up to 50 parameters. On the other hand, flow cytometry offers a high throughput with 10,000 cells measured per second at relatively low operating costs per sample.
 
-By using rare metal isotopes in CyTOF, there is no problem of cell autofluorescence which is a limitation in the classical flow cytometry. As the spectral overlap is greatly reduced, there is almost no need for compensation and a greater number of parameters per cell can be detected. Currently, around 40 parameters can be detected with mass cytometry and theoretically this number could be increased to more than 100 parameters. However, the throughput of CyTOF is lower which is at the rate of hundreds of cells per second and cells can not be collected after an experiment as they are destroyed during the mass spectrometry step.
+By using rare metal isotopes in CyTOF, there is no problem of cell autofluorescence which is a limitation in the classical flow cytometry. As the spectral overlap is greatly reduced, there is little compensation required and a greater number of parameters per cell can be detected. Currently, around 40 parameters can be detected with mass cytometry and theoretically this number could be increased to more than 100 parameters. However, the throughput of CyTOF is lower which is at the rate of hundreds of cells per second and cells can not be collected after an experiment as they are destroyed during the mass spectrometry step.
 
 
 <!-- Application -->
@@ -60,44 +60,26 @@ The ability of flow cytometry and mass cytometry to analyze individual cells at 
 
 <!-- Explain what is presented in this workflow -->
 
-In this workflow, we present an analysis of CyTOF data where the goal is to first, identify cell populations of interest and second, determine which of the cell subpopulations and protein markers could be used as biomarkers to distinguish between healthy and sick patients. We present how to visualize the obtained cell populations with t-SNE as a dimension reduction technique from `r CRANpkg("Rtsne")`. We use `r CRANpkg("pheatmap")` to plot heatmaps that represent characteristics of cell populations and biomarkers. 
+In this workflow, we present an analysis of CyTOF data where the goal is to first, identify cell populations of interest and second, determine which of the cell subpopulations and protein markers could be used as biomarkers to distinguish between healthy and sick patients.  
 
 The CyTOF data used here is already pre-processed meaning that the normalization and debarcoding as well as removal of doublets, debris and dead cells were already performed, see Section [Data preprocessing](#data-preprocessing).
 This workflow is equally applicable to any flow cytometry data for which the pre-processing including compensation and the steps listed above were performed. 
 
-Cell population identification often has been carried out by manual gating a method based on visual inspection of two-dimensional scatterplots, where at each step a subset of cells, which is positive or negative for the given two markers, is selected and further stratified in the next iteration until a population with given marker characteristics is selected. Despite its popularity, manual gating has many drawbacks such as subjectivity, bias toward the favorite cell types, high time workload and inefficiency when analyzing large datasets, which all contribute to the fact that manual gating is hard to reproduce [@Saeys2016].
-Large effort has been carried out to improve and automate cell population identification and many methods are currently available that address this question by the means of unsupervised clustering of cells [@Weber2016]. 
-
-In this pipeline, cell clustering is conducted with `r Biocpkg("FlowSOM")` and `r CRANpkg("ConsensusClusterPlus")` packages, one of the best performing clustering approaches [@Weber2016]. 
-
-<!-- Should I mention that there are the following methods: classification, regression and survival analysis? -->
-
-Biomarker discovery aims to identify cell subpopulations for which the abundances change between the biological conditions giving an insight into the cause or effect of the phenotypic differences.
-There are two main approaches to biomarker identification [@Saeys2016]. First, clustering and then performing a statistical test, which is presented in this workflow. Second, strong over-clustering plus feature selection to detect the most relevant subpopulations. 
-In addition to differentially abundant subpopulations, we identify protein markers for which the expression changes between the biological conditions.
+In this pipeline, cell population identification is conducted with the unsupervised cell clustering using the `r Biocpkg("FlowSOM")` and `r Biocpkg("ConsensusClusterPlus")` packages which combined create one of the best performing clustering approaches [@Weber2016]. 
 
 We conduct the differential analysis of cell population abundances and marker intensities using the generalized linear mixed models (GLMM) and linear mixed models (LMM), respectively, which allow for modeling more complex designs that can account for batch effects and paired experiments. The analysis are performed using the `r CRANpkg("lme4")` and `r CRANpkg("multcomp")` packages.
 
-Cell population abundances are represented as counts of cells in a given cluster and sample. Our goal is to compare the relative abundance, meaning the ratios, of cell subpopulations and not the absolute counts. 
-This can be done with the binomial model, which naturally accounts for the higher uncertainty of proportions based on lower counts, and which is not the case when proportions are modeled directly.
-However, as in the genomic data analysis [@Jia2014, @Zhao2013], the pure logistic regression is not able to model the overdispersion which we have also observed in this type of data. 
-A more suitable model would be based on the beta-binomial distribution, or similar results can be achieved by modeling the extra variance of relative ratios as random effects for each individual sample in the generalized linear mixed models (GLMM).
+We use the `r CRANpkg("ggplot2")` package as our graphical engine.
+We propose some visual representaions of the CyTOF data characteristics, such as an MDS plot.
+The obtained cell populations are visualised with t-SNE (`r CRANpkg("Rtsne")`) as a dimension reduction technique. The `r CRANpkg("pheatmap")` package is employed to plot heatmaps that represent characteristics of the annotated cell populations and biomarkers. 
 
-The differential analysis of marker expression are performed using the median expression from each sample as a dependent variable in the linear model (LM). 
-One drawback of this approach is that all the other characteristics of the protein marker intensity distribution, such as bimodality, skewness and variance, are ignored. 
-On the other hand, considering only median results in a simple, easy to interpret approach which in many cases is sufficient for the exploratory analysis. 
-Other issue that arises when using a summary statistic of a distribution is its uncertainty which increases as the number of cells used to calculate the median decreases. 
-This problem can be handled in the linear model by assigning weights to the median expression which are proportional to the number of cells.  
-
-The data analyzed in this workflow originates from a paired experiment. Samples from the same patients were taken in condition A and B. This is a classic example where one would choose mixed models over the traditional models, and patients would be treated as a random effect. Due to this we introduce some modifications to the approaches described above. 
-In the differential cell population abundance analysis, in the GLMM, we use patient IDs as a random effect instead of the sample IDs. In the differential median marker expression analysis, we use a linear mixed model (LMM) with patient IDs as a random effect instead of the LM.
+This workflow is not fully automatic, it involves a step where the user can manually merge and annotate clusters, see Section [Cluster merging and annotation](#cluster-merging-and-annotation), but it is entirely and easily reproducible.
 
 
-The workflow is not fully automatic, it involves a step where the user can manually merge and annotate clusters, see Section [Cluster merging and annotation](#cluster-merging-and-annotation), but it is entirely and easily reproducible.
 
 # Data description
 
-The dataset used here is not yet publicly available. For this reason, we had to anonymize conditions for which samples were collected and antigens used in the panel. The two conditions are called A and B and in both of them samples were obtained from healthy and sick patients. The antigen names were changed to "M1", "M2",..., "M23". 
+The dataset used here is not yet publicly available. For this reason, we had to anonymize conditions for which samples were collected and antigens used in the panel. The two conditions are called A and B and in both of them samples were obtained from the same healthy and sick patients resulting in a paired experiment. The antigen names were changed to "M1", "M2",..., "M23". 
 
 # Data preprocessing
 
@@ -105,12 +87,12 @@ The dataset used here is not yet publicly available. For this reason, we had to 
 
 Peripheral blood mononuclear cell (PBMC) staining and acquisition by mass cytometry were performed as described previously (Hartmann et al. 2017 ???). Data was normalized using the standalone MATLAB normalizer (Version 2013b) [@Finck2013], marker expression was controlled in FlowJo (Version10.1r5) by using a biologic positive and negative control and patient samples were debarcoded using Boolean gating.
 
-(TODO? Description of how the pre-processing could be done. Reference to the CATALYST package.)
+(TODO? Description of how the pre-processing could be done. Reference to the CATALYST package. Compensation, debarcoding, normalization and removal of debris, doublets and dead cells.)
 
 
-# Data importing and normalization
+# Data importing
 
-Currently, FCS, metadata and panel files are available in the `extdata` subdirectory of this package installation.
+Currently, the .fcs files, metadata and panel are available in the `extdata` subdirectory of this package installation.
 
 In the future, all of them will be available on FlowRepository so I will have to describe how to download them.
 
@@ -121,13 +103,21 @@ data_dir <- system.file("extdata", package = "cytofWorkflow")
 
 ```
 
+The metadata and panel are saved as .xls files. There are many ways of loading them into R. In the example below, we use the `read.xls` function from the `r CRANpkg("gdata")` package and the files will be read in into R as data frames.
+For simple text files, one could use the base `read.table` function. 
+To read in .xls and .xlsx files, you could use the `r CRANpkg("data.table")` package (function `fread`) or the `r CRANpkg("xlsx")` package (function `read.xlsx`) or one of the Hadley Wickham packages `r CRANpkg("readr")` or `r CRANpkg("readxl")`.
 
-Load metadata and panel files:
+The metadata file contains the following columns: `file_name` with the names of the .fcs files, `condition1` describes the status of a patient (Healthy or Sick), `condition2` describes whether samples were collected in condition A or B, `patient_id` gives IDs of patients and `short_name` contains information about conditions and patient number and is used as row names.  
+
+It is very importnat to carefully check whether variables are of the desired type (factor, numeric, character) as different read-in methods convert columns of the data table into different types. Below, we use `stringsAsFactors = FALSE` meaning all the character variables will stay characters, otherwise they would be converted into factors. 
+We want to set the condition variables as factors and make sure that healthy patients in condition A are our reference group. This will be usefull later for defining models in the differential analysis. 
+
 
 ```{r load_metadata}
 library(gdata)
 
 md <- read.xls(file.path(data_dir, "cytofWorkflow_metadata.xls"), stringsAsFactors = FALSE)
+head(md)
 
 rownames(md) <- md$short_name
 
@@ -135,9 +125,15 @@ rownames(md) <- md$short_name
 md$condition1 <- factor(md$condition1, levels = c("Healthy", "Sick"))
 md$condition2 <- factor(md$condition2, levels = c("A", "B"))
 md$condition <- interaction(md$condition2, md$condition1, sep = "_", lex.order = TRUE)
+```
+
+For the need of this analysis, we define a variable `condition` which describes all four possible groups of patients and will be usefull for plotting. We also specify colors for the different conditions and variables `color_samples` and `color_conditions` which store the colors for all the samples and conditions, respectively.
+
+
+
+```{r define_colors}
 ## Add colors
-md$color <- factor(md$condition, labels = c("#BC80BD", "#984EA3", "#80B1D3", "#FF7F00"))
-md
+md$color <- factor(md$condition, labels = c("#CAB2D6", "#6A3D9A", "#FDBF6F", "#FF7F00"))
 
 color_samples <- as.character(md$color)
 names(color_samples) <- md$short_name
@@ -147,60 +143,92 @@ color_conditions <- as.character(colors$color)
 names(color_conditions) <- colors$condition
 ```
 
+We read in the panel file, which contains `Isotope` and `Metal` variables defining the atomic mass number and the symbol of the chemical element, respectively, cojugated to the antibody in the mass cytometry. `Antigen` which specifies the protein marker that was targeted and column `Use` which defines whether a given antigen should be used in the following analysis. Normally, the antigen names correspond to the real protein names, for example, CD4, HLA-DR, etc. As mentioned before, the dataset used here in not yet publically available, and we had to anonymize the names of protein markers. 
+
 ```{r load_panel}
 panel <- read.xls(file.path(data_dir, "cytofWorkflow_panel.xls"), stringsAsFactors = FALSE)
 head(panel)
 ```
 
 
-An alternative to the approach below would be to use the `cytof_exprsMerge` function from `cytofkit`.
-
-Load the raw FCS files:
+To load the .fcs files, we use the `r Biocpkg("flowCore")` package and we read in all the files into a `flowSet` object. It is very important to keep in mind that the `read.flowSet` and `read.FCS` functions, by default, may transform the marker intensities and remove cells with extreme positive values. We want to keep this options off to be sure that we control for all the data processing steps.
 
 ```{r load_fcs}
 library(flowCore)
 
 file_names <- file.path(data_dir, md$file_name)
-fcs_raw <- read.flowSet(file_names)
+fcs_raw <- read.flowSet(file_names, transformation = FALSE, truncate_max_range = FALSE)
+fcs_raw
 ```
 
-Extract the expression data for markers with `panel$Use` equal to 1, and normalize it using the arcsinh transformation:
 
-```{r arcsinh_normalization}
+# Data transformation
+
+In the following analysis, we want to include only those channels from the .fcs files for which `panel$Use` equals to 1, which basically corresponds to all the protein markers. 
+To do so, we have to match column names from the .fcs files with its corresponding entries in the panel. We extract mass numbers from the .fcs column names, match them with the `Isotope` column in the panel and create a new variable called  `fcs_colnames`. Variable `keep` contails the names of the .fcs columns that we want to mantain.
+
+```{r match_fcs_colnames}
 ## Find which markers to use
 fcs_colnames <- colnames(fcs_raw)
 fcs_isotope <- as.numeric(gsub("[[:alpha:]]", "", fcs_colnames))
 mm <- match(panel$Isotope, fcs_isotope)
 panel$fcs_colnames <- fcs_colnames[mm]
 keep <- panel$fcs_colnames[panel$Use == 1]
-
-## Extract expression + arcsineh normalization
-expr <- fsApply(fcs_raw, exprs)
-expr <- asinh(expr[, keep] / 5)
-colnames(expr) <- panel$Antigen[panel$Use == 1]
 ```
 
-Normalize the expression data to 0-1. Useful when for plotting heatmaps.
 
-```{r 01_normalization}
+The .fcs files contain the bead-normalized marker expression. It is a common practice to transform these intensities using, for example, the arcsineh (hyperbolic inverse sine) with cofactor 5. Other transformations can be applied instead (References to CATALYST, Bendall et al. 2011 Figure S2 ???), but this one is one of the most popular. We also rename the columns in `expr` and use antigen names instead of isotops.
+
+```{r arcsinh_transformation}
+## Arcsineh transformation
+fcs <- fsApply(fcs_raw, function(x){
+  expr <- exprs(x)
+  expr <- asinh(expr[, keep] / 5)
+  exprs(x) <- expr
+  colnames(x) <- panel$Antigen[panel$Use == 1]
+  return(x)
+})
+```
+
+
+For some of the further analysis, it is more convenient for us to work using a matrix (called `expr`) that contains marker expression for cells from all the samples. We create it with the `fsApply` function which we use to extract the expression matrices from each element of the `flowSet` object and row binds them. 
+
+
+```{r extract_expression}
+## Extract expression
+expr <- fsApply(fcs, exprs)
+```
+
+
+As the ranges of marker intensities can vary substantially, we apply another transformation that scales expression to values between 0 and 1. Such transformed data, which is used for plotting heatmaps, gives better representation of differences in marker expression between annotated cell populations.
+
+```{r 01_transformation}
 rng <- apply(expr, 2, quantile, p = c(0.01, 0.99))
-
 expr01 <- t((t(expr) - rng[1, ]) / (rng[2, ] - rng[1, ]))
-
 expr01[expr01 < 0] <- 0
 expr01[expr01 > 1] <- 1
-
 ```
 
-Generate a variable with sample IDs.
+
+
+# Spot-check plots
+
+In this Section, we propose some quick checks to verify whether the data we analyze globally represents what we expect. For instance, whether samples that are supposed to be replicates of one condition group together and are distinct from samples from another conditions.  
+
+With the code below, we generate a variable called `sample_ids` with sample IDs corresponding to each cell in the `expr` matrix. It will be usefull later for identifying the condition that cells originate from.
 
 ```{r sample_ids}
 sample_ids <- rep(md$short_name, fsApply(fcs_raw, nrow))
 ```
 
-Plot distributions of marker expression.
+One of the important checks is to verify whether marker expression distributions do not have any abnormalities, such as, extremely large or low range of expression or a very distinct distribution pattern for only a part of the samples from a condition. This could indicate some problems with the mass cytometry experiment for some markers or some batch effects that were originally not expected. One can then consider removing such problematics markers and samples from the further analysis.
 
-```{r plot_merker_expression_distribution}
+In this workflow, we generate all the plots, except heatmaps, with the `r CRANpkg("ggplot2")` engine. 
+The code chunk below, generates a plot with per sample marker expression distributions colored by condition.
+
+We observe no extremely unusuall behavior. Samples from condition A and B have very distinct expression distributions as it was expected. For some of the markers, for example, M1, M3, M15 some samples from condition B_Sick resemble more samples from condition B_Heathy. Similarly, for marker M11, one sample from A_Sick is shifted toward samples from A_Healthy. We have to investigate further, which impact on the analysis it may have.
+
+```{r plot_merker_expression_distribution, fig.cap = "One of the spot-check plots representing the per sample marker expression distributions. Samples are colored according to the condition they belong to."}
 library(ggplot2)
 library(reshape2)
 
@@ -213,16 +241,15 @@ ggplot(ggdf, aes(x = expression, color = condition, group = sample_id)) +
   geom_density() +
   facet_wrap(~ antigen, nrow = 4, scales = "free") +
   theme_bw() +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1), legend.title = element_blank(), legend.position = "right") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
   guides(color = guide_legend(ncol = 1)) +
   scale_color_manual(values = color_conditions)
 
 ```
 
+Another spot-chek is the number of cells per sample. (How to interpret this Figure ???)
 
-Plot number of cells per sample
-
-```{r plot_number_of_cells}
+```{r plot_number_of_cells, fig.cap = "Barplot with the number of cells per sample."}
 cell_table <- table(sample_ids)
 
 ggdf <- data.frame(sample_id = names(cell_table), cell_counts = as.numeric(cell_table))
@@ -237,34 +264,91 @@ ggplot(ggdf, aes(x = sample_id, y = cell_counts, fill = sample_id)) +
 ```
 
 
+## MDS plot
+
+In genomics, one of the most important exploratory plots is the multi-dimensional scaling (MDS) plot or a principal component analysis (PCA) plot. They both show similarities and dissimilarities between samples measured in an unsuperwised way and give an idea on how much differential expression can be detected before conducting formal tests.
+An MDS plot can be generated with the `plotMDS` function from the `r Biocpkg("limma")` package. In genomics, distances between samples are calculated based on the expression of the top varying genes. 
+We propose to generate a similar plot in any CyTOF application, where, for example, median marker expression is used to calculate dissimilarities between samples. 
+
+Ideally, samples should cluster well within the same condition. If this is not the case, one can identify the outlier samples and eliminate them, for example, if there are enough samples left for the further analysis. Otherwise, one has to keep in mind that such samples will be a source of error and extra variation.
+As already expected from studying the expression distribution plots, in condition B, healthy and sick samples do not separate so well. This means that we might detect less differential changes between healthy and sick patients in condition B.
+
+```{r plot_mds, fig.cap = "MDS plot based on the median marker expression."}
+# Get the median marker expression per sample
+expr_median_sample <- aggregate(expr, by = list(sample_id = sample_ids), FUN = median)
+rownames(expr_median_sample) <- expr_median_sample[, 1]
+expr_median_sample <- t(expr_median_sample[, -1])
+
+library(limma)
+mds <- plotMDS(expr_median_sample, plot = FALSE)
+
+library(ggrepel)
+ggdf <- data.frame(MDS1 = mds$x, MDS2 = mds$y, sample_id = colnames(expr_median_sample))
+mm <- match(ggdf$sample_id, md$short_name)
+ggdf$condition <- md$condition[mm]
+
+ggplot(ggdf, aes(x = MDS1, y = MDS2, color = condition)) +
+  geom_point(size = 2, alpha = 0.8) +
+  geom_label_repel(aes(label = sample_id)) +
+  xlim(-1.2, 1.2) +
+  ylim(-0.3, 0.4) +
+  theme_bw() +
+  scale_color_manual(values = color_conditions) 
+```
+
+In contrast to genomic applications, the number of variables measured for each sample is much lower in mass or flow cytometry. In the former there are thousands of genes sequenced, and in the latter between 20 and 100 antigens are targeted. 
+We find that a plot proposed below gives also a good insight into the structure of the data. It is a heatmap of median marker intensities with clustered columns (samples) and rows (markers). 
+We have used hierarchical clustering with average linkage and euclidean distance, but also Ward's linkage could be used [@Bruggner2014], and in CyTOF applications, a cosine distance shows good performance [@Bendall2014].
+Its interpreatation is similar as of the MDS plot. Samples from within condition should cluster together. Additionally, we can see which markers drive the observed clustering. 
+
+
+```{r plot_dendogram, fig.cap = "Clustering of samples and markers based on the median marker expression."}
+# Cluster samples
+d <- dist(t(expr_median_sample), method = "euclidean")
+cluster_cols <- hclust(d, method = "average")
+# Cluster markers
+d <- dist(expr_median_sample, method = "euclidean")
+cluster_rows <- hclust(d, method = "average")
+
+# Column annotation for the heatmap
+mm <- match(colnames(expr_median_sample), md$short_name)
+annotation_col <- data.frame(condition = md$condition[mm])
+rownames(annotation_col) <- colnames(expr_median_sample)
+annotation_colors <- list(condition = color_conditions)
+
+# Colors for the heatmap
+color <- colorRampPalette(brewer.pal(n = 8, name = "YlGnBu"))(100)
+
+pheatmap(expr_median_sample, color = color, cluster_cols = cluster_cols, cluster_rows = cluster_rows, display_numbers = TRUE, number_color = "black", fontsize_number = 5, annotation_col = annotation_col, annotation_colors = annotation_colors)
+
+```
+
+
 # Marker ranking based on the non-redundancy score
 
-The non-redundancy score (NRS) [@Levine2015] based on the PCA analysis.
-Explain in detail why we calculate it. Useful if we want to work with a subset of markers but here we run the analysis with all the markers. 
+In this step, we identify the ability of markers to stratify cells into different subpopulations in each sample. For that, we calculate the non-redundancy score (NRS) [@Levine2015] which is based on the PCA analysis.
+Markers with higher score explain larger portion of variability that is present in a given sample. 
 
+The average NRS can be used to select a subset of markers which are non-redundant in each sample but at the same time capture the overall diversity between samples. Such a sebset of markers can be then used for the cell population identification analysis that follow next. 
+There is no precise rule on how to do that, but one of the approaches is to select some number of the top-scoring markers. The number can be chosen by analyzing the plot with the NR scores, shown below, where the markers are sorted by the decreasing average NRS. One can drop out markers that are not likely to distinguish cell populations of interest, even if they have high scores, and add in markers with low scores but known to be important in discerning cell subgroups.
 
-```{r nrs_function}
+(Write some interpretation of the Figure below.)
+
+```{r nrs, fig.cap = "Non-redundancy scores. Colorful points represent the per sample NR scores, while white points indicate the mean NR scores from all the samples. Markers on the x-axis are sorted according to the decreasing average NRS."}
+## Define a function that calculates the NRS per sample 
 NRS <- function(x, ncomp = 3){
   pr <- prcomp(x, center = TRUE, scale. = FALSE) 
   score <- rowSums(outer(rep(1, ncol(x)), pr$sdev[1:ncomp]^2) * abs(pr$rotation[,1:ncomp]))
   return(score)
 }
-```
 
-```{r nrs_calculate}
-## Split expression per sample
+## Split expression per sample and calculate the score
 expr_split <- split(data.frame(expr), sample_ids)
-
 nrs_sample <- sapply(expr_split, NRS)
-
 nrs <- rowMeans(nrs_sample, na.rm = TRUE)
-```
 
-
-```{r plot_nrs}
-## Plot NRS scores for ordered markers
+## Plot the NRS for ordered markers
 antigens_ordered <- names(sort(nrs, decreasing = TRUE))
-
 nrs_sample <- data.frame(nrs_sample)
 nrs_sample$antigen <- rownames(nrs_sample)
 
@@ -274,63 +358,52 @@ mm <- match(ggdf$sample_id, md$short_name)
 ggdf$condition <- md$condition[mm]
 
 ggplot(ggdf, aes(x = antigen, y = nrs)) +
-geom_point(aes(color = condition), alpha = 0.8, position = position_jitter(width = 0.3, height = 0)) +
+geom_point(aes(color = condition), alpha = 0.9, position = position_jitter(width = 0.3, height = 0)) +
   geom_boxplot(outlier.size = NA, fill = NA) +
   stat_summary(fun.y = "mean", geom = "point", shape = 21, fill = "white") +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
-  scale_color_manual(values = color_conditions) 
-
-```
-
-# MDS plot
-
-```{r mds_median_expression}
-# Get the median marker expression per sample
-expr_median_sample <- aggregate(expr, by = list(sample_id = sample_ids), FUN = median)
-rownames(expr_median_sample) <- expr_median_sample[, 1]
-expr_median_sample <- t(expr_median_sample[, -1])
-```
-
-```{r mds_plotMDS}
-library(limma)
-mds <- plotMDS(expr_median_sample, plot = FALSE)
+  scale_color_manual(values = color_conditions)
 ```
 
 
-```{r mds_plot}
-ggdf <- data.frame(PCA1 = mds$x, PCA2 = mds$y, sample_id = colnames(expr_median_sample))
-mm <- match(ggdf$sample_id, md$short_name)
-ggdf$condition <- md$condition[mm]
+# Cell population identification with FlowSOM and ConsensusClusterPlus
 
-ggplot(ggdf, aes(x = PCA1, y = PCA2, color = condition)) +
-  geom_point(size = 2) +
-  geom_text(aes(label = sample_id), vjust = -0.5) +
-  xlim(-1.2, 1.2) +
-  theme_bw() +
-  scale_color_manual(values = color_conditions) 
+Cell population identification often has been carried out by manual gating a method based on visual inspection of two-dimensional scatterplots, where at each step a subset of cells, which is positive or negative for the given two markers, is selected and further stratified in the next iteration until a population with given marker characteristics is selected. Despite its popularity, manual gating has many drawbacks such as subjectivity, bias toward the favorite cell types, high time workload and inefficiency when analyzing large datasets, which all contribute to the fact that manual gating is hard to reproduce [@Saeys2016].
+Large effort has been carried out to improve and automate cell population identification and many methods are currently available that address this question by the means of unsupervised clustering of cells [@Weber2016]. 
 
-```
+In this workflow, we conduct cell clustering with the suite of packages `r Biocpkg("FlowSOM")` [@VanGassen2015] and `r Biocpkg("ConsensusClusterPlus")` [@Wilkerson2010] that was concluded to be one of the best performing clustering approaches currently awailable [@Weber2016]. This ensemble has a very good capability of detecting both common and rare cell pupulations and is one of the fastest methods to run which enables its usage for the interactive analysis.
+We use a slight modification of the original workflow presented in the `r Biocpkg("FlowSOM")` vignette, which we find  more flexible.
+Namely, we directly call the `ConsensusClusterPlus` function which is embeded in `metaClustering_consensus`. Thanks to that, we are able to access all the functionality of the `r Biocpkg("ConsensusClusterPlus")` package, which is helpfull in the cluster number identification.
 
+The `r Biocpkg("FlowSOM")` workflow consists of tree main statistical steps. Building the self-organizing map (SOM) with the `BuildSOM` function which is a working horse for clustering where cells are assigned according to their similarities to 100 grid points (codes) of the SOM. Building of the minimal spanning tree (MST), which is mainly used for graphical representation of clusters and is skipped in this pipeline. And finaly, metaclustering of the SOM codes, which we prefer to perform directly with the `ConsensusClusterPlus` function. Additionally, we continue with the second round of merging of the metaclusters in a semi automatic fashion.
 
-# Cell population identification with FlowSOM
+`r Biocpkg("FlowSOM")` output is sensitive to random starts. To be sure that results are reproducible one must specify the seed for the random number generation in R using function `set.seed`. It is also advisable to rerun analyses with multiple random seeds for two reasons. To see how robust are the detected clusters, and when the goal is to find rare cell populations, it may happen that in some runs, random starting points do not represent rare cell populations as a chance of selecting starting cells from them is low.
 
-Explain that identifying meaningful clusters is one of the most challenging parts and all the downstream analysis depend on it.
-We use a slight modification of the FlowSOM workflow presented in its vignette. We find it more flexible.
+It is important to point out that, we cluster cells from all the samples together. This strategy is benefitial, as we have to label cell populations only once, and automatically the mapping of cell types between conditions is consistent. However, this approach works only if the biological variability between samples is small enough. Otherwise, one has to identify cell populations per sample or condition and make sure that the mapping of cell clusters between them is correct.
+
 
 ```{r flowsom_som}
 library(FlowSOM)
-library(ConsensusClusterPlus)
 
-## Run SOM with 100 clusters
+fsom <- ReadInput(fcs, transform = FALSE, scale = FALSE)
 set.seed(1234)
-som <- SOM(expr)
+som <- BuildSOM(fsom)
 ```
 
+Since often the automatic approaches for selecting the number of clusters present in the data do not work well [@Weber2016], it is recomended to over-cluster, and if necessary, perform manuall merging of clusters during the downstream analysis. Such hierarchical approach is especially suited when the goal is to detect smaller cell populations.
+
+In our dataset, we expect around 8 cell types to be present. Thus, we pefrom metaclustering of the 100 SOM codes into more than 8 groups, probably stratification into 20 groups will give enough resolution. We can verify that with one of the plots generated by `ConsensusClusterPlus` called delta area. The delta area can be interpreted as a score  for each possible number of clusters from k=2 to k=20, which, for a given k, indicates the amount of cluster stability obtained when clustering into k groups as compared to k-1 groups. It can be expected that high stability of clusters can be riched when clustering into the number of groups that best fits the data. Thus, this score can be used as a method for finding the optimal number of clusters, which corresponds to k at which there is no appreciable increase in stability. For more details about the meaning of this plot, the user can refer to the original description of the consensus clustering method [@Monti2003].
+
+We call the `ConsensusClusterPlus` with maximum number of clusters `maxK = 20` and other clustering parameters set to the values as in the `metaClustering_consensus` function. Again, to ensure that the analysis are reproducible, we define the random seed with parameter `seed`.
+
+(Interpretation of the detla area Figure.)
 
 ```{r flowsom_meta_clustering, message = FALSE}
-## Meta clustering into 20 clusters with ConsensusClusterPlus
-codes <- som$codes
+## Metaclustering into 20 clusters with ConsensusClusterPlus
+library(ConsensusClusterPlus)
+
+codes <- som$map$codes
 plot_outdir <- "consensus_plots"
 nmc <- 20
 
@@ -338,37 +411,31 @@ mc <- ConsensusClusterPlus(t(codes), maxK = nmc, reps = 100, pItem = 0.9, pFeatu
 
 ## Get cluster ids for each cell
 code_clustering <- mc[[nmc]]$consensusClass
-cell_clustering <- code_clustering[som$mapping[,1]]
+cell_clustering <- code_clustering[som$map$mapping[,1]]
 ```
 
-One of the plots produced by `ConsensusClusterPlus` represents a score for each possible number of clusters from 2 to `r nmc`. It can be used for the elbow criterion to define the optimal number of clusters.
+![The delta area plot from ConsensusClusterPlus indicating the relative increas in cluster stability obtained when clustering into k groups.](consensus_plots/consensus022.png)
 
-![Delta area](consensus_plots/consensus022.png)
+The SOM codes represent characteristics of the 100 clusters generated in the first step. Their visualisation can be helpfull in understanding the cell population structure and determining the number of clusters. We treat them as new representative cells and apply the t-SNE and PCA dimension reduction to be able to plot them in 2D. The size of the points corresponds to the number of cells that were assigned to a given code. The points are colored according to the results of metaclustering. Since we have only 100 data points, it is very rapid to run any dimension reduction method, which in contrary can be a burden when using the actuall cells. Indeed, for many methods a subsampling step has to precede the analysis.
 
-You can also plot the SOM codes.
+(Explain the differences between t-SNE and PCA ??? t-SNE preserves similarities between cells. PCA preserves the variance. In PCA distances between clusters are kept.)
 
 ```{r som_codes_size}
 ## Get code sizes; sometimes not all the codes have mapped cells so they will have size 0
-code_sizes <- table(factor(som$mapping[, 1], levels = 1:nrow(codes))) 
+code_sizes <- table(factor(som$map$mapping[, 1], levels = 1:nrow(codes))) 
 code_sizes <- as.numeric(code_sizes)
 
 ```
 
 ```{r som_codes_dimension_reduction}
-## t-SNE dimension reduction with cytofkit when setting pca = FALSE does not work!
-## So we use the Rtsne package directly.
-
-# library(cytofkit)
-# 
-# codes_dr <- cytof_dimReduction(codes, method = "tsne", tsneSeed = 1234)
-# colnames(codes_dr) <- c("dim1", "dim2")
-
-## Run t-SNE
+## Run t-SNE on codes
 library(Rtsne)
 
 set.seed(1234)
 tsne_out <- Rtsne(codes, pca = FALSE)
 
+## Run PCA on codes
+pca_out <- prcomp(codes, center = TRUE, scale. = FALSE)
 ```
 
 
@@ -378,12 +445,13 @@ color_clusters <- c("#DC050C", "#FB8072", "#1965B0", "#7BAFDE", "#882E72", "#B17
 ```
 
 
-```{r plot_som_codes}
-codes_dr <- data.frame(tSNE1 = tsne_out$Y[, 1], tSNE2 = tsne_out$Y[, 2])
-codes_dr$cluster <- factor(code_clustering)
+```{r plot_som_codes_tsne, fig.cap = "t-SNE plot representing the SOM codes colored accorging to the metaclustering into 20 cell populations."}
+codes_dr <- data.frame(tSNE1 = tsne_out$Y[, 1], tSNE2 = tsne_out$Y[, 2], PCA1 = pca_out$x[, 1], PCA2 = pca_out$x[, 2])
+codes_dr$code_clustering <- factor(code_clustering)
 codes_dr$size <- code_sizes
 
-ggplot(codes_dr,  aes(x = tSNE1, y = tSNE2, color = cluster, size = size)) +
+## Plot t-SNE on codes
+ggplot(codes_dr,  aes(x = tSNE1, y = tSNE2, color = code_clustering, size = size)) +
   geom_point(alpha = 0.9) +
   theme_bw() +
   scale_color_manual(values = color_clusters) +
@@ -391,10 +459,26 @@ ggplot(codes_dr,  aes(x = tSNE1, y = tSNE2, color = cluster, size = size)) +
 
 ```
 
-## Plotting heatmaps
+
+```{r plot_som_codes_pca, fig.cap = "PCA plot representing the SOM codes colored accorging to the metaclustering into 20 cell populations."}
+## Plot PCA on codes
+ggplot(codes_dr,  aes(x = PCA1, y = PCA2, color = code_clustering, size = size)) +
+  geom_point(alpha = 0.9) +
+  theme_bw() +
+  scale_color_manual(values = color_clusters) +
+  guides(color = guide_legend(override.aes = list(size = 4), ncol = 2))
+
+```
 
 
-```{r plot_heatmap}
+Heatmaps are another extremely usefull representation of cluster characteristics. We use the median expression. Of course this is not the full representation of cluster properties but such a summary plot is very usefull as it is quicker and easier to interpret. Gives the overall overview of clusters. 
+
+Rows correspond to clusters and columns to markers. The values in the parenthesis indicate the size of clusters expressed in percentage. As the range of marker expression can vary from marker to marker, we use the data that is transformed to the common range between 0 and 1. However since we use the other data in flowsom, the hierarchical structure of rows (clusters) is obtained using the other data as well so it translates better. The marker expression and dendrogram of metaclusters can be a basis for further cluster merging. See Section [Cluster merging and annotation](#cluster-merging-and-annotation).
+
+Since we will use this graphical representation often, in code chunk below, we create a wrapper function that generates the heatmaps.
+
+
+```{r plot_heatmap, fig.cap = "Heatmap of the median marker intensities in 20 cell populations obtained from the metaclustering step."}
 library(RColorBrewer)
 library(pheatmap)
 
@@ -436,9 +520,19 @@ plot_clustering_heatmap_wrapper(expr, expr01, cell_clustering, color_clusters)
 ```
 
 
-# Dimension reduction with t-SNE
+## Visual representation with t-SNE
 
-Using only a subset of cells.
+One of the most popular plots that are used to represent cell populations, are the t-SNE plots, where each cell is represented in a new lower, usually two-dimensional, space which was computed using the  t-stochastic neighbour embedding (t-SNE) [@VanDerMaaten2008]. The new dimensions are supposed to capture the similarity between cells from the original dimensions. This method has been shown to work very well with flow and mass cytometry data. 
+
+Nevertheless, there are few things to be cautious about. Beause it is based on preserving similarities between cells, cells that are similar in the original space will be close in the 2D representation, but the opposite does not always hold. Thus, one has to be carefull with the interpretation of t-SNE plots. For more guidance see [How to Use t-SNE Effectively](http://distill.pub/2016/misread-tsne/).
+
+Due to the stochastic nature of t-SNE, rerunning the method can result in different 2D representation of cells. It is advisable to run it few times to identify the common trends and and get feeling about the variability of the results.
+To be sure that the analysis are reproducible, the user has to define the random seed before running the method.
+
+t-SNE is a method that requires some substantial computational time to process the data for even few tens of thousands of cells. CyTOF datasets are usually much larger. To keep the running time reasonable one can use only a subset of cells for this particullar graphical representation, for example, 2000 cells from each sample. 
+
+In the t-SNE plot, we color the cells by the cluster they belong to. Ideally, cells of the same color should be close to each other. When the figure is stratified per sample, we can verify whether similar cell populations are present in the different replicates to identify any outlying samples. 
+
 
 ```{r tsne_duplicates_subsampling}
 ## Find and skip duplicates
@@ -473,7 +567,7 @@ tsne_out <- Rtsne(tsne_expr, check_duplicates = FALSE, pca = FALSE)
 ```
 
 
-```{r tsne_plot_one}
+```{r tsne_plot_one, fig.cap = "t-SNE plot with cells colored according to the 20 metaclusters."}
 ## Plot t-SNE
 dr <- data.frame(tSNE1 = tsne_out$Y[, 1], tSNE2 = tsne_out$Y[, 2])
 dr$sample_id <- sample_ids[tsne_inds]
@@ -488,33 +582,42 @@ ggp <- ggplot(dr,  aes(x = tSNE1, y = tSNE2, color = cell_clustering)) +
 ggp
 ```
 
-```{r tsne_plot_facet_sample}
+```{r tsne_plot_facet_sample, fig.cap = "t-SNE plot stratified by sample."}
 ## Facet per sample
 ggp + 
 facet_wrap(~ sample_id) 
 ```
 
 
-# Cluster merging and annotation
+## Cluster merging and annotation
+
+As sugested already, one should perform clustering into more subpopulations than expected allowing better detection of rare populations. We have performed clustering into 20 groups even though, we expect to observe around 8 cell types. In the t-SNE plots, we can clearly see that some of the cell clusters are placed very close to each other indicating that they could be merged into one cluster. The same can be deduced from the heatmap; marker exression patterns for some of the clusters are very similar. The delta area plot reaches a clear plato after k=15, meaning that this dataset should not contain more than 15 clusters.  
+
+Cluster merging is somewhat a manual step, but we will show how it could be at least partially automated and simplified.
+
+### Reducing the number of clusters with ConsensusClusterPlus
+
+After analyzing the heatmap and t-SNE plots, we can clearly see that stratification of the data into 20 clusters is too strong. 
+One of the options is to manulally merge clusters that represent similar cell populations. This can be problematic when there are 20 clusters.
+To simplify the task, one could use the detla area plot to determine what could be the maximum number of clusters present in the data in a more relaxed way and by that reduce the number of clusters into a number that is still leading to over-clustering but not as strong as with 20 clusters.  
+
+When the user has some expectations concerning the amount of cell populations, he could also check what the method suggests as clusters for such a number. 
+But often, there are some noisy clusters which are so distinct and thet will increase the number and will lead to merging some other clusters before which is not wanted. 
 
 
-## Rerunning ConsensusClusterPlus with identified number of clusters
-
-Applying the elbow criterion to the delta area Figure 1, we could deduce that there are 6 main clusters present in this dataset.
-
-```{r flowsom_meta_clustering2, message = FALSE}
+```{r flowsom_meta_clustering2}
 ## Get cluster ids for each cell
-nmc2 <- 6
+nmc2 <- 15
 code_clustering2 <- mc[[nmc2]]$consensusClass
-cell_clustering2 <- code_clustering2[som$mapping[, 1]]
+cell_clustering2 <- code_clustering2[som$map$mapping[, 1]]
 ```
 
 
 ```{r plot_som_codes2}
 ## Plot new clustering2
-codes_dr$cluster2 <- factor(code_clustering2)
+codes_dr$code_clustering2 <- factor(code_clustering2)
 
-ggplot(codes_dr,  aes(x = tSNE1, y = tSNE2, color = cluster2, size = size)) +
+ggplot(codes_dr,  aes(x = tSNE1, y = tSNE2, color = code_clustering2, size = size)) +
   geom_point(alpha = 0.9) +
   theme_bw() +
   scale_color_manual(values = color_clusters) +
@@ -523,13 +626,32 @@ ggplot(codes_dr,  aes(x = tSNE1, y = tSNE2, color = cluster2, size = size)) +
 ```
 
 
-```{r plot_heatmap2}
-plot_clustering_heatmap_wrapper(expr, expr01, cell_clustering2, color_clusters[1:nmc2])
-
+```{r tsne_plot_one_clustering2}
+dr$cell_clustering2 <- factor(cell_clustering2[tsne_inds], levels = 1:nmc2)
+ggplot(dr,  aes(x = tSNE1, y = tSNE2, color = cell_clustering2)) +
+  geom_point() +
+  theme_bw() +
+  scale_color_manual(values = color_clusters) +
+  guides(color = guide_legend(override.aes = list(size = 4), ncol = 2))
 ```
 
 
-## Manual cluster merging based on the heatmap
+```{r plot_heatmap2}
+plot_clustering_heatmap_wrapper(expr, expr01, cell_clustering2, color_clusters[1:nmc2])
+```
+
+
+### Manual cluster merging and annotating based on the heatmaps
+
+Cluster merging based on t-SNE maps only can lead to some artificial results as the accurate interpretation of t-SNE plots is very difficult. Clusters that are relatively close in the 2D representation can in fact be quite distant in the original space and the relative position can be rotated. Also only a subset of cells is presented.
+It is better to use as a main reference the heatmaps with the dendrograms showing the hierarchy among the clusters. Of course this plots are not ideal either because they aggregate information over many cells showing an average picture of each cluster but combined with t-SNE give a good insight into the data structure.
+
+We can see what is the similarity structure between clusters.
+We find the easiest to start analysis the dendrogram from the bottom leaves to the top root. To see what are the clusters that a
+By looking on the marker expression we can see what are their characteristics. Here all the markers were used to calculate the distance between clusters. 
+
+A very important aspect it the cluster size represented in the parentheses next to the cluster label. If the cluster size is very small and the cluster seems relevant one can merge it. If it looks as an outlier, one could eliminate it from the further analysis.
+
 
 (Should I rather use the `cutree()` function to get an 'automated' method for identifying clusters?)
 
@@ -548,10 +670,20 @@ code_clustering3 <- cluster_merging$new_cluster[mm]
 
 ```{r plot_som_codes3}
 ## Plot new clustering3
-codes_dr$cluster3 <- factor(code_clustering3)
+codes_dr$code_clustering3 <- factor(code_clustering3)
 
-ggplot(codes_dr,  aes(x = tSNE1, y = tSNE2, color = cluster3, size = size)) +
+ggplot(codes_dr,  aes(x = tSNE1, y = tSNE2, color = code_clustering3, size = size)) +
   geom_point(alpha = 0.9) +
+  theme_bw() +
+  scale_color_manual(values = color_clusters) +
+  guides(color = guide_legend(override.aes = list(size = 4), ncol = 2))
+```
+
+
+```{r tsne_plot_one_clustering3}
+dr$cell_clustering3 <- factor(cell_clustering3[tsne_inds])
+ggplot(dr,  aes(x = tSNE1, y = tSNE2, color = cell_clustering3)) +
+  geom_point() +
   theme_bw() +
   scale_color_manual(values = color_clusters) +
   guides(color = guide_legend(override.aes = list(size = 4), ncol = 2))
@@ -566,9 +698,27 @@ plot_clustering_heatmap_wrapper(expr, expr01, cell_clustering3, color_clusters[1
 
 # Differential analysis of cell population frequencies
 
-Explain in details why we use GLMM.
 
-Calculate cell frequencies in each cluster and sample
+<!-- Should I mention that there are the following methods: classification, regression and survival analysis? -->
+
+Biomarker discovery aims to identify cell subpopulations for which the abundances change between the biological conditions giving an insight into the cause or effect of the phenotypic differences.
+There are two main approaches to biomarker identification [@Saeys2016]. First, clustering and then performing a statistical test, which is presented in this workflow. Second, strong over-clustering plus feature selection to detect the most relevant subpopulations. 
+In addition to differentially abundant subpopulations, we identify protein markers for which the expression changes between the biological conditions.
+
+Cell population abundances are represented as counts of cells in a given cluster and sample. Our goal is to compare the relative abundance, meaning the ratios, of cell subpopulations and not the absolute counts. 
+This can be done with the binomial model, which naturally accounts for the higher uncertainty of proportions based on lower counts, and which is not the case when proportions are modeled directly.
+However, as in the genomic data analysis [@Jia2014, @Zhao2013], the pure logistic regression is not able to model the overdispersion which we have also observed in this type of data. 
+A more suitable model would be based on the beta-binomial distribution, or similar results can be achieved by modeling the extra variance of relative ratios as random effects for each individual sample in the generalized linear mixed models (GLMM).
+
+The differential analysis of marker expression are performed using the median expression from each sample as a dependent variable in the linear model (LM). 
+One drawback of this approach is that all the other characteristics of the protein marker intensity distribution, such as bimodality, skewness and variance, are ignored. 
+On the other hand, considering only median results in a simple, easy to interpret approach which in many cases is sufficient for the exploratory analysis. 
+Other issue that arises when using a summary statistic of a distribution is its uncertainty which increases as the number of cells used to calculate the median decreases. 
+This problem can be handled in the linear model by assigning weights to the median expression which are proportional to the number of cells.  
+
+The data analyzed in this workflow originates from a paired experiment. Samples from the same patients were taken in condition A and B. This is a classic example where one would choose mixed models over the traditional models, and patients would be treated as a random effect. Due to this we introduce some modifications to the approaches described above. 
+In the differential cell population abundance analysis, in the GLMM, we use patient IDs as a random effect instead of the sample IDs. In the differential median marker expression analysis, we use a linear mixed model (LMM) with patient IDs as a random effect instead of the LM.
+
 
 
 ```{r diff_freqs}
@@ -632,10 +782,10 @@ rownames(pvals) <- rownames(freq)
 ## Adjust the p-values
 adjp <- apply(pvals, 2, p.adjust, method = "BH")
 colnames(adjp) <- paste0("adjp_", contrast_names)
-adjp
+colSums(adjp < 0.05)
 ```
 
-## Plot proportions for all the clusters
+Plot proportions for all the clusters
 
 We plot the proportions for contrast `"HvsS_A"`.
 
@@ -662,7 +812,7 @@ ggplot(ggdf[ggdf$condition2 == "A", , drop = FALSE]) +
 ```
 
 
-## Plot heatmap with significant cell populations
+Plot heatmap with significant cell populations
 
 We plot the proportions for contrast `"HvsS_A"`.
 Enriched and depleted compartments.
@@ -774,11 +924,11 @@ rownames(pvals) <- rownames(expr_median_sample)
 ## Adjust the p-values
 adjp <- apply(pvals, 2, p.adjust, method = "BH")
 colnames(adjp) <- paste0("adjp_", contrast_names)
-head(adjp)
+colSums(adjp < 0.05)
 ```
 
 
-### Plot median expression of all the markers
+Plot median expression of all the markers
 
 Sorted by significance
 
@@ -806,7 +956,7 @@ ggplot(ggdf[ggdf$condition2 == "A", , drop = FALSE]) +
 ```
 
 
-### Plot heatmap with significant markers
+Plot heatmap with significant markers
 
 ```{r diff_expr1_plot_heatmap_with_significant_markers}
 ## Keep significant markers for condition A and sort them by significance
@@ -874,12 +1024,12 @@ rownames(pvals) <- paste0(expr_median_sample_cluster$cluster, "_", expr_median_s
 ## Adjust the p-values
 adjp <- apply(pvals, 2, p.adjust, method = "BH")
 colnames(adjp) <- paste0("adjp_", contrast_names)
-head(adjp)
+colSums(adjp < 0.05)
 
 ```
 
 
-### Plot median expression of all the markers in each cluster
+Plot median expression of all the markers in each cluster
 
 
 ```{r diff_expr2_plot_median_expr}
@@ -904,7 +1054,7 @@ ggplot(ggdf[ggdf$condition2 == "A", , drop = FALSE]) +
 ```
 
 
-### Plot heatmap with significant markers
+Plot heatmap with significant markers
 
 ```{r diff_expr2_plot_heatmap_with_significant_markers}
 ## Keep significant markers for condition A and sort them by significance
