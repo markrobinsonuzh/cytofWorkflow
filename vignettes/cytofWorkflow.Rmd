@@ -1244,13 +1244,36 @@ plot_differential_heatmap_wrapper(expr_norm = expr_median_sample_norm, sign_adjp
 
 # Discussion
 
-<!-- All the wrapper functions were created and adjusted for the needs of this workflow. For the real data analysis, the user should modify them according to its purpose. -->
-<!-- However, this approach works only if the variability between samples is small enough. -->
-<!-- In case of batches, for example, samples were measured with two different runs of CyTOF and clear differences between these time points can be observed in the spot-check plots (Section [Spot-check plots](#spot-check-plots)), one should consider separate clustering of samples from these batches. -->
-<!-- Clustering them together may result in an inaccurate cell assignment to different populations and might lead to artifacts in the following analysis, such as differential abundance analysis. -->
-<!-- However, to be able to use results from separate clustering analysis, for example, in the differential analysis, one has to make sure that the mapping of cell populations between them is accurate by, for example, using the same cluster names. -->
-<!-- And of course, the batch information should be included in the differential model. -->
+In this workflow, we have presented a pipeline for CyTOF data analysis which consists of a quality control step where characteristics of the different samples are visualized, for example, with the MDS plot, allowing verification of the experimental design, detection of batches and outlying samples. 
+Next, the cell population identification was carried out, which was a basis for the subsequent differential analyses of cell population abundance, marker expression in each of the populations and overall marker expression.
+The approaches to differential analyses proposed here are able to model more complex designs than two group comparisons. We have presented a range of visualizations that helps in understanding the data and reporting the results of clustering and differential analyses.
+However, all the wrapper functions presented in this workflow should be adjusted according to the needs of the real data analysis.
 
+Clustering is one of the most challenging steps in this workflow, and its accuracy is highly important, as it impacts the downstream differential analyses.
+There can be situations were a biologically meaningful cell population may be differentially enriched between the conditions, but the signal can not be detected because it was combined with some other cell population which behaves different. 
+Thus, other approaches should be also applied for validation of the main findings, such as `Citrus` or `CellCnn`. In the presence of batches, which neither of them is able to account for, as alternative, they could be applied to each of the batches separately. 
+
+In our example, clustering was performed on all the cells from all the samples.
+However, this approach works only if the variability between samples is small enough [@Saeys2016].
+In case of batches, for example, samples were measured with two different runs of CyTOF, and clear differences between these time points can be observed in the spot-check plots (Section [Spot-check plots](#spot-check-plots)), one could consider separate clustering of samples from these batches.
+Clustering of them together may result in an inaccurate cell assignment to different populations and might lead to artifacts in the following analysis, such as differential abundance analysis.
+However, to be able to use results from separate clustering analyses, for example, in the differential analysis, one has to make sure that the mapping of cell populations between them is accurate.
+And of course, the batch information should be included in the differential model.
+
+We have shown how over-clustering is necessary for detecting meaningful cell populations. However, too strong stratification may complicate cluster merging, as profiles of some of the clusters may not represent the canonical cell populations when looking only at the heatmap of median marker expression in each cluster. 
+It is helpful, while cluster merging, to combine the information from various visualization methods, such as dendrograms, t-SNE maps and other dimension reduction techniques, to see how close to each other the different clusters are, and how stable the observed results are. 
+
+One of the main goals of this workflow was to show an approach that is able to account for more complex experimental designs, where, for example, different batches of data could be analyzed together, and thus increase the detection power. 
+Using the regression like analysis allows also to test other than just the two condition differences. For instance, one could measure healthy and sick patients before and after a treatment and test whether the treatment has a different effect on the two types of patients, which would correspond to testing an interaction term in a linear model. 
+Many alternatives exist for the two group comparisons, such as the nonparametric Mann-Whitney-Wilcoxon test [@Hartmann2016], which is suitable for data that is not necessarily normally distributed, or the Student's t-test [@Pejoski4814] and its variations, such as the paired t-test.
+
+However, all of these approaches, including the LMM and GLMM, may perform poorly for small sample size data.  
+Solutions similar to those widely accepted in genomics [@Robinson2007; @Love2014; @Ritchie2015], where the information between data points is shared to obtain more accurate results, would be needed. An example of such an approach is `r Githubpkg("MarioniLab/cydar")`, which performs the differential abundance analysis using `r Biocpkg("edgeR")` [@McCarthy2012].
+
+The approach presented in this workflow is not fully automated due to the cluster merging and annotating steps, which are conducted manually. 
+Cluster annotation remains a manual step in many other approaches as well. However, in `Citrus` and `CellCnn` it takes place at the end of the analysis. Recently, a tool was proposed for consistent characterization of cell subsets using marker enrichment modeling (MEM) [@Diggins2017].
+
+To keep the analysis of this workflow reproducible, one has to remember about defining a random seed before running `r Biocpkg("FlowSOM")` and t-SNE. It is especially important in the clustering step, where the order of clusters may change with different seeds, and the cluster merging may not be valid anymore. 
 
 
 # Workflow availability

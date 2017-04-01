@@ -1,3 +1,84 @@
+@article{McCarthy2012,
+abstract = {A flexible statistical framework is developed for the analysis of read counts from RNA-Seq gene expression studies. It provides the ability to analyse complex experiments involving multiple treatment conditions and blocking variables while still taking full account of biological variation. Biological variation between RNA samples is estimated separately from the technical variation associated with sequencing technologies. Novel empirical Bayes methods allow each gene to have its own specific variability, even when there are relatively few biological replicates from which to estimate such variability. The pipeline is implemented in the edgeR package of the Bioconductor project. A case study analysis of carcinoma data demonstrates the ability of generalized linear model methods (GLMs) to detect differential expression in a paired design, and even to detect tumour-specific expression changes. The case study demonstrates the need to allow for gene-specific variability, rather than assuming a common dispersion across genes or a fixed relationship between abundance and variability. Genewise dispersions de-prioritize genes with inconsistent results and allow the main analysis to focus on changes that are consistent between biological replicates. Parallel computational approaches are developed to make non-linear model fitting faster and more reliable, making the application of GLMs to genomic data more convenient and practical. Simulations demonstrate the ability of adjusted profile likelihood estimators to return accurate estimators of biological variability in complex situations. When variation is gene-specific, empirical Bayes estimators provide an advantageous compromise between the extremes of assuming common dispersion or separate genewise dispersion. The methods developed here can also be applied to count data arising from DNA-Seq applications, including ChIP-Seq for epigenetic marks and DNA methylation analyses.},
+author = {McCarthy, Davis J. and Chen, Yunshun and Smyth, Gordon K.},
+file = {:Users/gosia/Documents/Mendeley Desktop/McCarthy, Chen, Smyth/McCarthy, Chen, Smyth - 2012 - Differential expression analysis of multifactor RNA-Seq experiments with respect to biological variation.pdf:pdf},
+journal = {Nucleic Acids Research},
+keywords = {edgeR},
+mendeley-groups = {RNA-seq DE/Gene DE/edgeR,Project DM/edgeR,.DRIMSeq paper,.CM2 PhD report},
+mendeley-tags = {edgeR},
+number = {10},
+pages = {4288--4297},
+pmid = {22287627},
+title = {{Differential expression analysis of multifactor RNA-Seq experiments with respect to biological variation}},
+volume = {40},
+year = {2012}
+}
+
+
+@article{Ritchie2015,
+abstract = {limma is an R/Bioconductor software package that provides an integrated solution for analysing data from gene expression experiments. It contains rich features for handling complex experimental designs and for information borrowing to overcome the problem of small sample sizes. Over the past decade, limma has been a popular choice for gene discovery through differential expression analyses of microarray and high-throughput PCR data. The package contains particularly strong facilities for reading, normalizing and exploring such data. Recently, the capabilities of limma have been significantly expanded in two important directions. First, the package can now perform both differential expression and differential splicing analyses of RNA sequencing (RNA-seq) data. All the downstream analysis tools previously restricted to microarray data are now available for RNA-seq as well. These capabilities allow users to analyse both RNA-seq and microarray data with very similar pipelines. Second, the package is now able to go past the traditional gene-wise expression analyses in a variety of ways, analysing expression profiles in terms of co-regulated sets of genes or in terms of higher-order expression signatures. This provides enhanced possibilities for biological interpretation of gene expression differences. This article reviews the philosophy and design of the limma package, summarizing both new and historical features, with an emphasis on recent enhancements and features that have not been previously described.},
+author = {Ritchie, Matthew E. and Phipson, Belinda and Wu, Di and Hu, Yifang and Law, Charity W. and Shi, Wei and Smyth, Gordon K.},
+journal = {Nucleic Acids Research},
+mendeley-groups = {.DRIMSeq paper,RNA-seq DE,RNA-seq DE/Gene DE},
+number = {7},
+pages = {e47},
+publisher = {Oxford University Press},
+title = {{Limma powers differential expression analyses for RNA-sequencing and microarray studies}},
+volume = {43},
+year = {2015}
+}
+
+
+@article{Love2014,
+abstract = {In comparative high-throughput sequencing assays, a fundamental task is the analysis of count data, such as read counts per gene in RNA-seq, for evidence of systematic changes across experimental conditions. Small replicate numbers, discreteness, large dynamic range and the presence of outliers require a suitable statistical approach. We present DESeq2, a method for differential analysis of count data, using shrinkage estimation for dispersions and fold changes to improve stability and interpretability of estimates. This enables a more quantitative analysis focused on the strength rather than the mere presence of differential expression. The DESeq2 package is available at http://www.bioconductor.org/packages/release/bioc/html/DESeq2.html webcite.},
+author = {Love, Michael I and Huber, Wolfgang and Anders, Simon},
+journal = {Genome biology},
+keywords = {Algorithms,Computational Biology,Computational Biology: methods,DESeq2,Genetic,High-Throughput Nucleotide Sequencing,Models,RNA,RNA: analysis,Sequence Analysis,Software,rlog},
+mendeley-groups = {RNA-seq DE/Gene DE},
+mendeley-tags = {rlog,DESeq2},
+number = {12},
+pages = {550},
+publisher = {BioMed Central},
+title = {{Moderated estimation of fold change and dispersion for RNA-seq data with DESeq2.}},
+url = {http://genomebiology.biomedcentral.com/articles/10.1186/s13059-014-0550-8},
+volume = {15},
+year = {2014}
+}
+
+
+@article{Robinson2007,
+abstract = {MOTIVATION: Digital gene expression (DGE) technologies measure gene expression by counting sequence tags. They are sensitive technologies for measuring gene expression on a genomic scale, without the need for prior knowledge of the genome sequence. As the cost of sequencing DNA decreases, the number of DGE datasets is expected to grow dramatically. Various tests of differential expression have been proposed for replicated DGE data using binomial, Poisson, negative binomial or pseudo-likelihood (PL) models for the counts, but none of the these are usable when the number of replicates is very small. RESULTS: We develop tests using the negative binomial distribution to model overdispersion relative to the Poisson, and use conditional weighted likelihood to moderate the level of overdispersion across genes. Not only is our strategy applicable even with the smallest number of libraries, but it also proves to be more powerful than previous strategies when more libraries are available. The methodology is equally applicable to other counting technologies, such as proteomic spectral counts. AVAILABILITY: An R package can be accessed from http://bioinf.wehi.edu.au/resources/},
+author = {Robinson, Mark D. and Smyth, Gordon K.},
+file = {:Users/gosia/Documents/Mendeley Desktop/Robinson, Smyth/Robinson, Smyth - 2007 - Moderated statistical tests for assessing differences in tag abundance.pdf:pdf},
+journal = {Bioinformatics},
+keywords = {edgeR},
+mendeley-groups = {RNA-seq DE/Gene DE/edgeR,Project DM/edgeR,.DRIMSeq paper,RNA-seq DE/Gene DE,.CM2 PhD report},
+mendeley-tags = {edgeR},
+number = {21},
+pages = {2881--2887},
+pmid = {17881408},
+title = {{Moderated statistical tests for assessing differences in tag abundance}},
+volume = {23},
+year = {2007}
+}
+
+
+@article{Diggins2017,
+author = {Diggins, Kirsten E and Greenplate, Allison R and Leelatian, Nalin and Wogsland, Cara E and Irish, Jonathan M},
+issn = {1548-7091},
+journal = {Nat Meth},
+mendeley-groups = {.cytofWorkflow},
+month = {mar},
+number = {3},
+pages = {275--278},
+publisher = {Nature Publishing Group, a division of Macmillan Publishers Limited. All Rights Reserved.},
+title = {{Characterizing cell subsets using marker enrichment modeling}},
+url = {http://dx.doi.org/10.1038/nmeth.4149 http://10.0.4.14/nmeth.4149 http://www.nature.com/nmeth/journal/v14/n3/abs/nmeth.4149.html{\#}supplementary-information},
+volume = {14},
+year = {2017}
+}
+
+
 @article{Pejoski4814,
 abstract = {Broadening our understanding of the abundance and phenotype of B cell subsets that are induced or perturbed by exogenous Ags will improve the vaccine evaluation process. Mass cytometry (CyTOF) is being used to increase the number of markers that can be investigated in single cells, and therefore characterize cell phenotype at an unprecedented level. We designed a panel of CyTOF Abs to compare the B cell response in cynomolgus macaques at baseline, and 8 and 28 d after the second homologous immunization with modified vaccinia virus Ankara. The spanning-tree progression analysis of density-normalized events (SPADE) algorithm was used to identify clusters of CD20+ B cells. Our data revealed the phenotypic complexity and diversity of circulating B cells at steady-state and significant vaccine-induced changes in the proportions of some B cell clusters. All SPADE clusters, including those altered quantitatively by vaccination, were characterized phenotypically and compared using double hierarchical clustering. Vaccine-altered clusters composed of previously described subsets including CD27hiCD21lo activated memory and CD27+CD21+ resting memory B cells, and subphenotypes with novel patterns of marker coexpression. The expansion, followed by the contraction, of a single memory B cell SPADE cluster was positively correlated with serum anti-vaccine Ab titers. Similar results were generated by a different algorithm, automatic classification of cellular expression by nonlinear stochastic embedding. In conclusion, we present an in-depth characterization of B cell subphenotypes and proportions, before and after vaccination, using a two-step clustering analysis of CyTOF data, which is suitable for longitudinal studies and B cell subsets and biomarkers discovery.},
 author = {Pejoski, David and Tchitchek, Nicolas and {Rodriguez Pozo}, Andr{\'{e}} and Elhmouzi-Younes, Jamila and Yousfi-Bogniaho, Rahima and Rogez-Kreuz, Christine and Clayette, Pascal and Dereuddre-Bosquet, Nathalie and L{\'{e}}vy, Yves and Cosma, Antonio and {Le Grand}, Roger and Beignon, Anne-Sophie},
