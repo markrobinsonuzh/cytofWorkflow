@@ -45,6 +45,7 @@ knitr::opts_chunk$set(cache = 2, warning = FALSE, message = FALSE, cache.path = 
 
 # Abstract
 
+Mass (and high dimensional flow) cytometry experiments have become a method of choice for characterizing cell populations at the single cell level at the high-throughput. Here, we present a pipeline of analyses based on Bioconductor packages, identifying cell populations via clustering using `FlowSOM` combined with manual merging and exploring the differences in cell composition across samples with the differential abundance and differential marker expression analyses. Differential analyses are based on regression frameworks and thus able to model a wide range of experimental designs, such as those containing batches.  Application of generalized linear mixed models for differential cell population abundance overdispersion of cell counts in clusters to be considered. We include various visualizations for quality control (multi-dimensional scaling  plots), for reporting of clustering results (t-SNE dimension reduction, heatmaps with dendrograms) and for differential analyses.
 
 
 # Introduction
@@ -53,7 +54,7 @@ knitr::opts_chunk$set(cache = 2, warning = FALSE, message = FALSE, cache.path = 
 
 Flow cytometry and the more recently introduced CyTOF (cytometry by time-of-flight mass spectrometry or mass cytometry) are technologies that measure abundance of proteins expressed on the surface or inside cells at high-throughput on single cells. 
 In flow cytometry, antibodies are labeled with fluorescent dyes. For each cell, the intensity of fluorescent parameters is measured using lasers and photodetectors. 
-CyTOF utilizes an entirely different technique. Transition element isotopes are used to label antibodies and the intensity read out of isotopes bound to each cell is analyzed with a time-of-flight mass spectrometer. 
+CyTOF utilizes transition element isotopes to label antibodies and abundances per cell are recorded with a time-of-flight mass spectrometer. 
 In both cases, the intensity of either fluorescent dyes or isotopes is assumed to be proportional to the expression level of antibody-targeted antigens of interest.
 
 Due to the differences in these techniques, other distinct characteristics are observed.
@@ -1244,23 +1245,22 @@ plot_differential_heatmap_wrapper(expr_norm = expr_median_sample_norm, sign_adjp
 
 # Discussion
 
-In this workflow, we have presented a pipeline for CyTOF data analysis that consists of a quality control step where aggregate scharacteristics of the samples are visualized, for example with an MDS plot, allowing verification of the experimental design, detection of batches and outlying samples. 
-Next, the cell population identification was carried out, forming the basis for subsequent differential analyses of cell population abundance and differential marker expression in each of the populations and overall marker expression.
-The approaches to differential analyses proposed here are able to model more complex designs than two group comparisons. We have presented a range of visualizations that helps in understanding the data and reporting the results of clustering and differential analyses.
-However, all the wrapper functions presented in this workflow should be adjusted according to the needs of the real data analysis.
+In this workflow, we have presented a pipeline for CyTOF data analysis that consists of a quality control step where aggregate characteristics of the samples are visualized, for example with an MDS plot, allowing verification of the experimental design, detection of batch effects and outlying samples.Next, cell population identification was carried out, forming the basis for subsequent differential analyses of cell population abundance, differential marker expression within a population or overall marker expression differences.
+The approaches to differential analyses proposed here are able to model complex designs via design matrices, such as factorial experiments, paired experiments or adjustment for batch effects. We have presented a range of visualizations that help in understanding the data and reporting the results of clustering and differential analyses.
+However, the wrapper functions presented in this workflow should be tailored according to the needs of the real data analysis.
 
-Clustering is one of the most challenging steps in this workflow, and its accuracy is highly important, as it impacts the downstream differential analyses.
-There can be situations were a biologically meaningful cell population may be differentially enriched between the conditions, but the signal can not be detected because it was combined with some other cell population which behaves different. 
-Thus, other approaches should be also applied for validation of the main findings, such as `Citrus` or `CellCnn`. In the presence of batches, which neither of them is able to account for, as alternative, they could be applied to each of the batches separately. 
-
-In our example, clustering was performed on all the cells from all the samples.
+Clustering is one of the most challenging steps in the workflow and its accuracy is highly important, since it directly impacts the downstream differential analyses.
+In particular, getting the right resolution of clusters is critical since there can be situations where a biologically meaningful cell population may be differentially enriched between conditions, but was notbe detected because it was combined with another cell population that behaves different. 
+In our example, clustering was performed on all cells from all samples.
 However, this approach works only if the variability between samples is small enough [@Saeys2016].
 In case of batches, for example, samples were measured with two different runs of CyTOF, and clear differences between these time points can be observed in the spot-check plots (Section [Spot-check plots](#spot-check-plots)), one could consider separate clustering of samples from these batches.
-Clustering of them together may result in an inaccurate cell assignment to different populations and might lead to artifacts in the following analysis, such as differential abundance analysis.
+Clustering of them altogether may result in an inaccurate cell assignment to different populations and might lead to artifacts in the following analysis, such as differential abundance analysis.
 However, to be able to use results from separate clustering analyses, for example, in the differential analysis, one has to make sure that the mapping of cell populations between them is accurate.
 And of course, the batch information should be included in the differential model.
 
-We have shown how over-clustering is necessary for detecting meaningful cell populations. However, too strong stratification may complicate cluster merging, as profiles of some of the clusters may not represent the canonical cell populations when looking only at the heatmap of median marker expression in each cluster. 
+Thus, other approaches should be also applied for validation of the main findings, such as `Citrus` or `CellCnn`. In the presence of batches, which neither of them is able to account for, as alternative, they could be applied to each of the batches separately. 
+
+We have shown how over-clustering is convenient for detecting meaningful cell populations. However, too high resolution may complicate manual cluster merging, as profiles of some of the clusters may not represent the canonical cell populations when looking only at the heatmap of median marker expression in each cluster. 
 It is helpful, while cluster merging, to combine the information from various visualization methods, such as dendrograms, t-SNE maps and other dimension reduction techniques, to see how close to each other the different clusters are, and how stable the observed results are. 
 
 One of the main goals of this workflow was to show an approach that is able to account for more complex experimental designs, where, for example, different batches of data could be analyzed together, and thus increase the detection power. 
@@ -1273,7 +1273,7 @@ Solutions similar to those widely accepted in genomics [@Robinson2007; @Love2014
 The approach presented in this workflow is not fully automated due to the cluster merging and annotating steps, which are conducted manually. 
 Cluster annotation remains a manual step in many other approaches as well. However, in `Citrus` and `CellCnn` it takes place at the end of the analysis. Recently, a tool was proposed for consistent characterization of cell subsets using marker enrichment modeling (MEM) [@Diggins2017].
 
-To keep the analysis of this workflow reproducible, one has to remember about defining a random seed before running `r Biocpkg("FlowSOM")` and t-SNE. It is especially important in the clustering step, where the order of clusters may change with different seeds, and the cluster merging may not be valid anymore. 
+To keep the analysis of this workflow reproducible, one needs to define a random seed before running `r Biocpkg("FlowSOM")` and t-SNE. It is especially important in the clustering step, where the order of clusters may change with different seeds, and the cluster merging may not be valid anymore. 
 
 
 # Workflow availability
