@@ -1244,8 +1244,8 @@ plot_differential_heatmap_wrapper(expr_norm = expr_median_sample_norm, sign_adjp
 
 # Discussion
 
-In this workflow, we have presented a pipeline for CyTOF data analysis which consists of a quality control step where characteristics of the different samples are visualized, for example, with the MDS plot, allowing verification of the experimental design, detection of batches and outlying samples. 
-Next, the cell population identification was carried out, which was a basis for the subsequent differential analyses of cell population abundance, marker expression in each of the populations and overall marker expression.
+In this workflow, we have presented a pipeline for CyTOF data analysis that consists of a quality control step where aggregate scharacteristics of the samples are visualized, for example with an MDS plot, allowing verification of the experimental design, detection of batches and outlying samples. 
+Next, the cell population identification was carried out, forming the basis for subsequent differential analyses of cell population abundance and differential marker expression in each of the populations and overall marker expression.
 The approaches to differential analyses proposed here are able to model more complex designs than two group comparisons. We have presented a range of visualizations that helps in understanding the data and reporting the results of clustering and differential analyses.
 However, all the wrapper functions presented in this workflow should be adjusted according to the needs of the real data analysis.
 
