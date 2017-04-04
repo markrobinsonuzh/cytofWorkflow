@@ -1243,32 +1243,30 @@ plot_differential_heatmap_wrapper(expr_norm = expr_median_sample_norm, sign_adjp
 
 # Discussion
 
-In this workflow, we have presented a pipeline for CyTOF data analysis that consists of a quality control step where aggregate characteristics of the samples are visualized, for example with an MDS plot, allowing verification of the experimental design, detection of batch effects and outlying samples.Next, cell population identification was carried out, forming the basis for subsequent differential analyses of cell population abundance, differential marker expression within a population or overall marker expression differences.
-The approaches to differential analyses proposed here are able to model complex designs via design matrices, such as factorial experiments, paired experiments or adjustment for batch effects. We have presented a range of visualizations that help in understanding the data and reporting the results of clustering and differential analyses.
+In this workflow, we have presented a pipeline for differential analyses of HDCyto datasets  that consists of a quality control step where aggregate characteristics of the samples are visualized (e.g., an MDS plot), allowing verification of the experimental design, detection of batch effects and outlying samples.  Next, cell population identification was carried out via clustering, forming the basis for subsequent differential analyses of cell population abundance, differential marker expression within a population or overall marker expression differences.
+The approaches to differential analyses proposed here are very general and thus able to model complex designs via design matrices, such as factorial experiments, paired experiments or adjustment for batch effects. We have presented a range of visualizations that help in understanding the data and reporting the results of clustering and differential analyses.
 However, the wrapper functions presented in this workflow should be tailored according to the needs of the real data analysis.
 
 Clustering is one of the most challenging steps in the workflow and its accuracy is highly important, since it directly impacts the downstream differential analyses.
-In particular, getting the right resolution of clusters is critical since there can be situations where a biologically meaningful cell population may be differentially enriched between conditions, but was notbe detected because it was combined with another cell population that behaves different. 
+In particular, getting the right resolution of clusters is critical since there can be situations where a biologically meaningful cell population may be differentially enriched between conditions, but was combined with another cell population that behaves different. 
 In our example, clustering was performed on all cells from all samples.
 However, this approach works only if the variability between samples is small enough [@Saeys2016].
-In case of batches, for example, samples were measured with two different runs of CyTOF, and clear differences between these time points can be observed in the spot check plots (Section [spot check plots](#diagnostic-plots)), one could consider separate clustering of samples from these batches.
-Clustering of them altogether may result in an inaccurate cell assignment to different populations and might lead to artifacts in the following analysis, such as differential abundance analysis.
-However, to be able to use results from separate clustering analyses, for example, in the differential analysis, one has to make sure that the mapping of cell populations between them is accurate.
-And of course, the batch information should be included in the differential model.
+In case of batches, where samples were measured across multiple acquisitions, and clear differences between these time points can be observed in the diagnostic plots (Section [Diagnostic plots](#diagnostic-plots)), one could consider batch-wise clustering of samples.
+Clustering batches altogether may result in inaccurate cell assignment to different populations and might lead to artifacts in the downstream analysis.
+On the other hand, to be able to use results from batch-wise clustering, one still needs to map cell populations across batches. In addition, including the batch information into the downstream statistical models, assuming a reasonably balanced design (all experimental condtions represented in each batch), may largely mitigate these problems.
 
-Thus, other approaches should be also applied for validation of the main findings, such as `Citrus` or `CellCnn`. In the presence of batches, which neither of them is able to account for, as alternative, they could be applied to each of the batches separately. 
+Certainly, there are a variety of computational approaches available to the user.  We have mentioned `Citrus` and `CellCnn`, which are both machine-learning approaches that turn the models, having the phenotype of interest as the response variable.  Neither of these approaches are directly able to account for batch effects or complicated designs.  However, they may have advantages in the search for rare distinguishing populations.
 
-We have shown how over-clustering is convenient for detecting meaningful cell populations. However, too high resolution may complicate manual cluster merging, as profiles of some of the clusters may not represent the canonical cell populations when looking only at the heatmap of median marker expression in each cluster. 
-It is helpful, while cluster merging, to combine the information from various visualization methods, such as dendrograms, t-SNE maps and other dimension reduction techniques, to see how close to each other the different clusters are, and how stable the observed results are. 
+We have shown how over-clustering is convenient for detecting meaningful cell populations. However,  high resolution of clustering complicates manual cluster merging, since profiles of some of the clusters may not represent the canonical cell populations when looking only at the heatmap of median marker expression in each cluster. 
+It is helpful, while cluster merging, to combine the information from various visualizations, such as dendrograms, t-SNE maps or other dimension reduction techniques
 
-One of the main goals of this workflow was to show an approach that is able to account for more complex experimental designs, where, for example, different batches of data could be analyzed together, and thus increase the detection power. 
-Using the regression like analysis allows also to test other than just the two condition differences. For instance, one could measure healthy and sick patients before and after a treatment and test whether the treatment has a different effect on the two types of patients, which would correspond to testing an interaction term in a linear model. 
-Many alternatives exist for the two group comparisons, such as the nonparametric Mann-Whitney-Wilcoxon test [@Hartmann2016], which is suitable for data that is not necessarily normally distributed, or the Student's t-test [@Pejoski4814] and its variations, such as the paired t-test.
+One of the main goals of this workflow was to highlight a model-based approach that is able to handle complex experimental designs. 
+Using the regression framework allows also to flexibly test situations well beyond two-group  differences.  Many alternatives exist for the two group comparisons, such as the nonparametric Mann-Whitney-Wilcoxon test [@Hartmann2016], which makes no assumptions about normality of the data, or the Student's t-test [@Pejoski4814] and its variations, such as the paired t-test.
 
-However, all of these approaches, including the LMM and GLMM, may perform poorly for small sample size data.  
-Solutions similar to those widely accepted in genomics [@Robinson2007; @Love2014; @Ritchie2015], where the information between data points is shared to obtain more accurate results, would be needed. An example of such an approach is `r Githubpkg("MarioniLab/cydar")`, which performs the differential abundance analysis using `r Biocpkg("edgeR")` [@McCarthy2012].
+However, all of these approaches, including the LMM and GLMM, may perform poorly for extremely small samples.  
+Solutions similar to those widely accepted in transcriptomics that share information over variance parameters [@Robinson2007; @Love2014; @Ritchie2015], would be needed. An example of such an approach is `r Githubpkg("MarioniLab/cydar")`, which performs the differential abundance analysis (on hypersphere counts) using `r Biocpkg("edgeR")` [@McCarthy2012].
 
-The approach presented in this workflow is not fully automated due to the cluster merging and annotating steps, which are conducted manually. 
+The approach presented in this workflow is not fully automated due to the cluster merging and annotating steps.  In general, our philosophy is that fully automated analyses are to be avoided, but rather a battery of diagnostic checks can be designed, as we have promoted here. 
 Cluster annotation remains a manual step in many other approaches as well. However, in `Citrus` and `CellCnn` it takes place at the end of the analysis. Recently, a tool was proposed for consistent characterization of cell subsets using marker enrichment modeling (MEM) [@Diggins2017].
 
 To keep the analysis of this workflow reproducible, one needs to define a random seed before running `r Biocpkg("FlowSOM")` and t-SNE. It is especially important in the clustering step, where the order of clusters may change with different seeds, and the cluster merging may not be valid anymore. 
@@ -1282,8 +1280,7 @@ The corresponding manuscript is available on the F1000 website [LINK].
 # Author contributions
 
 [TODO!]
-MN drafted the manuscript. MDR drafted the manuscript. CK. LMW.
-All authors read and approved the final manuscript and have agreed to the content.
+MN and MDR designed and ran analyses.  MN drafted the manuscript with input from MDR. CK provided the biological perspective at all steps of the analyses and performed the cluster merging. LMW contributed code and ideas for the analyses.  All authors read and approved the final manuscript and have agreed to the content.
 
 # Competing interests
 
@@ -1292,7 +1289,7 @@ No competing interests were disclosed.
 # Grant information
 
 [TODO!]
-MN acknowledges the funding from a Swiss Institute of Bioinformatics (SIB) Fellowship. MDR would like to acknowledge funding from an Swiss National Science Foundation (SNSF) Project Grant (143883).
+MN acknowledges the funding from a Swiss Institute of Bioinformatics (SIB) Fellowship.
 
 # Acknowledgments
 
