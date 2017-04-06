@@ -9,7 +9,6 @@ Encoding: UTF-8
 LazyData: true
 VignetteBuilder: knitr
 biocViews: Workflows
-Imports: BiocStyle, knitr, rmarkdown,
-        pheatmap, RColorBrewer, ggplot2
+Imports: BiocStyle, knitr, rmarkdown
 Suggests: knitcitations
 NeedsCompilation: no
