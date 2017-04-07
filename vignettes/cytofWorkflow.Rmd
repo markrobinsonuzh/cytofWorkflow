@@ -1,21 +1,38 @@
 ---
 title: "CyTOF workflow: differential discovery in high-throughput high-dimensional cytometry datasets"
-author: 
+author:
 - name: Malgorzata Nowicka
-  affiliation: 
+  affiliation:
   - &IMLS Institute for Molecular Life Sciences, University of Zurich, 8057 Zurich, Switzerland
   - &SIB SIB Swiss Institute of Bioinformatics, University of Zurich, 8057 Zurich, Switzerland
   email: gosia.nowicka@uzh.ch
 - name: Carsten Krieg
   affiliation: Institute of Experimental Immunology, University of Zurich, 8057 Zurich, Switzerland
 - name: Lukas M. Weber
-  affiliation: 
+  affiliation:
   - *IMLS
   - *SIB
 - name: Mark D. Robinson
-  affiliation: 
+  affiliation:
   - *IMLS
   - *SIB
+# author: 
+#   - name: Malgorzata Nowicka
+#     affiliation: 1, 2
+#   - name: Carsten Krieg
+#     affiliation: 3
+#   - name: Lukas M. Weber
+#     affiliation: 1, 2
+#   - name: Mark D. Robinson
+#     affiliation: 1, 2
+# address:
+#   - code: 1
+#     address: Institute for Molecular Life Sciences, University of Zurich, 8057 Zurich, Switzerland
+#   - code: 2
+#     address: SIB Swiss Institute of Bioinformatics, University of Zurich, 8057 Zurich, Switzerland
+#   - code: 2
+#     address: Institute of Experimental Immunology, University of Zurich, 8057 Zurich, Switzerland
+abstract: High dimensional (mass and flow) cytometry (HDCyto) experiments have become a method of choice for interrogating and characterizing cell populations at high throughput. Here, we present a R-based pipeline for differential analyses of HDCyto data, largely based on Bioconductor packages.  We computationally define cell populatios using FlowSOM clustering, allowing for optional but reproducible manual merging. There are several differential analyses of interest the differences in cell type abundance that are associated with a phenotype, or differences in signaling markers within specific subpopulations or differential analyses of aggregrated signals.  Importantly, the differential analyses we show are based on regression frameworks where the HDCyto data is the response; thus, we are able to model arbitrary designs, such as those with batch effects, paired designs, etc.  In particular, we apply generalized linear mixed models for analyses of cell population abundance or cell-population-specific analyses of signaling markers, allowing overdispersion in cells count or aggregated signal across samples to be appropriately modeled.  To support the formal statistical analyses, we include various visualizations at every step of the analysis, including for quality control (e.g., multi-dimensional scaling  plots), for reporting of clustering results (dimensionality reduction, heatmaps with dendrograms) and for differential analyses (e.g., plots of aggregated signal).
 documentclass: extarticle
 fontsize: 10pt
 papersize: a4
@@ -36,16 +53,13 @@ vignette: >
 
 <!-- knitr::purl('cytofWorkflow.Rmd') -->
 
+<!-- BiocWorkflowTools::markdownToLatex(input = "cytofWorkflow.Rmd") -->
+
 
 ```{r setup_knitr, include=FALSE, cache=FALSE}
 library(knitr)
 knitr::opts_chunk$set(cache = 2, warning = FALSE, message = FALSE, cache.path = "cache/", fig.path = "figure/")
 ```
-
-
-# Abstract
-
-High dimensional (mass and flow) cytometry (HDCyto) experiments have become a method of choice for interrogating and characterizing cell populations at high throughput. Here, we present a `R`-based pipeline for *differential analyses* of HDCyto data, largely based on Bioconductor packages.  We computationally define cell populatios using `FlowSOM` clustering, allowing for optional but reproducible manual merging. There are several differential analyses of interest: the differences in cell type abundance that are associated with a phenotype, or differences in signaling markers within specific subpopulations or differential analyses of aggregrated signals.  Importantly, the differential analyses we show are based on regression frameworks where the HDCyto data is the response; thus, we are able to model arbitrary designs, such as those with batch effects, paired designs, etc.  In particular, we apply generalized linear mixed models for analyses of cell population abundance or cell-population-specific analyses of signaling markers, allowing overdispersion in cells count or aggregated signal *across samples* to be appropriately modeled.  To support the formal statistical analyses, we include various visualizations at every step of the analysis, including for quality control (e.g., multi-dimensional scaling  plots), for reporting of clustering results (dimensionality reduction, heatmaps with dendrograms) and for differential analyses (e.g., plots of aggregated signal).
 
 
 # Introduction
@@ -110,8 +124,12 @@ In both the Bodenmiller et al. and `Citrus` manuscripts, the 10 lineage markers 
 
 # Data preprocessing
 
-TODO: Description of how the pre-processing could be done. Reference to the CATALYST package. Compensation, debarcoding, normalization and removal of debris, doublets and dead cells.
-Gating out uninteresting cells.
+The preprocessing steps including normalization using bead standards, debarcoding and compensation can be completed with the `r Githubpkg("HelenaLC/CATALYST")` package.
+It provides an R implementation of the bead based normalization described by Finck *et al.* [@Finck2013].
+The debarciding is cunducted with the single-cell deconvolution algorithm described by Zunder *et al.* [@Zunder2015]. During this step also cell doublets are identified and removed from the analysis.
+Finally, compensation is performed via a two-step algorithm, which first uses single-cell debarcoding of single-stained beads to identify single positive populations. Second, it estimates a spillover matrix from the identified populations and its inverse, called a compensation matrix, is used to compensate the observed intensities.
+
+[!!!] Removal of debris and dead cells?
 
 # Data importing
 
@@ -198,12 +216,13 @@ panel_filename <- "PBMC8_panel.xlsx"
 download.file(paste0(url, panel_filename), destfile = panel_filename)
 panel <- read.xls(panel_filename, stringsAsFactors = FALSE)
 head(panel)
-head(pData(parameters(fcs_raw[[1]])))
+panel_fcs <- pData(parameters(fcs_raw[[1]]))
+head(panel_fcs)
 
 lineage_markers <- panel$Antigen[panel$Lineage == 1]
-all(lineage_markers %in% pData(parameters(fcs_raw[[1]]))$desc)
+all(lineage_markers %in% panel_fcs$desc)
 functional_markers <- panel$Antigen[panel$Functional == 1]
-all(functional_markers %in% pData(parameters(fcs_raw[[1]]))$desc)
+all(functional_markers %in% panel_fcs$desc)
 ```
 
 
@@ -216,7 +235,7 @@ We also rename the columns in the `flowSet` to the antigen names from `panel$des
 ```{r arcsinh_transformation}
 ## Arcsineh transformation
 fcs <- fsApply(fcs_raw, function(x){
-  colnames(x) <- panel$desc
+  colnames(x) <- panel_fcs$desc
   expr <- exprs(x)
   expr <- asinh(expr[, c(lineage_markers, functional_markers)] / 5)
   exprs(x) <- expr
@@ -333,6 +352,7 @@ ggplot(ggdf, aes(x = MDS1, y = MDS2, color = condition)) +
   scale_color_manual(values = color_conditions) 
 
 ```
+
 
 In contrast to genomic applications, the number of variables measured for each sample is much lower in mass or flow cytometry. In the former, there are thousands of genes sequenced whereas in the latter, ~20-50 antigens are typically targeted. 
 Similar to the MDS plot above, a heatmap of the same data also gives insight into the structure of the data. The heatmap shows median marker intensities with clustered columns (samples) and rows (markers). 
@@ -986,8 +1006,16 @@ As our goal is to compare proportions, one could take those values, transform th
 However, this approach does not take into account the uncertainty of proportion estimates, which is higher when ratios are calculated for samples with lower total cell counts. 
 A distribution that naturally accounts for such uncertainty is the binomial distribution used in the logistic regression, which takes as dependent input the counts.
 Nevertheless, as in the genomic data analysis, the pure logistic regression is not able to capture the overdispersion which we have also observed in the CyTOF data. 
-A more suitable model would be based on the beta-binomial distribution, or similar results can be achieved by modeling the extra variance of ratios as random effects for each individual sample in the generalized linear mixed model (GLMM) [@Jia2014, @Zhao2013].
+A more suitable model would be based on the beta-binomial distribution, or similar results can be achieved by modeling the extra variance of ratios as random effects for each individual sample in the generalized linear mixed model (GLMM) [@Zhao2013; @Jia2014].
 Thus, we conduct the differential abundance analysis using GLMMs, but not due only to the pairing in the experiment. Even if it was not paired, we would use GLMMs because they allow overdispersion in proportions to be modeled. The random effect is defined by the sample ID and not by the patient ID, as it will be the case in the marker expression analyses.
+
+In our model, the blocking variable is patient ID $i = 1, ..., n$, where $n=8$. For each patient, there are $n_i$ samples measured, and $j = 1,..., n_i$ indicates the sample ID. Here, $n_i=2$ for all the $i$, as for each patient, we have one sample from a reference and one from the BCR/FcR-XL stimulated condition. We assume that for a given cell population the observed cell counts $Y_{ij}$ follow a binomial distribution $Y_{ij} \sim Bin(m_{ij}, \pi_{ij}|\beta_0, \beta_1, \gamma_{ij})$, where $m_{ij}$ is a total number of cells in a sample corresponding to patient $i$ and condition $j$. The generalized linear mixed model with observation-level random effects $\gamma_{ij}$ looks as follows:
+
+$$E(Y_{ij}|\beta_0, \beta_1, \gamma_{ij}) = logit^{-1}(\beta_0 + \beta_1 x_{ij} + \gamma_{ij}),$$
+where $\gamma_{ij} \sim N(0, \sigma^2_\gamma)$ and $x_{ij}$ corresponds to the `conditionBCRXL` column in the design matrix and indicates whether a sample $ij$ belongs to the reference ($x_{ij}=0$) or treated condition ($x_{ij}=1$). Since $E(Y_{ij}|\beta_0, \beta_1, \gamma_{ij}) = \pi_{ij}$, the above formula can be written as follows:
+
+$$logit(\pi_{ij}) = \beta_0 + \beta_1 x_{ij} + \gamma_{ij}.$$
+
 
 ```{r diff_formula_glmer_binomial}
 formula_glmer_binomial <- y/total ~ condition + (1|sample_id)
@@ -1002,8 +1030,12 @@ differential_abundance_wrapper <- function(counts, md, formula, K){
   ## Fit the GLMM for each cluster separately
   ntot <- colSums(counts)
   fit_binomial <- lapply(1:nrow(counts), function(i){
+    # i = 1
     data_tmp <- data.frame(y = as.numeric(counts[i, md$sample_id]), total = ntot[md$sample_id], md)
+    
     fit_tmp <- glmer(formula, weights = total, family = binomial, data = data_tmp)
+    # fit_tmp <- glmer(cbind(y, total - y) ~ condition + (1 | sample_id), family = binomial, data = data_tmp)
+
     ## Fit contrasts one by one
     out <- apply(K, 1, function(k){
       contr_tmp <- glht(fit_tmp, linfct = matrix(k, 1))
@@ -1102,7 +1134,15 @@ plot_differential_heatmap_wrapper(expr_norm = asin_norm, sign_adjp = sign_adjp, 
 
 ## Differential analysis of marker expression stratified by cell population
 
-In the code chunk below, we calculate the median expression of the 14 signaling markers in each cluster and sample. These will be used as a dependent variable, called `y`, in the linear mixed model (LMM), for which we assume that the median marker expression follows a Gaussian distribution (on the already asinh-transformed scale).
+In the code chunk below, we calculate the median expression of the 14 signaling markers in each cluster and sample. These will be used as a dependent variable $Y_{ij}$ in the linear model (LM) and linear mixed model (LMM), for which we assume that the median marker expression follows a Gaussian distribution (on the already asinh-transformed scale).
+The linear model is formulated as follows:
+
+$$Y_{ij} = \beta_0 + \beta_1 x_{ij} + \epsilon_{ij},$$
+where $\epsilon_{ij} \sim N(0, \sigma^2)$, and the mixed model includes a random interecept for each patient:
+
+$$Y_{ij} = \beta_0 + \beta_1 x_{ij} + \epsilon_{ij} + \gamma_{i},$$
+where $\gamma_{i} \sim N(0, \sigma^2_\gamma)$.
+
 One drawback of summarizing the protein marker intensity with median is that all the other characteristics of the distribution, such as bimodality, skewness and variance, are ignored. 
 On the other hand, it results in a simple, easy to interpret approach, which in many cases is sufficient to detect interesting differences between conditions. 
 
@@ -1187,8 +1227,8 @@ differential_expression_wrapper <- function(expr_median, md, model = "lmer", for
 ```
 
 
-To present how accounting for the within patient variability with the mixed model increases the power, we also fit a regular linear model. 
-The linear mixed model has a random intercept which corresponds to the patient ID.
+To present how accounting for the within patient variability with the mixed model increases the sensitivity, we also fit a regular linear model. 
+The formula for the linear mixed model has a random intercept which corresponds to the patient ID.
 
 
 ```{r diff_expr2_formula}
