@@ -80,9 +80,9 @@ knitr::opts_chunk$set(cache = 2, warning = FALSE, message = FALSE, cache.path = 
 High dimensional (mass and flow) cytometry (HDCyto) experiments have become a method of choice for interrogating and characterizing cell populations at high throughput. 
 Here, we present a R-based pipeline for differential analyses of HDCyto data, largely based on Bioconductor packages.
 We computationally define cell populations using FlowSOM clustering and we also facilitate an optional but reproducible strategy for manual merging of algorithm-generated clusters.
-Our workflow offers different analysis paths, including association of cell type abundance with a phenotype, or changes in signaling markers within specific subpopulations or differential analyses of aggregated signals.  
-Importantly, the differential analyses we show are based on regression frameworks where the HDCyto data is the response; thus, we are able to model arbitrary designs, such as those with batch effects, paired designs, etc.  
-In particular, we apply generalized linear mixed models for analyses of cell population abundance or cell-population-specific analyses of signaling markers, allowing overdispersion in cells count or aggregated signal across samples to be appropriately modeled.  
+Our workflow offers different analysis paths, including association of cell type abundance with a phenotype, or changes in signaling markers within specific subpopulations or differential analyses of aggregated signals.
+Importantly, the differential analyses we show are based on regression frameworks where the HDCyto data is the response; thus, we are able to model arbitrary designs, such as those with batch effects, paired designs, etc.
+In particular, we apply generalized linear mixed models for analyses of cell population abundance or cell-population-specific analyses of signaling markers, allowing overdispersion in cells count or aggregated signal across samples to be appropriately modeled.
 To support the formal statistical analyses, we include various visualizations at every step of the analysis, including for quality control (e.g., multi-dimensional scaling  plots), for reporting of clustering results (dimensionality reduction, heatmaps with dendrograms) and for differential analyses (e.g., plots of aggregated signal).
 
 
@@ -99,7 +99,7 @@ In either case, fluorescence intensities (flow cytometry) or ion counts (mass cy
 Due to the differences in acquistion, further distinct characteristics should be noted.
 Conventional fluorophore-based flow cytometry is non-destructive and thus can be used to sort cells for further analysis. 
 However, because of the spectral overlap between fluorophores, *compensation* of the data needs to be performed [@Roederer2001], which also limits the number of parameters that can be measured at once. 
-Standard flow cytometry experiments measure 6-12 parameters where the most modern flow cytometers can measure up to 20 parameters [Mahnke, Roederer Clin Lab Med 2007] and new developments (e.g., BD FACSymphony) might increase this capacity towards 50 markers.
+Standard flow cytometry experiments measure 6-12 parameters where the most modern flow cytometers can measure up to 20 parameters [@Mahnke2007] and new developments (e.g., BD FACSymphony) might increase this capacity towards 50 markers.
 Moreover, flow cytometry offers the highest throughput with more than 10,000 cells measured per second at relatively low operating costs per sample.
 
 
@@ -150,9 +150,9 @@ We use the `r CRANpkg("ggplot2")` package as our graphical engine.
 We propose a suite of useful visual representations of the CyTOF data characteristics, such as an MDS (multidimensional scaling) plot of aggregated signal.
 The obtained cell populations are visualized using dimension reduction techniques (e.g., t-SNE via the `r CRANpkg("Rtsne")` package) and heatmaps (via the `r CRANpkg("pheatmap")` package) represent characteristics of the annotated cell populations and identified biomarkers. 
 
-This workflow is not fully automatic and this is by design.  
+This workflow is not fully automatic and this is by design.
 It involves a step where the user can optionally manually merge and annotate clusters, see Section [Cluster merging and annotation](#cluster-merging-and-annotation), but in a way that is easily reproducible.
-The CyTOF data used here, see Section [Data description](#data-description), is already preprocessed meaning that the normalization and debarcoding as well as removal of doublets, debris and dead cells were already performed. 
+The CyTOF data used here, see Section [Data description](#data-description), is already preprocessed meaning that the normalization and debarcoding as well as removal of doublets, debris and dead cells were already performed.
 To see how such an analysis could be performed, go to Section [Data preprocessing](#data-preprocessing).
 
 Notably, this workflow is equally applicable to flow or mass cytometry datasets for which the preprocessing steps are already performed.
@@ -164,7 +164,7 @@ In this workflow, we use a subset of CyTOF data originating from Bodenmiller et 
 Specifically, we perform our analysis on 16 samples of peripheral blood mononuclear cells (PBMCs) from 8 healthy donors where 8 were unstimulated and another 8 were stimulated for 30 min with B cell receptor/Fc receptor crosslinking (BCR/FcR-XL).
 For each sample, 14 signaling markers and 10 cell surface markers were measured.
 
-The original data can be downloaded from the [Cytobank repository](http://reports.cytobank.org/105/v2). The subset that is used here is available under the [link to Citrus Cytobank repository](https://community.cytobank.org/cytobank/experiments/15713/download_files).
+The original data can be downloaded from the [Cytobank repository](http://reports.cytobank.org/105/v2) [@Kotecha2001]. The subset that is used here is available under the [link to Citrus Cytobank repository](https://community.cytobank.org/cytobank/experiments/15713/download_files).
 
 In both the Bodenmiller et al. and `Citrus` manuscripts, the 10 lineage markers were used to identify cell subpopulations, which were then investigated for differences between the reference and stimulated separately for each of the 14 functional markers. 
 The same strategy is used in this workflow; 10 lineage markers are used for cell clustering and 14 functional markers are tested for the differential expression between the reference and BCR/FcR-XL stimulation. 
@@ -174,7 +174,7 @@ Even though differential analysis of cell abundance was not in the scope of the 
 # Data preprocessing
 
 Conventional flow cytometers and mass cytometers produce .fcs files that can be manually analyzed using programs such as FlowJo [TriStar]. During this initial analysis step, dead cells are removed, compensation is checked and with simple two dimensional scatter plots (e.g., marker intensity versus time), marker expression patterns are checked.  Often, modern experiments are barcoded in order to remove analytical biases due to individual sample variation or acquisition time.
-The preprocessing steps including normalization using bead standards, debarcoding and compensation can be completed with the `r Biocpkg("CATALYST")` package, which provides an implementation of the debarcoding algorithm described by Zunder *et al.* [@Zunder2015] and the bead-based normalization from Finck *et al.* [@Finck2013].  Alternatively, datasets can be preprocessed outside of R (e.g., Normalizer v0.3 [https://github.com/nolanlab/bead-normalization/releases/tag/v0.3]).
+The preprocessing steps including normalization using bead standards, debarcoding and compensation can be completed with the `r Biocpkg("CATALYST")` package, which provides an implementation of the debarcoding algorithm described by Zunder *et al.* [@Zunder2015] and the bead-based normalization from Finck *et al.* [@Finck2013]. Alternatively, datasets can be preprocessed outside of R (e.g., [Normalizer](https://github.com/nolanlab/bead-normalization/releases/latest) [@Finck2013]).
 
 During preprocessing steps, cell doublets, debris and dead cells should be identified and removed.
 
@@ -709,7 +709,7 @@ plot_clustering_distr_wrapper(expr = expr[, lineage_markers_ord], cell_clusterin
 One of the most popular plots to represent single cell data are t-SNE plots, where each cell is represented in a lower, usually two-dimensional, space computing using t-stochastic neighbor embedding (t-SNE) [@VanDerMaaten2008].  More generally, dimensionality reduction techniques represent the similarity of points in 2 or 3 dimensions, such that similar objects in high dimensional space are also similar in lower dimensional space.  Mathematically, there are a myriad of ways to define this similarity.  For example, principal components analysis (PCA) uses linear combinations of the original features to find orthogonal dimensions that show the highest levels of variability; the top 2 or 3 principal components can then be visualized.
 
 Nevertheless, there are few notes of caution when using tSNE or any other dimensionality reduction technique. 
-Since they are based on preserving similarities between cells, those that are similar in the original space will be close in the 2D/3D representation, but the opposite does not always hold.  In our experience, t-SNE with default parameters for HDCyto is often suitable; for more guidance on the specifics of t-SNE, see [How to Use t-SNE Effectively](http://distill.pub/2016/misread-tsne/).
+Since they are based on preserving similarities between cells, those that are similar in the original space will be close in the 2D/3D representation, but the opposite does not always hold.  In our experience, t-SNE with default parameters for HDCyto is often suitable; for more guidance on the specifics of t-SNE, see [How to Use t-SNE Effectively](http://distill.pub/2016/misread-tsne/) [@Wattenberg2016].
 <!-- [This is super important! Also: mention the relation to the amount of neighboring cells. Biologists tend to put too many neighbors!!!] -->
 
 Due to the stochastic nature of t-SNE, rerunning the method will result in different 2D representation of cells. It is advisable to run it few times to identify the common trends and and get feeling about the variability of the results.
@@ -720,7 +720,7 @@ t-SNE is a method that requires significant computational time to process the da
 The t-SNE map below is colored according to the expression level of the CD4 marker showing that the CD4+ cells are placed to the left side of the plot. 
 One can use a collection of markers to highlight where cell types of interest are located on the *map*.
 
-Instead of t-SNE, one could also use other dimension reduction techniques, such as PCA, diffusion maps, SIMLR [REF] or isomaps, some of which are conveniently available via the `cytof_dimReduction` function from the `r Biocpkg("cytofkit")` package [REF]. 
+Instead of t-SNE, one could also use other dimension reduction techniques, such as PCA, diffusion maps, SIMLR [@Wang2017] or isomaps, some of which are conveniently available via the `cytof_dimReduction` function from the `r Biocpkg("cytofkit")` package [@Chen2016]. 
 To speed up the t-SNE analysis, one could use a multicore version of it available via the `r Githubpkg("RGLab/Rtsne.multicore")` package.
 An alternative algorithm, called `largeVis`, that does not require cell subsetting and scales well for projecting large amounts of cells is available as an R package `r Githubpkg("elbamos/largeVis")`.
 
@@ -858,8 +858,8 @@ In addition, merging can always follow an over-clustering step, but splitting of
 In our setup, over-clustering is also useful when the interest is in identifying the "natural" number of clusters present in the data. 
 Additionally to the t-SNE plots, one could investigate the delta area plot from the `r Biocpkg("ConsensusClusterPlus")` package and the hierarchical clustering dendrogram of the over-clustered subpopulations, as shown below.
 
-In our example, we are interested in detecting around 6 specific cell types, and we have performed `FlowSOM`-` clustering into 20 groups.
-After analyzing the heatmaps and t-SNE plots, we can clearly see that stratification of the data into 20 clusters may be too strong. 
+In our example, we are interested in detecting around 6 specific cell types, and we have performed `FlowSOM` clustering into 20 groups.
+After analyzing the heatmaps and t-SNE plots, we can clearly see that stratification of the data into 20 clusters may be too strong.
 Many clusters are placed very close to each other indicating that they could be merged together. The same can be deduced from the heatmaps; marker expression patterns for some of the clusters are very similar. 
 
 Cluster merging and annotating is somewhat manual, based partially on visual inspection of t-SNE plots and heatmaps and benefits from expert knowledge of the cell types.
@@ -884,8 +884,9 @@ The expert has annotated 8 cell populations: CD8 T-cells, CD4 T-cells, B-cells I
 
 
 ```{r cluster_merging1}
+library(gdata)
 cluster_merging1_filename <- "PBMC8_cluster_merging1.xlsx"
-download.file(paste0(url, cluster_merging1_filename), destfile = cluster_merging1_filename)
+download.file(file.path(url, cluster_merging1_filename), destfile = cluster_merging1_filename)
 cluster_merging1 <- read.xls(cluster_merging1_filename)
 cluster_merging1
 
@@ -912,10 +913,8 @@ One of the usefull representations of merging is a heatmap of median marker expr
 
 ```{r plot_clustering_heatmap1m_merging, fig.cap='Heatmap showing how the 20 metaclusters are merged.'}
 plot_clustering_heatmap_wrapper(expr = expr[, lineage_markers_ord], 
-                                expr01 = expr01[, lineage_markers_ord], 
-                                cell_clustering = cell_clustering1, 
-                                color_clusters = color_clusters, 
-                                cluster_merging = cluster_merging1)
+  expr01 = expr01[, lineage_markers_ord], cell_clustering = cell_clustering1, 
+  color_clusters = color_clusters, cluster_merging = cluster_merging1)
 
 ```
 
@@ -923,9 +922,8 @@ To get a final summary of the annotated cell types, one can plot a heatmap of me
 
 ```{r plot_clustering_heatmap1m, fig.cap='Heatmap of cell populations obtained from merging the 20 metaclusters.'}
 plot_clustering_heatmap_wrapper(expr = expr[, lineage_markers_ord], 
-                                expr01 = expr01[, lineage_markers_ord], 
-                                cell_clustering = cell_clustering1m, 
-                                color_clusters = color_clusters)
+  expr01 = expr01[, lineage_markers_ord], cell_clustering = cell_clustering1m, 
+  color_clusters = color_clusters)
 
 ```
 
@@ -974,7 +972,9 @@ ggplot(dr,  aes(x = tSNE1, y = tSNE2, color = cell_clustering2)) +
 
 
 ```{r plot_clustering_heatmap2, fig.cap = "Heatmap of the median marker intensities in 12 cell populations obtained from the metaclustering step."}
-plot_clustering_heatmap_wrapper(expr = expr[, lineage_markers_ord], expr01 = expr01[, lineage_markers_ord], cell_clustering = cell_clustering2, color_clusters = color_clusters)
+plot_clustering_heatmap_wrapper(expr = expr[, lineage_markers_ord], 
+  expr01 = expr01[, lineage_markers_ord], cell_clustering = cell_clustering2, 
+  color_clusters = color_clusters)
 
 ```
 
@@ -983,7 +983,8 @@ The merging is saved in the PBMC8_cluster_merging2.xlsx file.
 
 ```{r cluster_merging2}
 cluster_merging2_filename <- "PBMC8_cluster_merging2.xlsx"
-download.file(paste0(url, cluster_merging2_filename), destfile = cluster_merging2_filename)
+download.file(file.path(url, cluster_merging2_filename), 
+  destfile = cluster_merging2_filename)
 cluster_merging2 <- read.xls(cluster_merging2_filename)
 cluster_merging2
 
@@ -1007,12 +1008,16 @@ gg_tsne_cl2m
 
 ```{r plot_clustering_heatmap2_merging, fig.cap = "Heatmap of the median marker intensities in 12 cell populations obtained from the metaclustering step along with the annotation of cell populations."}
 
-plot_clustering_heatmap_wrapper(expr = expr[, lineage_markers_ord], expr01 = expr01[, lineage_markers_ord], cell_clustering = cell_clustering2, color_clusters = color_clusters, cluster_merging = cluster_merging2)
+plot_clustering_heatmap_wrapper(expr = expr[, lineage_markers_ord], 
+  expr01 = expr01[, lineage_markers_ord], cell_clustering = cell_clustering2, 
+  color_clusters = color_clusters, cluster_merging = cluster_merging2)
 ```
 
 
 ```{r plot_clustering_heatmap2m, fig.cap='Heatmap of cell populations obtained from merging the 12 metaclusters.'}
-plot_clustering_heatmap_wrapper(expr = expr[, lineage_markers_ord], expr01 = expr01[, lineage_markers_ord], cell_clustering = cell_clustering2m, color_clusters = color_clusters)
+plot_clustering_heatmap_wrapper(expr = expr[, lineage_markers_ord], 
+  expr01 = expr01[, lineage_markers_ord], cell_clustering = cell_clustering2m, 
+  color_clusters = color_clusters)
 
 ```
 
@@ -1048,7 +1053,9 @@ plot_grid(gg_tsne_cl2m, gg_tsne_cl3, labels = c('A', 'B'))
 
 
 ```{r plot_clustering_heatmap3, fig.cap = "Heatmap of the median marker intensities in 8 cell populations obtained from the metaclustering step."}
-plot_clustering_heatmap_wrapper(expr = expr[, lineage_markers_ord], expr01 = expr01[, lineage_markers_ord], cell_clustering = cell_clustering3, color_clusters = color_clusters)
+plot_clustering_heatmap_wrapper(expr = expr[, lineage_markers_ord], 
+  expr01 = expr01[, lineage_markers_ord], cell_clustering = cell_clustering3, 
+  color_clusters = color_clusters)
 
 ```
 
