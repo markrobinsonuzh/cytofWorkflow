@@ -77,35 +77,18 @@ knitr::opts_chunk$set(cache = 2, warning = FALSE, message = FALSE, cache.path = 
 
 # Abstract
 
-High dimensional (mass and flow) cytometry (HDCyto) experiments have become a method of choice for interrogating and characterizing cell populations at high throughput. 
-Here, we present a R-based pipeline for differential analyses of HDCyto data, largely based on Bioconductor packages.
-We computationally define cell populations using FlowSOM clustering and we also facilitate an optional but reproducible strategy for manual merging of algorithm-generated clusters.
-Our workflow offers different analysis paths, including association of cell type abundance with a phenotype, or changes in signaling markers within specific subpopulations or differential analyses of aggregated signals.
-Importantly, the differential analyses we show are based on regression frameworks where the HDCyto data is the response; thus, we are able to model arbitrary designs, such as those with batch effects, paired designs, etc.
-In particular, we apply generalized linear mixed models for analyses of cell population abundance or cell-population-specific analyses of signaling markers, allowing overdispersion in cells count or aggregated signal across samples to be appropriately modeled.
-To support the formal statistical analyses, we include various visualizations at every step of the analysis, including for quality control (e.g., multi-dimensional scaling  plots), for reporting of clustering results (dimensionality reduction, heatmaps with dendrograms) and for differential analyses (e.g., plots of aggregated signal).
+High dimensional (mass and flow) cytometry (HDCyto) experiments have become a method of choice for interrogating and characterizing cell populations at high throughput. Here, we present a R-based pipeline for differential analyses of HDCyto data, largely based on Bioconductor packages. We computationally define cell populations using FlowSOM clustering and facilitate an optional but reproducible strategy for manual merging of algorithm-generated clusters. Our workflow offers different analysis paths, including association of cell type abundance with a phenotype, or changes in signaling markers within specific subpopulations or differential analyses of aggregated signals. Importantly, the differential analyses we show are based on regression frameworks where the HDCyto data is the response; thus, we are able to model arbitrary experiments designs, such as those with batch effects, paired designs and so on. In particular, we apply generalized linear mixed models for analyses of cell population abundance or cell-population-specific analyses of signaling markers, allowing overdispersion in cells count or aggregated signal across samples to be appropriately modeled. To support the formal statistical analyses, we encourage exploratory data analysis at every step, including for quality control (e.g., multi-dimensional scaling  plots), for reporting of clustering results (dimensionality reduction, heatmaps with dendrograms) and for differential analyses (e.g., plots of aggregated signal).
 
 
 # Introduction
 
 <!-- Describe what CyTOF and Flow Cytometry are and what are the differences -->
 
-Flow cytometry and the more recently introduced CyTOF (cytometry by time-of-flight mass spectrometry or mass cytometry) are technologies that measure protein abundance on the surface or inside cells at high-throughput. 
-In flow cytometry, antibodies are labeled with fluorescent dyes. For each cell, the intensity of fluorescent parameters is measured using lasers and photodetectors. 
-CyTOF utilizes antibodies tagged with metal isotopes from the lanthanide series, which have favourable chemistry and do not occur in biological systems; abundances per cell are recorded with a time-of-flight mass spectrometer. 
-In either case, fluorescence intensities (flow cytometry) or ion counts (mass cytometry) are assumed to be proportional to the expression level of the antibody-targeted antigens of interest.
+Flow cytometry and the more recently introduced CyTOF (cytometry by time-of-flight mass spectrometry or mass cytometry) are technologies that measure protein abundance on the surface or inside cells at high-throughput.  In flow cytometry, antibodies are labeled with fluorescent dyes and fluorescence intensity is measured using lasers and photodetectors.  CyTOF utilizes antibodies tagged with metal isotopes from the lanthanide series, which have favourable chemistry and do not occur in biological systems; abundances per cell are recorded with a time-of-flight mass spectrometer. In either case, fluorescence intensities (flow cytometry) or ion counts (mass cytometry) are assumed to be proportional to the expression level of the antibody-targeted antigens of interest.
 
+Due to the differences in acquistion, further distinct characteristics should be noted. Conventional fluorophore-based flow cytometry is non-destructive and thus can be used to sort cells for further analysis.  However, because of the spectral overlap between fluorophores, *compensation* of the data needs to be performed [@Roederer2001], which also limits the number of parameters that can be measured at once. Thus, standard flow cytometry experiments measure 6-12 parameters with modern systems measuring up to 20 channels [@Mahnke2007], while new developments (e.g., BD FACSymphony) promise to increase this capacity towards 50. Moreover, flow cytometry offers the highest throughput with 10s of thousands of cells measured per second at relatively low operating costs per sample.
 
-Due to the differences in acquistion, further distinct characteristics should be noted.
-Conventional fluorophore-based flow cytometry is non-destructive and thus can be used to sort cells for further analysis. 
-However, because of the spectral overlap between fluorophores, *compensation* of the data needs to be performed [@Roederer2001], which also limits the number of parameters that can be measured at once. 
-Standard flow cytometry experiments measure 6-12 parameters where the most modern flow cytometers can measure up to 20 parameters [@Mahnke2007] and new developments (e.g., BD FACSymphony) might increase this capacity towards 50 markers.
-Moreover, flow cytometry offers the highest throughput with more than 10,000 cells measured per second at relatively low operating costs per sample.
-
-
-By using rare metal isotopes in CyTOF, cell autofluorescence is avoided and spectral overlap is drastically reduced although metal impurities need to be carefully considered.  Importantly, Leipold et al. commented that *minimal spillover does not equal no spillover* [@Leipold2015] and depending on the panel design, some considerations need to be made.
-Nonetheless, in CyTOF a greater number of parameters per cell can be detected, with current panels using around 40 parameters and with promise of up to 100 channels. 
-However, the throughput of CyTOF is lower, at the rate of hundreds of cells per second, and cells are destroyed during ionization.
+By using rare metal isotopes in CyTOF, cell autofluorescence is avoided and spectral overlap is drastically reduced.  However, the sensitivity of mass spectrometry results in the measurement of metal impurities and oxide formations, which need to be carefully considered in antibody panel design (e.g., through antibody concentrations and coupling of antibodies to neighbouring metals).  Leipold et al. recently commented that *minimal spillover does not equal no spillover* [@Leipold2015].  Nonetheless, CyTOF offers a high dimension of parameters measured per cell, with current panels using ~40 parameters with promise of up to 100.   Throughput of CyTOF is lower, at the rate of hundreds of cells per second and cells are destroyed during ionization.
 
 <!-- Application -->
 
