@@ -516,8 +516,12 @@ plot_clustering_heatmap_wrapper <- function(expr, expr01,
                                             cluster_merging = NULL){
   
   # Get the median expression
-  expr_median <- aggregate(expr, by = list(cell_clustering = cell_clustering), FUN = median)
-  expr01_median <- aggregate(expr01, by = list(cell_clustering = cell_clustering), FUN = median)
+  expr_median <- aggregate(expr, 
+                           by = list(cell_clustering = cell_clustering), 
+                           FUN = median)
+  expr01_median <- aggregate(expr01, 
+                             by = list(cell_clustering = cell_clustering), 
+                             FUN = median)
   
   # Get cluster frequencies
   clustering_table <- as.numeric(table(cell_clustering))
@@ -1086,7 +1090,7 @@ apply(adjp < 0.05, 2, table)
 ```
 
 
-We use a heatmap to report the differential cell populations.  Proportions are first scaled with the arcsine-square-root transformation (as an alternative to logit that does not return NAs when ratios are equal to zero or one). Then, Z-score normalization is applied to each population to better highlight the differences between compared conditions.  We created two wrapper functions: `normalization_wrapper` performs the normalization of submitted expression `expr` to mean 0 and standard deviation 1, and `plot_differential_heatmap_wrapper` generates a heatmap of submitted expression `expr_norm`, where samples are grouped by `condition`, indicated with a color bar on top of the plot. Additionally, labels of clusters contain the adjusted p-values in parenthesis.
+We use a heatmap to report the differential cell populations.  Proportions are first scaled with the arcsine-square-root transformation (as an alternative to logit that does not return NAs when ratios are equal to zero or one). Then, Z-score normalization is applied to each population to better highlight the relative differences between compared conditions.  We created two wrapper functions: `normalization_wrapper` performs the normalization of submitted expression `expr` to mean 0 and standard deviation 1, and `plot_differential_heatmap_wrapper` generates a heatmap of submitted expression `expr_norm`, where samples are grouped by `condition`, indicated with a color bar on top of the plot. Additionally, labels of clusters contain the adjusted p-values in parenthesis.
 
 ```{r normalization_wrapper}
 normalization_wrapper <- function(expr, th = 2.5){
@@ -1161,31 +1165,24 @@ plot_differential_heatmap_wrapper(expr_norm = asin_norm, sign_adjp = sign_adjp, 
 
 ## Differential analysis of marker expression stratified by cell population
 
-In the code chunk below, we calculate the median expression of the 14 signaling markers in each cluster and sample. These will be used as a dependent variable $Y_{ij}$ in the linear model (LM) and linear mixed model (LMM), for which we assume that the median marker expression follows a Gaussian distribution (on the already asinh-transformed scale).
+For this part of the analysis, we calculate the median expression of the 14 signaling markers in each cluster and sample. These will be used as a dependent variable $Y_{ij}$ in the linear model (LM) and linear mixed model (LMM), for which we assume that the median marker expression follows a Gaussian distribution (on the already asinh-transformed scale).
 The linear model is formulated as follows:
 
 $$Y_{ij} = \beta_0 + \beta_1 x_{ij} + \epsilon_{ij},$$
 where $\epsilon_{ij} \sim N(0, \sigma^2)$, and the mixed model includes a random interecept for each patient:
 
-$$Y_{ij} = \beta_0 + \beta_1 x_{ij} + \epsilon_{ij} + \gamma_{i},$$
+$$Y_{ij} = \beta_0 + \beta_1 x_{ij} + \gamma_{i} + \epsilon_{ij},$$
 where $\gamma_{i} \sim N(0, \sigma^2_\gamma)$.
 
-One drawback of summarizing the protein marker intensity with a median is that all the other characteristics of the distribution, such as bimodality, skewness and variance, are ignored. On the other hand, it results in a simple, easy to interpret approach, which in many cases is sufficient to detect interesting differences between conditions. 
+One drawback of summarizing the protein marker intensity with a median over cells is that all the other characteristics of the distribution, such as bimodality, skewness and variance, are ignored. On the other hand, it results in a simple, easy to interpret approach, which in many cases will be able to detect interesting changes. Another issue that arises from using a summary statistic is the level of uncertainty, which increases as the number of cells used to calculate it decreases.  In the statistical modeling, this problem could be partially handled by assigning observation weights (number of cells) to each wcluster and sample. However, since each cluster is tested separately, these weights do not account for the differences in size between clusters.
 
-Other issue that arises when using a summary statistic of a distribution is its uncertainty, which increases as the number of cells used to calculate it decreases.  In the linear model, this problem could be partially handled by assigning observation weights, which are proportional to the number of cells in a given cluster and sample. However, since each cluster is tested separately, these weights do not account for the differences in size between clusters.
-
-There might be instances of small cell populations for which no cells are observed in some samples or where the number of cells is very low. 
-For empty clusters, NAs are introduced because the median expression cannot be calculated, or it can be of high uncertainty when calculated on very few cells.
-One could eliminate samples with low counts, given there are enough replicates left where the cell counts are satisfactory, or clusters with such low abundant samples could be entirely skipped in the differential analysis.
-<!-- [Why a certain number? What is it based on?] -->
-In our example, we follow the latter approach and remove from the analysis clusters that have less than 5 cells in any of the samples. 
-
-We also remove cases where marker expression is equal to zero in all the samples, as it leads to an error during model fitting. 
+There might be instances of small cell populations for which no cells are observed in some samples or where the number of cells is very low.  For empty clusters, NAs are introduced because no median expression can be calculated; in the case of few cells, the median may be quite variable.  Thus, we apply a filter to remove samples that have fewer than 5 cells.  We also remove cases where marker expression is equal to zero in all the samples, as this leads to an error during model fitting. 
 
 
 ```{r diff_expr2_median_expression}
 expr_median_sample_cluster <- aggregate(expr[, functional_markers], 
-                                        by = list(sample_id = sample_ids, cluster = cell_clustering1m), 
+                                        by = list(sample_id = sample_ids, 
+                                                  cluster = cell_clustering1m), 
                                         FUN = median, drop = FALSE)
 expr_median_sample_cluster_melt <- melt(expr_median_sample_cluster, 
                                         id.vars = c("sample_id", "cluster"), 
@@ -1204,10 +1201,9 @@ expr_median_sample_cluster <- expr_median_sample_cluster[expr_median_sample_clus
 expr_median_sample_cluster <- expr_median_sample_cluster[rowSums(expr_median_sample_cluster[, md$sample_id]) > 0, ]
 ```
 
-It is very useful to plot the median expression of all the markers in each cluster for each sample colored by condition to get a rough image of how strong the differences might be. 
-We do that with the combination of boxplots and jittered points as for visualization of cluster abundances.
+It is helpful to plot the median expression of all the markers in each cluster for each sample colored by condition to get a rough image of how strong the differences might be.  We do this by combining boxplots and jitter.
 
-```{r diff_expr2_plot_median_expr, fig.width = 8, fig.cap = "Median expression of 14 signaling markers in the identified PBMC cell populations."}
+```{r diff_expr2_plot_median_expr, fig.width = 8, fig.height = 9, fig.cap = "Median expression of 14 signaling markers in the identified PBMC cell populations."}
 ggdf <- expr_median_sample_cluster_melt[expr_median_sample_cluster_melt$cluster %in% clusters_keep, ]
 ## Add info about samples
 mm <- match(ggdf$sample_id, md$sample_id)
@@ -1219,7 +1215,7 @@ ggplot(ggdf) +
                position = position_dodge(), alpha = 0.5, outlier.color = NA) +
   geom_point(aes(x = antigen, y = median_expression, color = condition), 
              alpha = 0.8, position = position_jitterdodge(), size = 0.5) +
-  facet_wrap(~ cluster, scales = "free_y") +
+  facet_wrap(~ cluster, scales = "free_y", ncol=2) +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
   scale_color_manual(values = color_conditions) +
@@ -1227,9 +1223,7 @@ ggplot(ggdf) +
 
 ```
 
-We have created a wrapper function `differential_expression_wrapper` that performs the differential analysis of marker expression. The user needs to specify a data frame `expr_median` with marker expression, where each column corresponds to a sample and each row to a given cluster and marker. One can choose between fitting a regular linear model `model = "lm"` or a linear mixed model `model = "lmer"`. 
-The `formula` parameter must be adjusted adequately to the model. 
-The wrapper function returns the adjusted p-values from each of the specified contrasts `K` for each cluster-marker. 
+We have created a wrapper function `differential_expression_wrapper` that performs the differential analysis of marker expression. The user needs to specify a data frame `expr_median` with marker expression, where each column corresponds to a sample and each row to a cluster/marker combination. One can choose between fitting a regular linear model `model = "lm"` or a linear mixed model `model = "lmer"`.  The `formula` parameter must be adjusted adequately to the model choice.  The wrapper function returns the adjusted p-values for each of the specified contrasts `K` for each cluster/marker combination. 
 
 
 ```{r diff_differential_expression_wrapper}
@@ -1265,8 +1259,7 @@ differential_expression_wrapper <- function(expr_median, md, model = "lmer", for
 ```
 
 
-To present how accounting for the within patient variability with the mixed model increases the sensitivity, we also fit a regular linear model. 
-The formula for the linear mixed model has a random intercept which corresponds to the patient ID.
+To present how accounting for the within patient variability with the mixed model increases the sensitivity, we also fit a regular linear model.  The linear mixed model has a random intercept for each patient.
 
 
 ```{r diff_expr2_formula}
@@ -1277,18 +1270,18 @@ formula_lmer <- y ~ condition + (1|patient_id)
 By accounting for the patient effect, we detect almost twice as many cases of differential signaling compared to the regular linear model.  
 
 ```{r diff_expr2_fit_model}
-adjp <- differential_expression_wrapper(expr_median = expr_median_sample_cluster, md = md, model = "lm", formula = formula_lm, K = K)
+adjp <- differential_expression_wrapper(expr_median = expr_median_sample_cluster, 
+                                        md = md, model = "lm", formula = formula_lm, K = K)
 apply(adjp < 0.05, 2, table)
 
-adjp <- differential_expression_wrapper(expr_median = expr_median_sample_cluster, md = md, model = "lmer", formula = formula_lmer, K = K)
+adjp <- differential_expression_wrapper(expr_median = expr_median_sample_cluster, 
+                                        md = md, model = "lmer", formula = formula_lmer, K = K)
 apply(adjp < 0.05, 2, table)
 
 ```
 
 
-We can report the significant results with a heatmap.
-Instead of plotting the absolute expression we display the normalized expression, which highlights the direction of marker changes.  
-Additionally, we order the cluster-marker instances by their significance and group them by cluster.
+To report the significant results, we use a heatmap.  Instead of plotting the absolute expression we display the normalized expression, which highlights the direction of marker changes.  Additionally, we order the cluster-marker instances by their significance and group them by cell type (cluster).
 
 ```{r diff_expr2_plot_heatmap_with_significant_markers, fig.height = 12, fig.cap="Normalized expression of signaling markers that are significantly differentially expressed between BCR/FcR-XL stimulated and unstimulated condition."}
 
@@ -1306,21 +1299,27 @@ plot_differential_heatmap_wrapper(expr_norm = expr_median_sample_cluster_norm, s
 ```
 
 
-
 ## DA of the overall marker expression
 
-This analysis is conducted in an analogous manner to that described above, with the difference that the median marker expression is aggregated from all the cells in a given sample, see the `expr_median_sample` object.
+The analysis of *overall* expression is analogous to the previous section, except that median marker expression is aggregated from all the cells in a given sample.
 
 
 ```{r diff_expr1_plot_median_expr, fig.cap="Median expression of 14 signaling markers calculated from all the cells in a given sample."}
-ggdf <- melt(data.frame(antigen = functional_markers, expr_median_sample[functional_markers, ]), id.vars = "antigen", value.name = "median_expression", variable.name = "sample_id")
+ggdf <- melt(data.frame(antigen = functional_markers, 
+                        expr_median_sample[functional_markers, ]), 
+             id.vars = "antigen", 
+             value.name = "median_expression", 
+             variable.name = "sample_id")
+
 ## Add condition info
 mm <- match(ggdf$sample_id, md$sample_id)
 ggdf$condition <- factor(md$condition[mm])
 
 ggplot(ggdf) +
-  geom_boxplot(aes(x = condition, y = median_expression, color = condition, fill = condition), position = position_dodge(), alpha = 0.5, outlier.color = NA) +
-  geom_point(aes(x = condition, y = median_expression, color = condition), alpha = 0.8, position = position_jitterdodge()) +
+  geom_boxplot(aes(x = condition, y = median_expression, color = condition, fill = condition), 
+               position = position_dodge(), alpha = 0.5, outlier.color = NA) +
+  geom_point(aes(x = condition, y = median_expression, color = condition), alpha = 0.8, 
+             position = position_jitterdodge()) +
   facet_wrap(~ antigen, scales = "free", nrow = 3) +
   theme_bw() +
   theme(axis.text.x = element_blank(), axis.ticks.x = element_blank()) +
@@ -1329,7 +1328,7 @@ ggplot(ggdf) +
 
 ```
 
-Similarly to the analysis above, we identify more markers being differentially expressed with the LMM, which accounts for the within patient variability.
+Similar to the analysis above, we identify more markers being differentially expressed with the LMM, which accounts for the within patient variability.
 
 ```{r diff_expr1_fit_model}
 ## Fit a linear model 
@@ -1359,27 +1358,20 @@ plot_differential_heatmap_wrapper(expr_norm = expr_median_sample_norm, sign_adjp
 
 # Discussion
 
-In this workflow, we have presented a pipeline for differential analyses of HDCyto datasets  that consists of a quality control step where aggregate characteristics of the samples are visualized (e.g., an MDS plot), allowing verification of the experimental design, detection of batch effects and outlying samples.  
-Next, cell population identification was carried out via clustering, forming the basis for subsequent differential analyses of cell population abundance, differential marker expression within a population or overall marker expression differences.
-The approaches to differential analyses proposed here are very general and thus able to model complex designs via design matrices, such as factorial experiments, paired experiments or adjustment for batch effects. 
-We have presented a range of visualizations that help in understanding the data and reporting the results of clustering and differential analyses.
-However, the wrapper functions presented in this workflow should be tailored according to the needs of the real data analysis.
+In this workflow, we have presented a pipeline for diverse differential analyses of HDCyto datasets.  First, we highlight quality control steps where aggregate characteristics of the samples are visualized (e.g., an MDS plot), allowing verification of the experimental design, detection of batch effects and outlying samples.  Next, cell population identification was carried out via clustering, forming the basis for subsequent differential analyses of cell population abundance, differential marker expression within a population or overall marker expression differences. The approaches to differential analyses proposed here are very general and thus able to model complex experimental designs via design matrices, such as factorial experiments, paired experiments or adjustment for batch effects.  We have presented a range of visualizations that help in understanding the data and reporting the results of clustering and differential analyses.  However, the wrapper functions presented in this workflow may need to  be tailored to the needs of a different experiment.
 
-Clustering is one of the most challenging steps in the workflow and its accuracy is highly important, since it directly impacts the downstream differential analyses.
-In particular, getting the right resolution of clusters is critical since there can be situations where a biologically meaningful cell population may be differentially enriched between conditions, but was combined with another cell population that behaves different. 
+Clustering is one of the most challenging steps in the workflow and its accuracy is critical to the downstream differential analyses.  In particular, getting the right resolution of clusters is crucial since there can be situations where a biologically meaningful cell population may be differentially enriched between conditions, but in an automatic clustering, was combined with another cell population that behaves differently. 
+
 <!-- [comment on neighboring cells]  -->
 
-The data analyzed in here was generated using sample barcoding before pooled antibody staining and mass cytometry. 
-Such a multiplexing strategy reduces the intersample variability, as all the samples are exposed to the uniform antibody concentration in tubes and measured with one mass cytometry run [@Zunder2015]. 
-Thus, technical biases that may affect marker expression should be the same in all samples, and they should cancel out in comparisons between samples.
+<!--The data analyzed here was generated using sample barcoding before pooled antibody staining and mass cytometry. Such a multiplexing strategy reduces the intersample variability, as all the samples are exposed to the uniform antibody concentration in tubes and measured with one mass cytometry run [@Zunder2015].  Thus, technical biases that may affect marker expression should be the same in all samples, and they should cancel out in comparisons between samples.
 
 Certainly, a challenge arises when combining data from different instrument acquisitions. 
 The observed marked expression can be affected by the varying efficiency of antibody binding in each batch and by the ion detection sensitivity after the machine calibration resulting in strong shifts and varying dynamic ranges of marker expression between the run batches. 
 Clustering run batches altogether may result in inaccurate cell assignment to different populations and might lead to artifacts in the downstream analysis.
 
-Normalization techniques are needed that can adjust data from different run batches and make it comparable prior to pooled clustering and other types of analysis. 
-There are some options available, such as normalization using bead standards [@Finck2013], equalization of the dynamic range between batches for each marker or usage of warping functions which eliminate non-linear distortions, see `r Githubpkg("MarioniLab/cydar")` vignette. 
-However, a comprehensive evaluation of these approaches and their effect on subsequent analyses is still missing. 
+Normalization techniques are needed that can adjust data from different run batches and make it comparable prior to pooled clustering and other types of analysis. -->
+There are some options available, such as normalization using bead standards [@Finck2013], equalization of the dynamic range between batches for each marker or usage of warping functions that eliminate non-linear distortions, see `r Githubpkg("MarioniLab/cydar")` vignette. However, a comprehensive evaluation of these approaches and their effect on subsequent analyses is still missing. 
 
 Alternalively, one could consider batch-wise clustering of samples. 
 On the other hand, to be able to use those results, one still needs to map cell populations across batches. 
@@ -1409,8 +1401,7 @@ Cluster annotation remains a manual step in many other approaches as well.
 However, in `Citrus` and `CellCnn` it takes place at the end of the analysis. 
 Recently, a tool was proposed for consistent characterization of cell subsets using marker enrichment modeling (MEM) [@Diggins2017].
 
-To keep the analysis of this workflow reproducible, one needs to define a random seed before running `r Biocpkg("FlowSOM")` and t-SNE. 
-It is especially important in the clustering step, where the order of clusters may change with different seeds, and the cluster merging may not be valid anymore. 
+To keep the analysis of this workflow reproducible, one needs to define a random seed before running `r Biocpkg("FlowSOM")` and t-SNE.  It is especially important in the clustering step, where the order of clusters may change with different seeds, and the cluster merging may not be valid anymore. 
 
 
 # Workflow availability
@@ -1421,10 +1412,7 @@ The corresponding manuscript is available on the F1000 website [LINK].
 # Author contributions
 
 [TODO!]
-MN and MDR designed and ran analyses.  
-MN drafted the manuscript with input from MDR. 
-CK provided the biological perspective at all steps of the analyses and performed the cluster merging. LMW contributed code and ideas for the analyses.  
-All authors read and approved the final manuscript and have agreed to the content.
+MN and MDR designed and ran analyses.  MN drafted the manuscript with input from MDR.  CK provided the biological perspective at all steps of the analyses and performed the cluster merging. LMW contributed code and ideas for the analyses.  All authors read and approved the final manuscript and have agreed to the content.
 <!-- [Suggestion] -->
 <!-- M.D.R., M.N. and L.M.W. developed and wrote the algorithm, analyzed data and wrote the manuscript -->
 <!-- C.K., and S.G. performed experiments, analyzed data and gave feedback on clinical application. -->
@@ -1443,7 +1431,7 @@ MN acknowledges the funding from a Swiss Institute of Bioinformatics (SIB) Fello
 # Acknowledgments
 
 [TODO!]
-The authors wish to thank Felix Hartmann for code snippets and discussions as well as members of the Robinson lab for helpful discussions.
+The authors wish to thank members of the Robinson and XXX groups for helpful discussions.
 
 # Session Information
 
