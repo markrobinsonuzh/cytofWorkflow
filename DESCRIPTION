@@ -1,6 +1,6 @@
 Package: cytofWorkflow
 Title: Dummy Package
-Version: 0.0.4
+Version: 0.0.5
 Authors@R: person("Malgorzata", "Nowicka", email = "gosia.nowicka@uzh.ch", role = c("aut", "cre"))
 Description: Dummy Package
 Depends: R (>= 3.3.0)

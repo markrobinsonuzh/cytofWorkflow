@@ -13,10 +13,15 @@ author:
   affiliation:
   - *IMLS
   - *SIB
-- name: Lukas M. Weber
-  affiliation:
-  - *IMLS
-  - *SIB
+- name: Felix J. Hartmann
+  affiliation: 
+  - *IEI
+- name: Burkhard Becher
+  affiliation: 
+  - *IEI
+- name: Mitch P. Levesque
+  affiliation: 
+  - &DERM Department of Dermatology, University Hospital Zurich, CH-8091 Zurich, Switzerland
 - name: Mark D. Robinson
   affiliation:
   - *IMLS
@@ -43,6 +48,7 @@ documentclass: extarticle
 fontsize: 10pt
 papersize: a4
 bibliography: bibliography.bib
+#output: word_document
 output: 
   BiocStyle::html_document:
     fig_caption: true
@@ -192,7 +198,6 @@ fcs_raw <- read.flowSet(md$file_name, transformation = FALSE,
                         truncate_max_range = FALSE)
 fcs_raw
 ```
-
 
 In our example, information about the panel is also available in a file called PBMC8_panel.xlsx and can be downloaded from the [Robinson Lab server](http://imlspenticton.uzh.ch/robinson_lab/cytofWorkflow) and saved into a variable called `panel`.  It contains columns for `Isotope` and `Metal` that define the atomic mass number and the symbol of the chemical element conjugated to the antibody, respectively and `Antigen`, which specifies the protein marker that was targeted; two additional columns specify whether a channel belongs to the lineage or surface type of marker.
 
@@ -1364,45 +1369,27 @@ Clustering is one of the most challenging steps in the workflow and its accuracy
 
 <!-- [comment on neighboring cells]  -->
 
-<!--The data analyzed here was generated using sample barcoding before pooled antibody staining and mass cytometry. Such a multiplexing strategy reduces the intersample variability, as all the samples are exposed to the uniform antibody concentration in tubes and measured with one mass cytometry run [@Zunder2015].  Thus, technical biases that may affect marker expression should be the same in all samples, and they should cancel out in comparisons between samples.
+The data analyzed here was generated using sample barcoding; this strategy reduces intersample variability, since all the samples are exposed to the same antibody cocktail and measured in a single acquisition [@Zunder2015].  Thus, the range of marker expression for each channel should, in principle, be within a similar range across samples.  Certainly, additional challenges may arise when combining data from different instrument acquisitions and additional preprocessing treatments may need to be applied.  Despite adjustments through bead-based normalization [@Finck2013], the observed marked expression may be affected by the varying efficiency of antibody binding in each batch and by the ion detection sensitivity after machine calibration.  Beyond normalization, other strategies have been proposed, such as equalizing the dynamic range between batches for each marker or the use of warping functions to eliminate non-linear distortions (see `r Githubpkg("MarioniLab/cydar")` vignette). However, a comprehensive evaluation of these approaches and their effect on downstream analyses is still missing.  Overall, we expect that as a general rule, including batch parameters (or other covariates) in the linear modeling largely mitigates the problem.
 
-Certainly, a challenge arises when combining data from different instrument acquisitions. 
-The observed marked expression can be affected by the varying efficiency of antibody binding in each batch and by the ion detection sensitivity after the machine calibration resulting in strong shifts and varying dynamic ranges of marker expression between the run batches. 
+<!--
+**MR: still unsure how much we should say about this, beyond that above**
 Clustering run batches altogether may result in inaccurate cell assignment to different populations and might lead to artifacts in the downstream analysis.
 
-Normalization techniques are needed that can adjust data from different run batches and make it comparable prior to pooled clustering and other types of analysis. -->
-There are some options available, such as normalization using bead standards [@Finck2013], equalization of the dynamic range between batches for each marker or usage of warping functions that eliminate non-linear distortions, see `r Githubpkg("MarioniLab/cydar")` vignette. However, a comprehensive evaluation of these approaches and their effect on subsequent analyses is still missing. 
-
-Alternalively, one could consider batch-wise clustering of samples. 
+Alternatively, one could consider batch-wise clustering of samples. 
 On the other hand, to be able to use those results, one still needs to map cell populations across batches. 
-The mapping could be done manually, or some automated approaches developped for flow cytometry exist [@Pyne2009].
-In addition, including the batch information into the downstream statistical models, assuming a reasonably balanced design (all experimental condtions represented in each batch), may largely mitigate these problems.
+The mapping could be done manually, or some automated approaches developped for flow cytometry exist [@Pyne2009].-->
 
-There are a variety of computational approaches available to the user.  
-We have mentioned `Citrus` and `CellCnn`, which are both machine-learning approaches that turn the models, having the phenotype of interest as the response variable.  
-Neither of these approaches are directly able to account for batch effects or complicated designs.  
-However, they may have advantages in the search for rare distinguishing populations.
+We presented a classical statistical approach where preprocessing of the HDCyto data leads to tables of summaries (e.g., cell counts) or aggregrated measurements (e.g., cluster-specific signal) for each samples, which become the input to statistical model.  Of course, there are a variety of alternative computational approaches available to the user.  We have mentioned `Citrus` and `CellCnn`, which are both machine-learning approaches that fit a reverse model to ours (i.e.,  phenotype of interest as the response variable).  Neither of these approaches are directly able to account for batch effects or complicated designs.  However, they may have advantages in the search for rare distinguishing populations, which could be used together with our framework for formal statistical testing.
 
-We have shown how over-clustering is convenient for detecting meaningful cell populations. 
-However, high resolution of clustering complicates manual cluster merging, since profiles of some of the clusters may not represent the canonical cell populations when looking only at the heatmap of median marker expression in each cluster. 
-It is helpful, while cluster merging, to combine the information from various visualizations, such as dendrograms, t-SNE maps or other dimension reduction techniques
+We have shown that some level of over-clustering is convenient for detecting meaningful cell populations, with the background that automatic detection of the number of natural clusters is difficult [@Weber2016].  However, there are tradeoffs between the resolution of clustering and the labor involved in aggregating them to biologically meaningful clusters.  Overall, we take an interactive algorithm-guided approach together with subject-area experts to arrive at sensible cell populations.  In particular, we rely on various visualizations, such as dendrograms, t-SNE maps or other dimension reduction techniques to guide the process.  However, alternative strategies can be combined with the statistical inference we present, such as over-clustering combined with data-driven aggregation.
 
-One of the main goals of this workflow was to highlight a model-based approach that is able to handle complex experimental designs. 
-Using the regression framework allows also to flexibly test situations well beyond two-group  differences.  
-Many alternatives exist for the two group comparisons, such as the nonparametric Mann-Whitney-Wilcoxon test [@Hartmann2016], which makes no assumptions about normality of the data, or the Student's t-test [@Pejoski4814] and its variations, such as the paired t-test.
+One of the main goals of this workflow was to highlight how a model-based approach that is able to handle complex experimental designs.  This becomes important in many experimental situations where covariates (e.g., age, gender, batch) may affect the observed HDCyto data.  Thus, the classical regression framework allows also to flexibly test situations well beyond two-groupdifferences.  Of course, alternatives exist for two group comparisons, such as the nonparametric Mann-Whitney-Wilcoxon test [@Hartmann2016], which makes no assumptions about normality of the data, or the Student's t-test [@Pejoski4814] and its variations, such as the paired t-test.  
 
-However, all of these approaches, including the LM, LMM and GLMM, may perform poorly for extremely small samples.  
-Solutions similar to those widely accepted in transcriptomics that share information over variance parameters [@Robinson2007; @Love2014; @Ritchie2015], would be needed. 
-An example of such an approach is `r Githubpkg("MarioniLab/cydar")`, which performs the differential abundance analysis (on hypersphere counts) using `r Biocpkg("edgeR")` [@McCarthy2012].
+We note that the the LM, LMM and GLMM, may perform poorly for extremely small samples.  Solutions similar to those widely accepted in transcriptomics that share information over variance parameters [@Robinson2007; @Love2014; @Ritchie2015] could be leveraged.  An example of such an approach is `r Githubpkg("MarioniLab/cydar")`, which performs the differential abundance analysis (on hypersphere counts) using the generalized linear modeling capabilities of `r Biocpkg("edgeR")` [@McCarthy2012].
 
-The approach presented in this workflow is not fully automated due to the cluster merging and annotating steps.  
-In general, our philosophy is that fully automated analyses are to be avoided, but rather a battery of diagnostic checks can be designed, as we have promoted here. 
-Cluster annotation remains a manual step in many other approaches as well. 
-However, in `Citrus` and `CellCnn` it takes place at the end of the analysis. 
-Recently, a tool was proposed for consistent characterization of cell subsets using marker enrichment modeling (MEM) [@Diggins2017].
+As noted, the approach presented in this workflow is not fully automated due to the cluster merging and annotating as well as extensive exploratory data analysis steps.  In general, our philosophy is that fully automated analyses are to be avoided, but rather a battery of diagnostic checks can be designed, as we have promoted here.  Cluster annotation remains a manual step in many other approaches as well.  Recently, a tool was proposed for consistent characterization of cell subsets using marker enrichment modeling (MEM) [@Diggins2017].
 
-To keep the analysis of this workflow reproducible, one needs to define a random seed before running `r Biocpkg("FlowSOM")` and t-SNE.  It is especially important in the clustering step, where the order of clusters may change with different seeds, and the cluster merging may not be valid anymore. 
-
+To keep the analysis of this workflow reproducible, one needs to define a random seed before running `r Biocpkg("FlowSOM")` and t-SNE.  It is especially important in the clustering step, where the order of clusters may change with different seeds; the cluster merging needs to be match to the see used.
 
 # Workflow availability
 
@@ -1412,12 +1399,7 @@ The corresponding manuscript is available on the F1000 website [LINK].
 # Author contributions
 
 [TODO!]
-MN and MDR designed and ran analyses.  MN drafted the manuscript with input from MDR.  CK provided the biological perspective at all steps of the analyses and performed the cluster merging. LMW contributed code and ideas for the analyses.  All authors read and approved the final manuscript and have agreed to the content.
-<!-- [Suggestion] -->
-<!-- M.D.R., M.N. and L.M.W. developed and wrote the algorithm, analyzed data and wrote the manuscript -->
-<!-- C.K., and S.G. performed experiments, analyzed data and gave feedback on clinical application. -->
-<!-- S.S., R.D. and M.P.L. provided and characterized clinical samples. -->
-<!-- B.B. gave feedback on the manuscript and the bioinformatics. -->
+MN and MDR designed and ran analyses.  MN drafted the manuscript with input from MDR.  CK and SG performed experiments, analyzed data and gave feedback on clinical applications. CK performed the cluster merging. FJH and LMW contributed code and ideas for the analyses. MPL interpreted data and provided clinical perspective.  BB gave feedback on the manuscript and the bioinformatics. All authors read and approved the final manuscript and have agreed to the content.
 
 # Competing interests
 
