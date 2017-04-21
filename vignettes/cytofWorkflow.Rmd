@@ -16,9 +16,12 @@ author:
 - name: Felix J. Hartmann
   affiliation: 
   - *IEI
-- name: Burkhard Becher
+- name: Carsten Krieg
   affiliation: 
-  - *IEI
+  - &IEI Institute of Experimental Immunology, University of Zurich, 8057 Zurich, Switzerland
+- name: Silvia Guglietta
+  affiliation: 
+  - &EIO Department of Experimental Oncology, European Institute of Oncology, Via Adamello 16, I-20139 Milan, Italy
 - name: Mitch P. Levesque
   affiliation: 
   - &DERM Department of Dermatology, University Hospital Zurich, CH-8091 Zurich, Switzerland
@@ -63,6 +66,7 @@ vignette: >
 
 <!-- rmarkdown::render('cytofWorkflow.Rmd') -->
 <!-- rmarkdown::render('cytofWorkflow.Rmd', clean=FALSE) -->
+<!-- system("pandoc -o cytofWorkflow.knit.docx cytofWorkflow.knit.md") -->
 
 <!-- knitr::purl('cytofWorkflow.Rmd') -->
 
