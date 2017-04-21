@@ -62,6 +62,7 @@ vignette: >
 <!-- To render this document: -->
 
 <!-- rmarkdown::render('cytofWorkflow.Rmd') -->
+<!-- rmarkdown::render('cytofWorkflow.Rmd', clean=FALSE) -->
 
 <!-- knitr::purl('cytofWorkflow.Rmd') -->
 
@@ -170,7 +171,6 @@ metadata_filename <- "PBMC8_metadata.xlsx"
 download.file(file.path(url, metadata_filename), 
               destfile = metadata_filename)
 md <- read_excel(metadata_filename)
-rownames(md) <- md$sample_id
 
 ## Make sure condition variables are factors with the right levels
 md$condition <- factor(md$condition, levels = c("Ref", "BCRXL"))
@@ -192,7 +192,14 @@ unzip(fcs_filename)
 
 To load the content of the .fcs files into R, we use the `r Biocpkg("flowCore")` package and read in all files into a `flowSet` object, which is a general container for HDCyto data.  Importantly, `read.flowSet` and the  `read.FCS` functions, by default, may transform the marker intensities and remove cells with extreme positive values.  We keep these options off to be sure that we control the exact preprocessing steps.
 
-```{r load_fcs}
+```{r load_fcs, include=FALSE}
+library(flowCore)
+fcs_raw <- read.flowSet(md$file_name, transformation = FALSE, 
+                        truncate_max_range = FALSE)
+fcs_raw
+```
+
+```{r load_fcs2, eval=FALSE}
 library(flowCore)
 fcs_raw <- read.flowSet(md$file_name, transformation = FALSE, 
                         truncate_max_range = FALSE)
@@ -1154,7 +1161,7 @@ asin <- as.data.frame.matrix(asin_table)
 sign_clusters <- names(which(sort(adjp[, "adjp_BCRXLvsRef"]) < FDR_cutoff))
 
 ## Get the adjusted p-values
-sign_adjp <- adjp[sign_clusters , "adjp_BCRXLvsRef"]
+sign_adjp <- adjp[sign_clusters , "adjp_BCRXLvsRef", drop=FALSE]
 
 ## Keep samples for condition A and normalize to mean = 0 and sd = 1
 asin_norm <- normalization_wrapper(asin[sign_clusters, ])
@@ -1163,7 +1170,11 @@ asin_norm <- normalization_wrapper(asin[sign_clusters, ])
 
 ```{r diff_freqs_plot_heatmap_with_significant_clusters, fig.height = 2, fig.cap="Normalized proportions of PBMC cell populations that are significantly differentially abundant between BCR/FcR-XL stimulated and unstimulated condition."}
 
-plot_differential_heatmap_wrapper(expr_norm = asin_norm, sign_adjp = sign_adjp, condition = md[colnames(asin_norm), "condition"], color_conditions = color_conditions)
+mm <- match(colnames(asin_norm), md$sample_id)
+plot_differential_heatmap_wrapper(expr_norm = asin_norm, 
+                                  sign_adjp = sign_adjp, 
+                                  condition = md$condition[mm],
+                                  color_conditions = color_conditions)
 
 ```
 
@@ -1292,14 +1303,22 @@ To report the significant results, we use a heatmap.  Instead of plotting the ab
 
 ## Keep the significant markers, sort them by significance and group by cluster
 sign_clusters_markers <- names(which(adjp[, "adjp_BCRXLvsRef"] < FDR_cutoff))
-oo <- order(expr_median_sample_cluster[sign_clusters_markers, "cluster"], adjp[sign_clusters_markers, "adjp_BCRXLvsRef"])
+oo <- order(expr_median_sample_cluster[sign_clusters_markers, "cluster"], 
+            adjp[sign_clusters_markers, "adjp_BCRXLvsRef"])
 sign_clusters_markers <- sign_clusters_markers[oo]
+
 ## Get the significant adjusted p-values
 sign_adjp <- adjp[sign_clusters_markers , "adjp_BCRXLvsRef"]
-## Normalize expression to mean = 0 and sd = 1
-expr_median_sample_cluster_norm <- normalization_wrapper(expr_median_sample_cluster[sign_clusters_markers, md$sample_id])
 
-plot_differential_heatmap_wrapper(expr_norm = expr_median_sample_cluster_norm, sign_adjp = sign_adjp, condition = md[colnames(expr_median_sample_cluster_norm), "condition"], color_conditions = color_conditions)
+## Normalize expression to mean = 0 and sd = 1
+expr_median_sample_cluster_norm <- normalization_wrapper(expr_median_sample_cluster[sign_clusters_markers,
+                                                                                    md$sample_id])
+
+mm <- match(colnames(expr_median_sample_cluster_norm), md$sample_id)
+plot_differential_heatmap_wrapper(expr_norm = expr_median_sample_cluster_norm, 
+                                  sign_adjp = sign_adjp, 
+                                  condition = md$condition[mm],
+                                  color_conditions = color_conditions)
 
 ```
 
@@ -1310,9 +1329,11 @@ The analysis of *overall* expression is analogous to the previous section, excep
 
 
 ```{r diff_expr1_plot_median_expr, fig.cap="Median expression of 14 signaling markers calculated from all the cells in a given sample."}
-ggdf <- melt(data.frame(antigen = functional_markers, 
-                        expr_median_sample[functional_markers, ]), 
-             id.vars = "antigen", 
+ggdf <- data.frame(t(expr_median_sample[,functional_markers]))
+colnames(ggdf) <- expr_median_sample$sample_id
+ggdf$antigen <- functional_markers
+
+ggdf <- melt(ggdf, id.vars = "antigen", 
              value.name = "median_expression", 
              variable.name = "sample_id")
 
