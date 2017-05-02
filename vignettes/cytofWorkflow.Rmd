@@ -16,12 +16,12 @@ author:
 - name: Felix J. Hartmann
   affiliation: 
   - *IEI
-- name: Carsten Krieg
-  affiliation: 
-  - &IEI Institute of Experimental Immunology, University of Zurich, 8057 Zurich, Switzerland
 - name: Silvia Guglietta
   affiliation: 
   - &EIO Department of Experimental Oncology, European Institute of Oncology, Via Adamello 16, I-20139 Milan, Italy
+- name: Burkhard Becher
+  affiliation: 
+  - &IEI Institute of Experimental Immunology, University of Zurich, 8057 Zurich, Switzerland
 - name: Mitch P. Levesque
   affiliation: 
   - &DERM Department of Dermatology, University Hospital Zurich, CH-8091 Zurich, Switzerland
