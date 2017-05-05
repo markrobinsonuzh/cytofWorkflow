@@ -216,8 +216,7 @@ In our example, information about the panel is also available in a file called P
 The isotope, metal and antigen information that the instrument receives is also stored in the `flowFrame` (container for one sample) or `flowSet` (container for multiple samples) objects.  You can type `fcs_raw[[1]]` to see the first `flowFrame`, which contains a table with columns `name` and `desc`.  Their content can be accessed with functions `pData(parameters())`, which is identical for all the `flowFrame` objects in the `flowSet`.  The variable `name` corresponds to the column names in the `flowSet` object, you can type in R `colnames(fcs_raw)`.
 
 One should make sure that the elements from `panel` can be matched to their corresponding entries in the `flowSet` object to make the analysis less prone to subsetting mistakes. Here, for example, the entries in `panel$Antigen` have their exact equivalents in the `desc` columns of the `flowFrame` objects. 
-[NEW: In the following analysis, often we will use marker IDs as column names in the tables containing expression values. During object conversion from one type to another, for example, from matrix to data frame, characters, such as dashes, in dimension names are, by default, replaced with dots. This may be problematic, as the new names can not be matched. To avoid this problem, we replace all the dashes with underscores.]
-We define two variables that indicate the lineage and functional markers.
+In the following analysis, we will often use marker IDs as column names in the tables containing expression values. As a cautionary note, object conversion from one type to another (e.g., creation of data.frame from a matrix), some characters (e.g., dashes) in the dimension names are replaced with dots and this may cause problems in matching.  To avoid this problem, we replace all the dashes with underscores.  Also, we define two variables that indicate the lineage and functional markers.
 
 
 ```{r load_panel}
@@ -1015,8 +1014,7 @@ ggplot(ggdf, aes(x = sample_id, y = proportion, fill = cluster)) +
 
 ```
 
-It may be quite hard to see the differences in the cluster abundances in the plot above, especially for clusters with very low frequency.  And, since boxplots cannot represent multimodal distributions, we show boxplots with jittered points of the sample-level cluster proportions overlaid.  The y-axes are scaled to the range of data plotted for each cluster to better visualize the differences in frequency of lower abundance clusters.
-[NEW: For this experiment, it may be interesting to additionally depict the patient information. We do it by plotting a different point shape for each patient. Indeed, we can see that often the direction of abundance changes between the two conditions is concordant between the patients.]
+It may be quite hard to see the differences in the cluster abundances in the plot above, especially for clusters with very low frequency.  And, since boxplots cannot represent multimodal distributions, we show boxplots with jittered points of the sample-level cluster proportions overlaid.  The y-axes are scaled to the range of data plotted for each cluster to better visualize the differences in frequency of lower abundance clusters. For this experiment, it may be interesting to additionally depict the patient information. We do this by plotting a different point shape for each patient. Indeed, we can see that often the direction of abundance changes between the two conditions is concordant between the patients.
 
 
 ```{r diff_freqs_plot_props_boxplot, fig.width = 8, fig.height = 4, fig.cap="Relative abundance of PBMC populations in each sample plotted using boxplots."}
