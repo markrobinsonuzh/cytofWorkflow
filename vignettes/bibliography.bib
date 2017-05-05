@@ -1,3 +1,41 @@
+@article{Angerer2016,
+abstract = {Summary: Diffusion maps are a spectral method for non-linear dimension reduction and have recently been adapted for the visualization of single-cell expression data. Here we present destiny, an efficient R implementation of the diffusion map algorithm. Our package includes a single-cell specific noise model allowing for missing and censored values. In contrast to previous implementations, we further present an efficient nearest-neighbour approximation that allows for the processing of hundreds of thousands of cells and a functionality for projecting new data on existing diffusion maps. We exemplarily apply destiny to a recent time-resolved mass cytometry dataset of cellular reprogramming.Availability and implementation: destiny is an open-source R/Bioconductor package “bioconductor.org/packages/destiny” also available at www.helmholtz-muenchen.de/icb/destiny. A detailed vignette describing functions and workflows is provided with the package.Contact: carsten.marr@helmholtz-muenchen.de or f.buettner@helmholtz-muenchen.deSupplementary information: Supplementary data are available at Bioinformatics online.},
+annote = {10.1093/bioinformatics/btv715},
+author = {Angerer, Philipp and Haghverdi, Laleh and B{\"{u}}ttner, Maren and Theis, Fabian J and Marr, Carsten and Buettner, Florian},
+doi = {10.1093/bioinformatics/btv715},
+file = {:Users/gosia/Documents/Mendeley Desktop/Angerer et al/Angerer et al. - 2016 - destiny diffusion maps for large-scale single-cell data in R.pdf:pdf;:Users/gosia/Documents/Mendeley Desktop/Angerer et al/Angerer et al. - 2016 - destiny diffusion maps for large-scale single-cell data in R(2).pdf:pdf},
+journal = {Bioinformatics},
+keywords = {destiny},
+mendeley-groups = {Single cell/Diffusion maps,Single cell,.cytofWorkflow},
+mendeley-tags = {destiny},
+month = {apr},
+number = {8},
+pages = {1241--1243},
+title = {{destiny: diffusion maps for large-scale single-cell data in R}},
+url = {http://bioinformatics.oxfordjournals.org/content/32/8/1241.abstract},
+volume = {32},
+year = {2016}
+}
+@article{Haghverdi2015,
+abstract = {MOTIVATION: Single-cell technologies have recently gained popularity in cellular differentiation studies regarding their ability to resolve potential heterogeneities in cell populations. Analysing such high-dimensional single-cell data has its own statistical and computational challenges. Popular multivariate approaches are based on data normalisation, followed by dimension reduction and clustering to identify subgroups. However, in the case of cellular differentiation, we would not expect clear clusters to be present but instead expect the cells to follow continuous branching lineages. RESULTS: Here we propose the use of diffusion maps to deal with the problem of defining differentiation trajectories. We adapt this method to single-cell data by adequate choice of kernel width and inclusion of uncertainties or missing measurement values, which enables the establishment of a pseudo-temporal ordering of single cells in a high-dimensional gene expression space. We expect this output to reflect cell differentiation trajectories, where the data originates from intrinsic diffusion-like dynamics. Starting from a pluripotent stage, cells move smoothly within the transcriptional landscape towards more differentiated states with some stochasticity along their path. We demonstrate the robustness of our method with respect to extrinsic noise (e.g. measurement noise) and sampling density heterogeneities on simulated toy data as well as two single-cell quantitative polymerase chain reaction (qPCR) data sets (i.e. mouse haematopoietic stem cells and mouse embryonic stem cells) and an RNA-Seq data of human pre-implantation embryos. We show that diffusion maps perform considerably better than Principal Component Analysis (PCA) and are advantageous over other techniques for non-linear dimension reduction such as t-distributed Stochastic Neighbour Embedding (t-SNE) for preserving the global structures and pseudotemporal ordering of cells. AVAILABILITY: The Matlab implementation of diffusion maps for single-cell data is available at https://www.helmholtz-muenchen.de/icb/single-cell-diffusion-map. CONTACT: fbuettner.phys@gmail.com, fabian.theis@helmholtz-muenchen.de.},
+author = {Haghverdi, L. and Buettner, F. and Theis, F. J.},
+doi = {10.1093/bioinformatics/btv325},
+file = {:Users/gosia/Documents/Mendeley Desktop/Haghverdi, Buettner, Theis/Haghverdi, Buettner, Theis - 2015 - Diffusion maps for high-dimensional single-cell analysis of differentiation data.pdf:pdf},
+issn = {1367-4803},
+journal = {Bioinformatics},
+keywords = {destiny},
+mendeley-groups = {Single cell/Diffusion maps,.cytofWorkflow},
+mendeley-tags = {destiny},
+number = {May},
+pages = {2989--2998},
+pmid = {26002886},
+title = {{Diffusion maps for high-dimensional single-cell analysis of differentiation data}},
+url = {http://www.ncbi.nlm.nih.gov/pubmed/26002886},
+volume = {31},
+year = {2015}
+}
+
+
 @article{Aghaeepour2013,
 annote = {10.1038/nmeth.2365},
 author = {Aghaeepour, Nima and Finak, Greg and Hoos, Holger and Mosmann, Tim R and Brinkman, Ryan and Gottardo, Raphael and Scheuermann, Richard H},
@@ -551,4 +589,17 @@ title = {{Palladium-based mass tag cell barcoding with a doublet-filtering schem
 url = {http://www.nature.com/doifinder/10.1038/nprot.2015.020},
 volume = {10},
 year = {2015}
+}
+@article{Li116566,
+abstract = {Mass cytometry (CyTOF) has greatly expanded the capability of cytometry. It is now easy to generate multiple CyTOF samples in a single study, with each sample containing single-cell measurement on 50 markers for more than hundreds of thousands of cells. Current methods do not adequately address the issues concerning combining multiple samples for subpopulation discovery, and these issues can be quickly and dramatically amplified with increasing number of samples. To overcome this limitation, we developed Partition-Assisted Clustering and Multiple Alignments of Networks (PAC-MAN) for the fast automatic identification of cell populations in CyTOF data closely matching that of expert manual-discovery, and for alignments between subpopulations across samples to define dataset-level cellular states. PAC-MAN is computationally efficient, allowing the management of very large CyTOF datasets, which are increasingly common in clinical studies and cancer studies that monitor various tissue samples for each subject.},
+author = {Li, Ye Henry and Li, Dangna and Samusik, Nikolay and Wang, Xiaowei and Guan, Leying and Nolan, Garry P and Wong, Wing Hung},
+doi = {10.1101/116566},
+journal = {bioRxiv},
+keywords = {PAC-MAN},
+mendeley-groups = {Single cell/Clustering,.cytofWorkflow},
+mendeley-tags = {PAC-MAN},
+publisher = {Cold Spring Harbor Labs Journals},
+title = {{Scalable Multi-Sample Single-Cell Data Analysis by Partition-Assisted Clustering and Multiple Alignments of Networks}},
+url = {http://biorxiv.org/content/early/2017/03/28/116566},
+year = {2017}
 }
