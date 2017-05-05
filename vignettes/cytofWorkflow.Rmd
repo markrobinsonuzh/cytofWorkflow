@@ -65,7 +65,8 @@ vignette: >
 
 <!-- To render this document: -->
 
-<!-- rmarkdown::render('cytofWorkflow.Rmd') -->
+<!-- 
+-->
 <!-- rmarkdown::render('cytofWorkflow.Rmd', clean=FALSE) -->
 <!-- system("pandoc -o cytofWorkflow.knit.docx cytofWorkflow.knit.md") -->
 
