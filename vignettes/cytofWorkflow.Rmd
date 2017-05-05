@@ -94,55 +94,55 @@ knitr::opts_chunk$set(cache = 2, warning = FALSE, message = FALSE, cache.path = 
 
 # Abstract
 
-High dimensional (mass and flow) cytometry (HDCyto) experiments have become a method of choice for interrogating and characterizing cell populations at high throughput. Here, we present a R-based pipeline for differential analyses of HDCyto data, largely based on Bioconductor packages. We computationally define cell populations using FlowSOM clustering and facilitate an optional but reproducible strategy for manual merging of algorithm-generated clusters. Our workflow offers different analysis paths, including association of cell type abundance with a phenotype, or changes in signaling markers within specific subpopulations or differential analyses of aggregated signals. Importantly, the differential analyses we show are based on regression frameworks where the HDCyto data is the response; thus, we are able to model arbitrary experiments designs, such as those with batch effects, paired designs and so on. In particular, we apply generalized linear mixed models for analyses of cell population abundance or cell-population-specific analyses of signaling markers, allowing overdispersion in cells count or aggregated signal across samples to be appropriately modeled. To support the formal statistical analyses, we encourage exploratory data analysis at every step, including for quality control (e.g., multi-dimensional scaling  plots), for reporting of clustering results (dimensionality reduction, heatmaps with dendrograms) and for differential analyses (e.g., plots of aggregated signal).
+High dimensional (mass and flow) cytometry (HDCyto) experiments have become a method of choice for high throughput interrogation and characterization of cell populations at high throughput. Here, we present an R-based pipeline for differential analyses of HDCyto data, largely based on Bioconductor packages. We computationally define cell populations using FlowSOM clustering and facilitate an optional but reproducible strategy for manual merging of algorithm-generated clusters. Our workflow offers different analysis paths, including association of cell type abundance with a phenotype, or changes in signaling markers within specific subpopulations or differential analyses of aggregated signals. Importantly, the differential analyses we show are based on regression frameworks where the HDCyto data is the response; thus, we are able to model arbitrary experimental designs, such as those with batch effects, paired designs and so on. In particular, we apply generalized linear mixed models to analyses of cell population abundance or cell-population-specific analyses of signaling markers, allowing overdispersion in cells count or aggregated signal across samples to be appropriately modeled. To support the formal statistical analyses, we encourage exploratory data analysis at every step, including for quality control (e.g., multi-dimensional scaling  plots), for reporting of clustering results (dimensionality reduction, heatmaps with dendrograms) and for differential analyses (e.g., plots of aggregated signal).
 
 
 # Introduction
 
 <!-- Describe what CyTOF and Flow Cytometry are and what are the differences -->
 
-Flow cytometry and the more recently introduced CyTOF (cytometry by time-of-flight mass spectrometry or mass cytometry) are technologies that measure protein abundance on the surface or inside cells at high-throughput.  In flow cytometry, antibodies are labeled with fluorescent dyes and fluorescence intensity is measured using lasers and photodetectors.  CyTOF utilizes antibodies tagged with metal isotopes from the lanthanide series, which have favourable chemistry and do not occur in biological systems; abundances per cell are recorded with a time-of-flight mass spectrometer. In either case, fluorescence intensities (flow cytometry) or ion counts (mass cytometry) are assumed to be proportional to the expression level of the antibody-targeted antigens of interest.
+Flow cytometry and the more recently introduced CyTOF (cytometry by time-of-flight mass spectrometry or mass cytometry) are high-throughput technologies that measure protein abundance on the surface or within cells.  In flow cytometry, antibodies are labeled with fluorescent dyes and fluorescence intensity is measured using lasers and photodetectors.  CyTOF utilizes antibodies tagged with metal isotopes from the lanthanide series, which have favorable chemistry and do not occur in biological systems; abundances per cell are recorded with a time-of-flight mass spectrometer. In either case, fluorescence intensities (flow cytometry) or ion counts (mass cytometry) are assumed to be proportional to the expression level of the antibody-targeted antigens of interest.
 
-Due to the differences in acquistion, further distinct characteristics should be noted. Conventional fluorophore-based flow cytometry is non-destructive and thus can be used to sort cells for further analysis.  However, because of the spectral overlap between fluorophores, *compensation* of the data needs to be performed [@Roederer2001], which also limits the number of parameters that can be measured at once. Thus, standard flow cytometry experiments measure 6-12 parameters with modern systems measuring up to 20 channels [@Mahnke2007], while new developments (e.g., BD FACSymphony) promise to increase this capacity towards 50. Moreover, flow cytometry offers the highest throughput with 10s of thousands of cells measured per second at relatively low operating costs per sample.
+Due to the differences in acquisition, further distinct characteristics should be noted. Conventional fluorophore-based flow cytometry is non-destructive and thus can be used to sort cells for further analysis.  However, because of the spectral overlap between fluorophores, *compensation* of the data needs to be performed [@Roederer2001], which also limits the number of parameters that can be measured simultaneously. Thus, standard flow cytometry experiments measure 6-12 parameters with modern systems measuring up to 20 channels [@Mahnke2007], while new developments (e.g., BD FACSymphony) promise to increase this capacity towards 50. Moreover, flow cytometry offers the highest throughput with 10s of thousands of cells measured per second at relatively low operating costs per sample.
 
-By using rare metal isotopes in CyTOF, cell autofluorescence is avoided and spectral overlap is drastically reduced.  However, the sensitivity of mass spectrometry results in the measurement of metal impurities and oxide formations, which need to be carefully considered in antibody panel design (e.g., through antibody concentrations and coupling of antibodies to neighbouring metals).  Leipold et al. recently commented that *minimal spillover does not equal no spillover* [@Leipold2015].  Nonetheless, CyTOF offers a high dimension of parameters measured per cell, with current panels using ~40 parameters and promise of up to 100.   Throughput of CyTOF is lower, at the rate of hundreds of cells per second and cells are destroyed during ionization.
+By using rare metal isotopes in CyTOF, cell autofluorescence can be avoided and spectral overlap is drastically reduced.  However, the sensitivity of mass spectrometry results in the measurement of metal impurities and oxide formations, which need to be carefully considered in antibody panel design (e.g., through antibody concentrations and coupling of antibodies to neighboring metals).  Leipold et al. recently commented that *minimal spillover does not equal no spillover* [@Leipold2015].  Nonetheless, CyTOF offers a high dimension of parameters measured per cell, with current panels using ~40 parameters and the promise of up to 100.   Throughput of CyTOF is lower, at the rate of hundreds of cells per second and cells are destroyed during ionization.
 
 <!-- Application -->
 
-The ability of flow cytometry and mass cytometry to analyze individual cells at high-throughput has resulted in a wide range of biological and medical applications. For example, these ``immunophenotyping'' assays are used to detect and quantify cell populations of interest, to uncover new cell populations and to compare abundance of cell populations between different conditions, such as between patient groups [@vanUnen20161227].  That is, it can be used as a biomarker discovery tool.
+The ability of flow cytometry and mass cytometry to analyze individual cells at high-throughput scales has resulted in a wide range of biological and medical applications. For example, these ``immunophenotyping'' assays are used to detect and quantify cell populations of interest, to uncover new cell populations and to compare abundance of cell populations between different conditions, such as between patient groups [@vanUnen20161227].  That is, it can be used as a biomarker discovery tool.
 
 <!-- Explain what is presented in this workflow -->
 
-There are various methodological approaches that aim for biomarker discovery [@Saeys2016].  A common strategy, which we will refer through this workflow as the "classic" approach, is to first identify cell populations of interest by the means of manual gating or automated clustering [@Hartmann2016; @Pejoski4814].  Second, using statistical tests, one can determine which of the cell subpopulations or protein markers are associated with a phenotype (e.g., clinical outcome) of interest.  Typically, cell subpopulation abundance expressed as cluster cell counts or median marker expression would be used in the statistical model to relate to the sample-level phenotype.  
+Various methodological approaches aim for biomarker discovery [@Saeys2016].  A common strategy, which we will refer through this workflow as the "classic" approach, is to first identify cell populations of interest by manual gating or automated clustering [@Hartmann2016; @Pejoski4814].  Second, using statistical tests, one can determine which of the cell subpopulations or protein markers are associated with a phenotype (e.g., clinical outcome) of interest.  Typically, cell subpopulation abundance expressed as cluster cell counts or median marker expression would be used in the statistical model to relate to the sample-level phenotype.  
 
 <!-- Identification of rare clusters that are predictive of phenotype might be a challenge in this approach, depending on the resolution of the clustering, since the steps of cell population identification and phenotype association are separated. There can be a risk that smaller cell subsets are distinct between the conditions, but they can not be detected because they are not annotated as separate subpopulations. -->
 
 Importantly, there are many alternatives to what we propose below and several new methods are emerging.
 For example, `Citrus` [@Bruggner2014] tackles the differential discovery problem by strong over-clustering of the cells and building a hierarchy of clusters from very specific to general ones.  Using model selection and regularization techniques, clusters and markers that associate with the outcome are identified. A new machine learning approach, `CellCnn` [@Arvaniti2016], learns the representation of clusters that are associated with the considered phenotype by the means of convolutional neural networks, which makes it particularly applicable to detecting discriminating rare cell populations.  However, there are tradeoffs to consider.  `Citrus` performs feature selection but does not provide significance levels, such as p-values, for the strength of associations.  Due to its computational requirements, `Citrus` can not be run on entire mass cytometry datasets and one typically must analyze a subset of the data.  The "filters" from `CellCnn` may identify one or more cell subsets that distinguish experimental groups, while these groups may not necessarily correspond to any of the canonical cell types, since they are learned with a data-driven approach.
 
-A noticeable distinction between the machine learning approaches and our classical regression approach is how the model is designed. `Citrus` and `CellCnn` model the patient response as a function of the measured HDCyto values, whereas the classical approach models the HDCyto data itself as the response, thus putting the distributional assumptions on the experimental HDCyto data.  This carries the distinct advantage that covariates (e.g., age, gender, batch) can be adjusted for, together with finding associations of the phenotype to the predictors of interest (e.g., cell type abundance).  Specifically, neither `Citrus` nor `CellCnn` are able to directly account for complex designs, such as paired experiments or presence of batches.  
+A noticeable distinction between the machine learning approaches and our classical regression approach is how the model is designed. `Citrus` and `CellCnn` model the patient response as a function of the measured HDCyto values, whereas the classical approach models the HDCyto data itself as the response, thus putting the distributional assumptions on the experimental HDCyto data.  This carries the distinct advantage that covariates (e.g., age, gender, batch) can be included, together with finding associations of the phenotype to the predictors of interest (e.g., cell type abundance).  Specifically, neither `Citrus` nor `CellCnn` are able to directly account for complex designs, such as paired experiments or presence of batches.  
 
-Within the classic approach, hybrid methods are certainly possible, where discovery of interesting cell populations is done with one algorithm and quantifications or signal aggregations are modeled in standard regression frameworks. For instance, `CellCnn` provides p-values from a t-test or Mann-Whitney U-test conducted on the frequencies of previously detected cell populations. The models we propose below are flexible extensions of this strategy.
+Within the classical approach, hybrid methods are certainly possible, where discovery of interesting cell populations is done with one algorithm and quantifications or signal aggregations are modeled in standard regression frameworks. For instance, `CellCnn` provides p-values from a t-test or Mann-Whitney U-test conducted on the frequencies of previously detected cell populations. The models we propose below are flexible extensions of this strategy.
 
 <!-- All in all, depending on the biological question, one has to choose a suitable approach. 
 Often, it might be that the first classic approach will be sufficient, and by its methodological simplicity and flexibility, it will bring easily interpretable results. Thus, in this workflow, we present, step by step, how to perform differential analyses and assemble a suite of tools and methods that, in our opinion, leads to a high level of flexibility and robust statistically-supported results. -->
 
 Step by step, this workflow presents differential discovery analyses assembled from a suite of tools and methods that, in our view, leads to a high level of flexibility, robust statistically-supported and interpretable results. Cell population identification is conducted by means of unsupervised clustering using the `r Biocpkg("FlowSOM")` and `r Biocpkg("ConsensusClusterPlus")` packages, which together were among the best performing clustering approaches for high-dimensional cytometry data [@Weber2016].  Notably, `FlowSOM` scales easily to millions of cells and thus no subsetting of the data is required.  
 
-To be able to analyze arbitrary experiment designs (e.g., batch effects, paired experiments, etc.), we show how to conduct the differential analysis of cell population abundances using the generalized linear mixed models (GLMM) and marker intensities using linear models (LM) and linear mixed models (LMM).  Model fitting is performed with `r CRANpkg("lme4")` and `r CRANpkg("stats")` packages and hypothesis testing with the `r CRANpkg("multcomp")` package.
+To be able to analyze arbitrary experimental designs (e.g., batch effects, paired experiments, etc.), we show how to conduct the differential analysis of cell population abundances using the generalized linear mixed models (GLMM) and marker intensities using linear models (LM) and linear mixed models (LMM).  Model fitting is performed with `r CRANpkg("lme4")` and `r CRANpkg("stats")` packages and hypothesis testing with the `r CRANpkg("multcomp")` package.
 
 We use the `r CRANpkg("ggplot2")` package as our graphical engine.  Notably, we propose a suite of useful visual representations of HDCyto data characteristics, such as an MDS (multidimensional scaling) plot of aggregated signal for exploring sample similarities. The obtained cell populations are visualized using dimension reduction techniques (e.g., t-SNE via the `r CRANpkg("Rtsne")` package) and heatmaps (via the `r CRANpkg("pheatmap")` package) to represent characteristics of the annotated cell populations and identified biomarkers. 
 
-The workflow is not fully automatic and this is by design.  First, we strongly advocate for exploratory data analysis to get an understanding of data characteristics before formal statistical modeling.  Second, the workflow involves an optional step where the user can manually merge and annotate clusters, see Section [Cluster merging and annotation](#cluster-merging-and-annotation), but in a way that is easily reproducible.  The CyTOF data used here, see Section [Data description](#data-description), is already preprocessed, i.e., the normalization and debarcoding as well as removal of doublets, debris and dead cells were already performed.  To see how such an analysis could be performed, go to Section [Data preprocessing](#data-preprocessing).
+The workflow is intentionally not fully automatic.  First, we strongly advocate for exploratory data analysis to get an understanding of data characteristics before formal statistical modeling.  Second, the workflow involves an optional step where the user can manually merge and annotate clusters, see Section [Cluster merging and annotation](#cluster-merging-and-annotation), but in a way that is easily reproducible.  The CyTOF data used here, see Section [Data description](#data-description), is already preprocessed, i.e., the normalization and debarcoding as well as removal of doublets, debris and dead cells were already performed.  To see how such an analysis could be performed, go to Section [Data preprocessing](#data-preprocessing).
 
-Notably, this workflow is equally applicable to flow or mass cytometry datasets for which the preprocessing steps are already performed.  In addition, the workflow is modular and can be adapted as new algorithms or new knowledge about how to best use existing tools comes to light.  In particular, alternative clustering algorithms, such as the popular PhenoGraph algorithm [@Levine2015] (e.g., via the `r Githubpkg("JinmiaoChenLab/Rphenograph")` package) and dimensionality reduction techniques, such as diffusion maps [@Haghverdi2015] via the `r Biocpkg("destiny")` package [@Angerer2016]) and SIMLR [@Wang2017] via the `r Biocpkg("SIMLR")` package, could be inserted to the workflow.  We point to various alternatives and considerations in the text below.
+Notably, this workflow is equally applicable to flow or mass cytometry datasets for which the preprocessing steps have already been performed.  In addition, the workflow is modular and can be adapted as new algorithms or new knowledge about how to best use existing tools comes to light.  In particular, alternative clustering algorithms, such as the popular PhenoGraph algorithm [@Levine2015] (e.g., via the `r Githubpkg("JinmiaoChenLab/Rphenograph")` package) and dimensionality reduction techniques, such as diffusion maps [@Haghverdi2015] via the `r Biocpkg("destiny")` package [@Angerer2016]) and SIMLR [@Wang2017] via the `r Biocpkg("SIMLR")` package, could be inserted to the workflow.  We point to various alternatives and considerations in the text below.
 
 
 # Data description
 
 We use a subset of CyTOF data originating from Bodenmiller et al. [@Bodenmiller2012] that was also used in the `Citrus` paper [@Bruggner2014]. Specifically, we perform our analysis on 16 samples of peripheral blood mononuclear cells (PBMCs) from 8 healthy donors where 8 were unstimulated and another 8 were stimulated for 30 min with B cell receptor/Fc receptor crosslinking (BCR/FcR-XL). For each sample, 14 signaling markers and 10 cell surface markers were measured.
 
-The original data can be downloaded from the [Cytobank report](http://reports.cytobank.org/105/v2). The subset that is used here is also available from the [Citrus Cytobank repository](https://community.cytobank.org/cytobank/experiments/15713/download_files).
+The original data can be downloaded from the [Cytobank report](http://reports.cytobank.org/105/v2). The subset used here is also available from the [Citrus Cytobank repository](https://community.cytobank.org/cytobank/experiments/15713/download_files).
 
 In both the Bodenmiller et al. and `Citrus` manuscripts, the 10 lineage markers were used to identify cell subpopulations, which were then investigated for differences between the reference and stimulated separately for each of the 14 functional markers. The same strategy is used in this workflow; 10 lineage markers are used for cell clustering and 14 functional markers are tested for the differential expression between the reference and BCR/FcR-XL stimulation.  Even though differential analysis of cell abundance was not in the scope of the Bodenmiller et al. experiment, we present them here to highlight the generality of the discovery.
 
@@ -215,7 +215,7 @@ In our example, information about the panel is also available in a file called P
 
 The isotope, metal and antigen information that the instrument receives is also stored in the `flowFrame` (container for one sample) or `flowSet` (container for multiple samples) objects.  You can type `fcs_raw[[1]]` to see the first `flowFrame`, which contains a table with columns `name` and `desc`.  Their content can be accessed with functions `pData(parameters())`, which is identical for all the `flowFrame` objects in the `flowSet`.  The variable `name` corresponds to the column names in the `flowSet` object, you can type in R `colnames(fcs_raw)`.
 
-One should make sure that the elements from `panel` can be matched to their correspondig entries in the `flowSet` object to make the analysis less prone to subsetting mistakes. Here, for example, the entries in `panel$Antigen` have their exact equivalents in the `desc` columns of the `flowFrame` objects. 
+One should make sure that the elements from `panel` can be matched to their corresponding entries in the `flowSet` object to make the analysis less prone to subsetting mistakes. Here, for example, the entries in `panel$Antigen` have their exact equivalents in the `desc` columns of the `flowFrame` objects. 
 [NEW: In the following analysis, often we will use marker IDs as column names in the tables containing expression values. During object conversion from one type to another, for example, from matrix to data frame, characters, such as dashes, in dimension names are, by default, replaced with dots. This may be problematic, as the new names can not be matched. To avoid this problem, we replace all the dashes with underscores.]
 We define two variables that indicate the lineage and functional markers.
 
@@ -248,7 +248,7 @@ all(functional_markers %in% panel_fcs$desc)
 
 # Data transformation
 
-Usually, the raw marker intensities read by a cytometer, have strongly skewed distributions with varying ranges of expression, thus making it difficult to  distinguish between the negative and positive cell populations.  Therefore, it is common practice to transform CyTOF marker intensities using, for example, arcsineh (hyperbolic inverse sine) with cofactor 5 [@Bendall687 Figure S2; @Bruggner2014] to make the distributions more symetric and to map them to a comparable range of expression, which is important for clustering. A cofactor of 150 has been promoted for flow cytometry, but users are free to implement an alternative transformation, some of which are available from the `transform` function of the `r Biocpkg("flowCore")` package.  In the following step, we include only those channels that correspond to the lineage and functional markers.  We also rename the columns in the `flowSet` to the antigen names from `panel$desc`.
+Usually, the raw marker intensities read by a cytometer, have strongly skewed distributions with varying ranges of expression, thus making it difficult to  distinguish between the negative and positive cell populations.  Therefore, it is common practice to transform CyTOF marker intensities using, for example, arcsineh (hyperbolic inverse sine) with cofactor 5 [@Bendall687 Figure S2; @Bruggner2014] to make the distributions more symmetric and to map them to a comparable range of expression, which is important for clustering. A cofactor of 150 has been promoted for flow cytometry, but users are free to implement an alternative transformation, some of which are available from the `transform` function of the `r Biocpkg("flowCore")` package.  In the following step, we include only those channels that correspond to the lineage and functional markers.  We also rename the columns in the `flowSet` to the antigen names from `panel$desc`.
 
 ```{r arcsinh_transformation}
 ## arcsineh transformation and column subsetting
@@ -477,7 +477,7 @@ The `r Biocpkg("FlowSOM")` workflow consists of three main steps. First, a self-
 
 It is important to point out that we cluster all cells from all samples together.  This strategy is beneficial, since we label cell populations only once and the mapping of cell types between samples is automatically consistent.  In our analysis, cell populations are identified using only the 10 lineage markers as defined in the `BuildSOM` function with the `colsToUse` argument.
 
-<!-- Also in the experiemntal design it already is crucial to think of which positive and negative control cells to include into a unique barcode and run them within the same subsequent analysis. -->
+<!-- Also in the experimental design it already is crucial to think of which positive and negative control cells to include into a unique barcode and run them within the same subsequent analysis. -->
 
 
 ```{r flowsom_som}
@@ -645,7 +645,7 @@ Nevertheless, there are few notes of caution when using tSNE or any other dimens
 
 t-SNE is a method that requires significant computational time to process the data even for tens of thousands of cells. CyTOF datasets are usually much larger and thus to keep running times reasonable, one can use a subset of cells; for example, we use here 2000 cells from each sample.  The t-SNE map below is colored according to the expression level of the CD4 marker, highlighting that the CD4+ T-cells are placed to the left side of the plot.  In this way, one can use a collection of markers to highlight where cell types of interest are located on the *map*.
 
-Instead of t-SNE, one could also use other dimension reduction techniques, such as PCA, diffusion maps, SIMLR [@Wang2017] or isomaps, some of which are conveniently available via the `cytof_dimReduction` function from the `r Biocpkg("cytofkit")` package [@Chen2016].  To speed up the t-SNE analysis, one could use a multicore version of it available via the `r Githubpkg("RGLab/Rtsne.multicore")` package.  Alternative algorithms, such as `largeVis` [REF] (available via the `r Githubpkg("elbamos/largeVis")` package), can be used for dimensionality reduction of very large datasets without downsampling.  Alternatively, the dimensionality reduction can be performed on the *codes* of the SOM, at a resolution specified by the user (see below).
+Instead of t-SNE, one could also use other dimension reduction techniques, such as PCA, diffusion maps, SIMLR [@Wang2017] or isomaps, some of which are conveniently available via the `cytof_dimReduction` function from the `r Biocpkg("cytofkit")` package [@Chen2016].  To speed up the t-SNE analysis, one could use a multicore version that is available via the `r Githubpkg("RGLab/Rtsne.multicore")` package.  Alternative algorithms, such as `largeVis` [REF] (available via the `r Githubpkg("elbamos/largeVis")` package), can be used for dimensionality reduction of very large datasets without downsampling.  Alternatively, the dimensionality reduction can be performed on the *codes* of the SOM, at a resolution specified by the user (see below).
 
 
 ```{r tsne_duplicates_subsampling}
@@ -775,13 +775,13 @@ In our experience, manual merging of clusters leads to slightly different result
 
 In our setup, over-clustering is also useful when the interest is in identifying the "natural" number of clusters present in the data.  Additionally to the t-SNE plots, one could investigate the delta area plot from the `r Biocpkg("ConsensusClusterPlus")` package and the hierarchical clustering dendrogram of the over-clustered subpopulations, as shown below.
 
-In our example, we expect around 6 specific cell types, and we have performed `FlowSOM` clustering into 20 groups as a reasonable over-estimate.  After analyzing the heatmaps and t-SNE plots, we can clearly see that stratification of the data into 20 clusters may be too strong.  Many clusters are placed very close to each other indicating that they could be merged together. The same can be deduced from the heatmaps, highlighting that marker expression patterns for some neighbouring clusters are very similar.  Cluster merging and annotating is somewhat manual, based partially on visual inspection of t-SNE plots and heatmaps and thus, benefits from expert knowledge of the cell types.
+In our example, we expect around 6 specific cell types, and we have performed `FlowSOM` clustering into 20 groups as a reasonable over-estimate.  After analyzing the heatmaps and t-SNE plots, we can clearly see that stratification of the data into 20 clusters may be too strong.  Many clusters are placed very close to each other indicating that they could be merged together. The same can be deduced from the heatmaps, highlighting that marker expression patterns for some neighboring clusters are very similar.  Cluster merging and annotating is somewhat manual, based partially on visual inspection of t-SNE plots and heatmaps and thus, benefits from expert knowledge of the cell types.
 
 ### Manual cluster merging and annotating based on heatmaps
 
 In our experience, the main reference for manual merging of clusters is the heatmap of marker characteristics across metaclusters with dendrograms showing the hierarchy of similarities.  Importantly, such plots aggregate information over many cells, thus showing an average picture of each cluster, but combined with dimensionality reduction, gives a good insight into the data structure.  Given expert knowledge of the cell types and markers, it is then left to the researcher to decide how exactly to merge clusters (e.g., with higher weight given to some markers).
 
-The dendrogram highlights the similarity between the metaclusters and can be used explicitly for the merging.  However, there are reasons why we would not always follow exactly the dendrogram.  In general, when it comes to clustering, blindly following the hierarchy of codes will lead to identification of populations of similar cells, but it does not necessarily mean that they are of biological interest.  The distances between metaclusters are calculated over all the markers and it may be that some markers carry higher weight for certain cell types.  In addition, different linkage methods may lead to different hierarchy, especially when clusters are not fully distinct.  Another aspect to consider in cluster merging is the cluster size, represented in the parentheses next to the cluster label in our plots. If the cluster size is very small, but the cluster seems relevant and distinct, one can keep it as separate.  However, if it is small and different from the neighbouring clustering only in a somewhat unimportant marker, it could be merged.  And, if some of the metaclusters do not represent any specific cell types, they could be dropped out of the downstream analysis instead of being merged.   However, in case an automated solution for cluster merging is truly needed, one could use the `cutree()` function applied to the dendrogram.
+The dendrogram highlights the similarity between the metaclusters and can be used explicitly for the merging.  However, there are reasons why we would not always follow exactly the dendrogram.  In general, when it comes to clustering, blindly following the hierarchy of codes will lead to identification of populations of similar cells, but it does not necessarily mean that they are of biological interest.  The distances between metaclusters are calculated over all the markers and it may be that some markers carry higher weight for certain cell types.  In addition, different linkage methods may lead to different hierarchy, especially when clusters are not fully distinct.  Another aspect to consider in cluster merging is the cluster size, represented in the parentheses next to the cluster label in our plots. If the cluster size is very small, but the cluster seems relevant and distinct, one can keep it as separate.  However, if it is small and different from the neighboring clustering only in a somewhat unimportant marker, it could be merged.  And, if some of the metaclusters do not represent any specific cell types, they could be dropped out of the downstream analysis instead of being merged.   However, in case an automated solution for cluster merging is truly needed, one could use the `cutree()` function applied to the dendrogram.
 
 Based on the seed that was set, cluster merging of the 20 metaclusters is defined in the PBMC8_cluster_merging1.xlsx file on the [Robinson Lab server](http://imlspenticton.uzh.ch/robinson_lab/cytofWorkflow) with the IDs of the original clusters and new cluster names, and we save it as a `cluster_merging1` data frame. 
 The expert has annotated 8 cell populations: CD8 T-cells, CD4 T-cells, B-cells IgM-, B-cells IgM+, NK cells, dendritic cells (DC), monocytes and surface negative cells; monocytes could be further subdivided based on HLA-DR into high, medium and low subtypes.
@@ -1016,27 +1016,31 @@ ggplot(ggdf, aes(x = sample_id, y = proportion, fill = cluster)) +
 ```
 
 It may be quite hard to see the differences in the cluster abundances in the plot above, especially for clusters with very low frequency.  And, since boxplots cannot represent multimodal distributions, we show boxplots with jittered points of the sample-level cluster proportions overlaid.  The y-axes are scaled to the range of data plotted for each cluster to better visualize the differences in frequency of lower abundance clusters.
+[NEW: For this experiment, it may be interesting to additionally depict the patient information. We do it by plotting a different point shape for each patient. Indeed, we can see that often the direction of abundance changes between the two conditions is concordant between the patients.]
 
 
-```{r diff_freqs_plot_props_boxplot, fig.width = 8, fig.height = 3, fig.cap="Relative abundance of PBMC populations in each sample plotted using boxplots."}
+```{r diff_freqs_plot_props_boxplot, fig.width = 8, fig.height = 4, fig.cap="Relative abundance of PBMC populations in each sample plotted using boxplots."}
+ggdf$patient_id <- factor(md$patient_id[mm])
+
 ggplot(ggdf) +
   geom_boxplot(aes(x = condition, y = proportion, color = condition, 
     fill = condition),  position = position_dodge(), alpha = 0.5, 
     outlier.color = NA) +
-  geom_point(aes(x = condition, y = proportion, color = condition), 
-    alpha = 0.8, position = position_jitterdodge()) +
+  geom_point(aes(x = condition, y = proportion, color = condition, 
+    shape = patient_id), alpha = 0.8, position = position_jitterdodge()) +
   facet_wrap(~ cluster, scales = "free", nrow = 2) +
   theme_bw() +
   theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(), 
     strip.text = element_text(size = 6)) +
   scale_color_manual(values = color_conditions) +
-  scale_fill_manual(values = color_conditions)
+  scale_fill_manual(values = color_conditions) +
+  scale_shape_manual(values = c(16, 17, 8, 3, 12, 0, 1, 2))
 
 ```
 
 <!-- A more suitable model would be based on the beta-binomial distribution, or similar results can be achieved by modeling the extra variance of ratios as random effects for each individual sample in the -->
 
-As our goal is to compare proportions, one could take these values, transform them (e.g., logit) and use them as a dependent variable in a linear model.  However, this approach does not take into account the uncertainty of proportion estimates, which is higher when ratios are calculated for samples with lower total cell counts.  A distribution that naturally accounts for such uncertainty is the binomial distribution (i.e., logistic regression), which takes the cell counts as input (relative to the total for each sample). Nevertheless, as in the genomic data analysis, the pure logistic regression is not able to capture the overdispersion that is present in HDCyto data.  A natural extension to model the extra variation is the generalized linear mixed model (GLMM) [@Zhao2013; @Jia2014].  Thus, we conduct the differential abundance analysis using GLMMs, but not specifically due to the pairing in the experiment.  Even in the absence of pairing, GLMMs allow overdispersion in proportions to be modeled, where the random effect is defined by the sample ID (instead of the patient ID), as will be the case in the marker expression analyses.
+As our goal is to compare proportions, one could take these values, transform them (e.g., logit) and use them as a dependent variable in a linear model.  However, this approach does not take into account the uncertainty of proportion estimates, which is higher when ratios are calculated for samples with lower total cell counts.  A distribution that naturally accounts for such uncertainty is the binomial distribution (i.e., logistic regression), which takes the cell counts as input (relative to the total for each sample). Nevertheless, as in the genomic data analysis, the pure logistic regression is not able to capture the overdispersion that is present in HDCyto data.  A natural extension to model the extra variation is the generalized linear mixed model (GLMM) [@Zhao2013; @Jia2014].  Thus, we conduct the differential abundance analysis using GLMMs, but not specifically due to the pairing in the experiment.  Even in the absence of pairing, GLMMs allow overdispersion in proportions to be modeled, where the random effect is defined by the sample ID instead of the patient ID, as will be the case in the marker expression analyses.
 
 In our model, the blocking variable is patient ID $i = 1, ..., n$, where $n=8$. For each patient, there are $n_i$ samples measured, and $j = 1,..., n_i$ indicates the sample ID.  Here, $n_i=2$ for all $i$ (one from reference and one from BCR/FcR-XL stimulated).  We assume that for a given cell population, the cell counts $Y_{ij}$ follow a binomial distribution $Y_{ij} \sim Bin(m_{ij}, \pi_{ij}|\beta_0, \beta_1, \gamma_{ij})$, where $m_{ij}$ is a total number of cells in a sample corresponding to patient $i$ and condition $j$.  The generalized linear mixed model with observation-level random effects $\gamma_{ij}$ is defined as follows:
 
@@ -1050,14 +1054,14 @@ $$ logit(\pi_{ij}) = \beta_0 + \beta_1 x_{ij} + \gamma_{ij}.$$
 formula_glmer_binomial <- y/total ~ condition + (1|sample_id)
 ```
 
-The wrapper function below takes as input a data frame with cell counts (each row is a population, each column is a sample), the metadata table, the formula and performs the differential analysis specified with contrast `K` for each population separately and returns a table with adjusted p-values.
+The wrapper function below takes as input a data frame with cell counts (each row is a population, each column is a sample), the metadata table, the formula and performs the differential analysis specified with contrast `K` for each population separately and returns a table with non-adjusted and adjusted p-values.
 
 ```{r diff_differential_abundance_wrapper}
 differential_abundance_wrapper <- function(counts, md, formula, K){
   ## Fit the GLMM for each cluster separately
   ntot <- colSums(counts)
   fit_binomial <- lapply(1:nrow(counts), function(i){
-    # i = 1
+
     data_tmp <- data.frame(y = as.numeric(counts[i, md$sample_id]), 
       total = ntot[md$sample_id], md)
     
@@ -1079,17 +1083,32 @@ differential_abundance_wrapper <- function(counts, md, formula, K){
   ## Adjust the p-values
   adjp <- apply(pvals, 2, p.adjust, method = "BH")
   colnames(adjp) <- paste0("adjp_", contrast_names)
-  return(adjp)
+  return(list(pvals = pvals, adjp = adjp))
 }
 ```
 
 
 ```{r diff_freqs_fit_model}
-adjp <- differential_abundance_wrapper(counts, md = md, 
+da_out <- differential_abundance_wrapper(counts, md = md, 
   formula = formula_glmer_binomial, K = K)
-apply(adjp < 0.05, 2, table)
+apply(da_out$adjp < 0.05, 2, table)
 ```
 
+
+[NEW: Just testing this model with patient and sample as random effects.]
+
+```{r diff_freqs_fit_model2}
+da_out <- differential_abundance_wrapper(counts, md = md, 
+  formula = y/total ~ condition + (1|patient_id) + (1|sample_id), K = K)
+da_out$adjp < 0.05
+```
+
+
+An output table containing the observed cell population proportions in each sample and p-values can be assembled. 
+
+```{r diff_freqs_fit_model_output}
+da_output <- data.frame(cluster = rownames(props), props, da_out$pvals, da_out$adjp)
+```
 
 We use a heatmap to report the differential cell populations.  Proportions are first scaled with the arcsine-square-root transformation (as an alternative to logit that does not return NAs when ratios are equal to zero or one). Then, Z-score normalization is applied to each population to better highlight the relative differences between compared conditions.  We created two wrapper functions: `normalization_wrapper` performs the normalization of submitted expression `expr` to mean 0 and standard deviation 1, and `plot_differential_heatmap_wrapper` generates a heatmap of submitted expression `expr_norm`, where samples are grouped by `condition`, indicated with a color bar on top of the plot. Additionally, labels of clusters contain the adjusted p-values in parenthesis.
 
@@ -1145,13 +1164,10 @@ plot_differential_heatmap_wrapper <- function(expr_norm, sign_adjp,
 ## Apply the arcsine-square-root transformation
 asin_table <- asin(sqrt((t(t(counts_table) / colSums(counts_table)))))
 asin <- as.data.frame.matrix(asin_table)
-
 ## Keep significant clusters and sort them by significance
-sign_clusters <- names(which(sort(adjp[, "adjp_BCRXLvsRef"]) < FDR_cutoff))
-
+sign_clusters <- names(which(sort(da_out$adjp[, "adjp_BCRXLvsRef"]) < FDR_cutoff))
 ## Get the adjusted p-values
-sign_adjp <- adjp[sign_clusters , "adjp_BCRXLvsRef", drop=FALSE]
-
+sign_adjp <- da_out$adjp[sign_clusters , "adjp_BCRXLvsRef", drop=FALSE]
 ## Keep samples for condition A and normalize to mean = 0 and sd = 1
 asin_norm <- normalization_wrapper(asin[sign_clusters, ])
 ```
@@ -1180,6 +1196,8 @@ where $\gamma_{i} \sim N(0, \sigma^2_\gamma)$.  In the current experiment, we ha
 One drawback of summarizing the protein marker intensity with a median over cells is that all the other characteristics of the distribution, such as bimodality, skewness and variance, are ignored. On the other hand, it results in a simple, easy to interpret approach, which in many cases will be able to detect interesting changes. Another issue that arises from using a summary statistic is the level of uncertainty, which increases as the number of cells used to calculate it decreases.  In the statistical modeling, this problem could be partially handled by assigning observation weights (number of cells) to each cluster and sample. However, since each cluster is tested separately, these weights do not account for the differences in size between clusters.
 
 There might be instances of small cell populations for which no cells are observed in some samples or where the number of cells is very low.  For clusters absent from a sample (e.g., due to biological variance or insufficient sampling), NAs are introduced because no median expression can be calculated; in the case of few cells, the median may be quite variable.  Thus, we apply a filter to remove samples that have fewer than 5 cells.  We also remove cases where marker expression is equal to zero in all the samples, as this leads to an error during model fitting. 
+
+<!-- [ One could eliminate samples with low counts, given there are enough replicates left where the cell counts are satisfactory, or clusters with such low abundant samples could be entirely skipped in the differential analysis. In our example, we follow the latter approach and remove from the analysis clusters that have less than 5 cells in any of the samples.] -->
 
 
 ```{r diff_expr2_median_expression}
@@ -1214,22 +1232,24 @@ ggdf <- expr_median_sample_cluster_melt[expr_median_sample_cluster_melt$cluster
 ## Add info about samples
 mm <- match(ggdf$sample_id, md$sample_id)
 ggdf$condition <- factor(md$condition[mm])
-
+ggdf$patient_id <- factor(md$patient_id[mm])
 ggplot(ggdf) +
   geom_boxplot(aes(x = antigen, y = median_expression, 
     color = condition, fill = condition), 
     position = position_dodge(), alpha = 0.5, outlier.color = NA) +
-  geom_point(aes(x = antigen, y = median_expression, color = condition), 
-    alpha = 0.8, position = position_jitterdodge(), size = 0.5) +
+  geom_point(aes(x = antigen, y = median_expression, color = condition, 
+    shape = patient_id), alpha = 0.8, position = position_jitterdodge(), 
+    size = 0.7) +
   facet_wrap(~ cluster, scales = "free_y", ncol=2) +
   theme_bw() +
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +
   scale_color_manual(values = color_conditions) +
-  scale_fill_manual(values = color_conditions)
+  scale_fill_manual(values = color_conditions) +
+  scale_shape_manual(values = c(16, 17, 8, 3, 12, 0, 1, 2))
 
 ```
 
-We created a wrapper function `differential_expression_wrapper` that performs the differential analysis of marker expression. The user needs to specify a data frame `expr_median` with marker expression, where each column corresponds to a sample and each row to a cluster/marker combination. One can choose between fitting a regular linear model `model = "lm"` or a linear mixed model `model = "lmer"`.  The `formula` parameter must be adjusted adequately to the model choice.  The wrapper function returns the adjusted p-values for each of the specified contrasts `K` for each cluster/marker combination. 
+We created a wrapper function `differential_expression_wrapper` that performs the differential analysis of marker expression. The user needs to specify a data frame `expr_median` with marker expression, where each column corresponds to a sample and each row to a cluster/marker combination. One can choose between fitting a regular linear model `model = "lm"` or a linear mixed model `model = "lmer"`.  The `formula` parameter must be adjusted adequately to the model choice.  The wrapper function returns the non-adjusted and adjusted p-values for each of the specified contrasts `K` for each cluster/marker combination. 
 
 
 ```{r diff_differential_expression_wrapper}
@@ -1259,7 +1279,7 @@ differential_expression_wrapper <- function(expr_median, md, model = "lmer", for
   ## Adjust the p-values
   adjp <- apply(pvals, 2, p.adjust, method = "BH")
   colnames(adjp) <- paste0("adjp_", contrast_names)
-  return(adjp)
+  return(list(pvals = pvals, adjp = adjp))
 }
 
 ```
@@ -1276,29 +1296,34 @@ formula_lmer <- y ~ condition + (1|patient_id)
 By accounting for the patient effect, we detect almost twice as many cases of differential signaling compared to the regular linear model.  
 
 ```{r diff_expr2_fit_model}
-adjp <- differential_expression_wrapper(expr_median = expr_median_sample_cluster, 
+de_out1 <- differential_expression_wrapper(expr_median = expr_median_sample_cluster, 
   md = md, model = "lm", formula = formula_lm, K = K)
-apply(adjp < 0.05, 2, table)
+apply(de_out1$adjp < 0.05, 2, table)
 
-adjp <- differential_expression_wrapper(expr_median = expr_median_sample_cluster, 
+de_out2 <- differential_expression_wrapper(expr_median = expr_median_sample_cluster, 
   md = md, model = "lmer", formula = formula_lmer, K = K)
-apply(adjp < 0.05, 2, table)
+apply(de_out2$adjp < 0.05, 2, table)
 
 ```
 
+One can assemble together an output table with the information about median marker expression in each cluster and sample and the obtained p-values.
+
+```{r diff_expr2_fit_model_output}
+de_output2 <- data.frame(expr_median_sample_cluster, de_out2$pvals, de_out2$adjp)
+```
 
 To report the significant results, we use a heatmap.  Instead of plotting the absolute expression, we display the normalized expression, which better highlights the direction of marker changes.  Additionally, we order the cluster-marker instances by their significance and group them by cell type (cluster).
 
 ```{r diff_expr2_plot_heatmap_with_significant_markers, fig.height = 12, fig.cap="Normalized expression of signaling markers that are significantly differentially expressed between BCR/FcR-XL stimulated and unstimulated condition."}
 
 ## Keep the significant markers, sort them by significance and group by cluster
-sign_clusters_markers <- names(which(adjp[, "adjp_BCRXLvsRef"] < FDR_cutoff))
+sign_clusters_markers <- names(which(de_out2$adjp[, "adjp_BCRXLvsRef"] < FDR_cutoff))
 oo <- order(expr_median_sample_cluster[sign_clusters_markers, "cluster"], 
-  adjp[sign_clusters_markers, "adjp_BCRXLvsRef"])
+  de_out2$adjp[sign_clusters_markers, "adjp_BCRXLvsRef"])
 sign_clusters_markers <- sign_clusters_markers[oo]
 
 ## Get the significant adjusted p-values
-sign_adjp <- adjp[sign_clusters_markers , "adjp_BCRXLvsRef"]
+sign_adjp <- de_out2$adjp[sign_clusters_markers , "adjp_BCRXLvsRef"]
 
 ## Normalize expression to mean = 0 and sd = 1
 expr_s <- expr_median_sample_cluster[sign_clusters_markers,md$sample_id]
@@ -1317,25 +1342,26 @@ plot_differential_heatmap_wrapper(expr_norm = expr_median_sample_cluster_norm,
 The analysis of *overall* expression is analogous to the previous section, except that median marker expression is aggregated from all the cells in a given sample.
 
 
-```{r diff_expr1_plot_median_expr, fig.cap="Median expression of 14 signaling markers calculated from all the cells in a given sample."}
+```{r diff_expr1_plot_median_expr, fig.width = 8, fig.height = 7, fig.cap="Median expression of 14 signaling markers calculated from all the cells in a given sample."}
 ggdf <- melt(data.frame(expr_median_sample[functional_markers, ], 
   antigen = functional_markers), id.vars = "antigen", 
   value.name = "median_expression", variable.name = "sample_id")
 ## Add condition info
 mm <- match(ggdf$sample_id, md$sample_id)
 ggdf$condition <- factor(md$condition[mm])
-
+ggdf$patient_id <- factor(md$patient_id[mm])
 ggplot(ggdf) +
   geom_boxplot(aes(x = condition, y = median_expression, color = condition, 
     fill = condition),  position = position_dodge(), alpha = 0.5, 
     outlier.color = NA) +
-  geom_point(aes(x = condition, y = median_expression, color = condition), 
-    alpha = 0.8, position = position_jitterdodge()) +
-  facet_wrap(~ antigen, scales = "free", nrow = 3) +
+  geom_point(aes(x = condition, y = median_expression, color = condition, 
+    shape = patient_id), alpha = 0.8, position = position_jitterdodge()) +
+  facet_wrap(~ antigen, scales = "free", nrow = 4) +
   theme_bw() +
   theme(axis.text.x = element_blank(), axis.ticks.x = element_blank()) +
   scale_color_manual(values = color_conditions) +
-  scale_fill_manual(values = color_conditions)
+  scale_fill_manual(values = color_conditions) +
+  scale_shape_manual(values = c(16, 17, 8, 3, 12, 0, 1, 2))
 
 ```
 
@@ -1343,26 +1369,32 @@ Similar to the analysis above, we identify more markers being differentially exp
 
 ```{r diff_expr1_fit_model}
 ## Fit a linear model 
-adjp <- differential_expression_wrapper(expr_median = 
+de_out3 <- differential_expression_wrapper(expr_median = 
     expr_median_sample[functional_markers, ], 
   md = md, model = "lm", formula = formula_lm, K = K)
-apply(adjp < 0.05, 2, table)
+apply(de_out3$adjp < 0.05, 2, table)
 
 ## Fit a linear mixed model with patient ID as a random effect
-adjp <- differential_expression_wrapper(expr_median = 
+de_out4 <- differential_expression_wrapper(expr_median = 
     expr_median_sample[functional_markers, ], 
   md = md, model = "lmer", formula = formula_lmer, K = K)
-apply(adjp < 0.05, 2, table)
+apply(de_out4$adjp < 0.05, 2, table)
 
 ```
 
-As before, we plot a heatmap with the significant markers sorted by their statistical significance.
+As before, we create an output table with the median marker expression calculated in each sample and the p-values, and we plot a heatmap with the significant markers sorted by their statistical significance.
+
+```{r diff_expr1_fit_model_output}
+de_output4 <- data.frame(antigen = functional_markers, 
+  expr_median_sample[functional_markers, ], de_out4$pvals, de_out4$adjp)
+```
+
 
 ```{r diff_expr1_plot_heatmap_with_significant_markers, fig.cap="Normalized expression for signaling markers that are significantly differentially expressed between BCR/FcR-XL stimulated and unstimulated condition."}
 ## Keep the significant markers and sort them by significance
-sign_markers <- names(which(sort(adjp[, "adjp_BCRXLvsRef"]) < FDR_cutoff))
+sign_markers <- names(which(sort(de_out4$adjp[, "adjp_BCRXLvsRef"]) < FDR_cutoff))
 ## Get the adjusted p-values
-sign_adjp <- adjp[sign_markers , "adjp_BCRXLvsRef"]
+sign_adjp <- de_out4$adjp[sign_markers , "adjp_BCRXLvsRef"]
 ## Normalize expression to mean = 0 and sd = 1
 expr_median_sample_norm <- normalization_wrapper(expr_median_sample[sign_markers, ])
 
@@ -1379,7 +1411,7 @@ plot_differential_heatmap_wrapper(expr_norm = expr_median_sample_norm,
 
 In this workflow, we have presented a pipeline for diverse differential analyses of HDCyto datasets.  First, we highlight quality control steps where aggregate characteristics of the samples are visualized (e.g., an MDS plot), allowing verification of the experimental design, detection of batch effects and outlying samples.  Next, cell population identification was carried out via clustering, which forms the basis for subsequent differential analyses of cell population abundance, differential marker expression within a population or overall marker expression differences. The approaches to differential analyses proposed here are very general and thus able to model complex experimental designs via design matrices, such as factorial experiments, paired experiments or adjustment for batch effects.  We have presented a range of visualizations that help in understanding the data and reporting the results of clustering and differential analyses.  The wrapper functions presented in this workflow may need to be tailored to the needs of a different experiment.
 
-Clustering is one of the most challenging steps in the workflow and its accuracy is critical to the downstream differential analyses.  In particular, getting the right resolution of clusters is crucial since there can be situations where a biologically meaningful cell population may be differentially enriched between conditions, but in an automatic clustering, was combined with another cell population that behaves differently.  While we have a good understanding of the how computational algorithms recapitulate manual gating in high dimensions [@Weber2016], one of the open areas of research remains how to best cluster *across* samples.  For example, a recent approach uses a combination of high dimensional density estimation, hierarchical clustering and network inference and comparison to extract clusters across samples, with a possibility to handle batch effects [@Li116566].  In our approach, we aggregated all cells together before clustering.  An alternative would be to cluster within each sample and then aggregate a collection of metaclusters across samples.  Further research is required to better understand these effects, especially when batch effects are present.
+Clustering is one of the most challenging steps in the workflow and its accuracy is critical to the downstream differential analyses.  In particular, getting the right resolution of clusters is crucial since there can be situations where a biologically meaningful cell population may be differentially enriched between conditions, but in an automatic clustering, was combined with another cell population that behaves differently.  While we have a good understanding of how computational algorithms recapitulate manual gating in high dimensions [@Weber2016], one of the open areas of research remains how to best cluster *across* samples.  For example, a recent approach uses a combination of high dimensional density estimation, hierarchical clustering and network inference and comparison to extract clusters across samples, with a possibility to handle batch effects [@Li116566].  In our approach, we aggregated all cells together before clustering.  An alternative would be to cluster within each sample and then aggregate a collection of metaclusters across samples.  Further research is required to better understand these effects, especially when batch effects are present.
 
 The data analyzed here was generated using sample barcoding; this strategy reduces intersample variability, since all samples are exposed to the same antibody cocktail and measured in a single acquisition [@Zunder2015].  Thus, the range of marker expression for each channel should, in principle, be within a similar range across samples.  Certainly, additional challenges may arise when combining data from different instrument acquisitions and additional preprocessing treatments may need to be applied.  Despite adjustments through bead-based normalization [@Finck2013], the observed marker expression may be affected by the varying efficiency of antibody binding in each batch and by the ion detection sensitivity after machine calibration.  Beyond normalization, other strategies have been proposed, such as equalizing the dynamic range between batches for each marker or the use of warping functions to eliminate non-linear distortions (see `r Githubpkg("MarioniLab/cydar")` vignette). However, a comprehensive evaluation of these approaches and their effect on downstream analyses is still missing.  Overall, we expect that as a general rule, including batch parameters (or other covariates) in the linear modeling largely mitigates the problem.
 
@@ -1389,13 +1421,13 @@ Clustering run batches altogether may result in inaccurate cell assignment to di
 
 Alternatively, one could consider batch-wise clustering of samples. 
 On the other hand, to be able to use those results, one still needs to map cell populations across batches. 
-The mapping could be done manually, or some automated approaches developped for flow cytometry exist [@Pyne2009].-->
+The mapping could be done manually, or some automated approaches developed for flow cytometry exist [@Pyne2009].-->
 
-We presented a classical statistical approach where preprocessing of the HDCyto data leads to tables of summaries (e.g., cell counts) or aggregrated measurements (e.g., cluster-specific signal) for each samples, which become the input to statistical model.  Of course, there are a variety of alternative computational approaches available to the user.  We have mentioned `Citrus` and `CellCnn`, which are both machine-learning approaches that fit a reverse model to ours (i.e.,  phenotype of interest as the response variable).  Neither of these approaches are directly able to account for batch effects or complicated designs.  However, they may have advantages in the search for rare distinguishing populations, which could be used together with our framework for formal statistical testing.
+We presented a classical statistical approach where preprocessing of the HDCyto data leads to tables of summaries (e.g., cell counts) or aggregated measurements (e.g., cluster-specific signal) for each samples, which become the input to statistical model.  Of course, there are a variety of alternative computational approaches available to the user.  We have mentioned `Citrus` and `CellCnn`, which are both machine-learning approaches that fit a reverse model to ours (i.e.,  phenotype of interest as the response variable).  Neither of these approaches are directly able to account for batch effects or complicated designs.  However, they may have advantages in the search for rare distinguishing populations, which could be used together with our framework for formal statistical testing.
 
 We have shown that some level of over-clustering is convenient for detecting meaningful cell populations, with the background that automatic detection of the number of natural clusters is difficult [@Weber2016].  However, there are tradeoffs between the resolution of clustering and the labor involved in aggregating them to biologically meaningful clusters.  Overall, we take an interactive but flexible algorithm-guided approach together with subject-area experts to arrive at sensible cell populations.  In particular, we rely on various visualizations, such as dendrograms, t-SNE maps or other dimension reduction techniques to guide the process.  However, alternative strategies could be combined with the statistical inference we present, such as over-clustering combined with data-driven aggregation to the optimal resolution.
 
-One of the main goals of this workflow was to highlight how a model-based approach that is able to handle complex experimental designs.  This becomes important in many experimental situations where covariates (e.g., age, gender, batch) may affect the observed HDCyto data.  Thus, the classical regression framework allows also to flexibly test situations well beyond two-groupdifferences.  Of course, alternatives exist for two group comparisons, such as the nonparametric Mann-Whitney-Wilcoxon test [@Hartmann2016], which makes no assumptions about normality of the data, or the Student's t-test [@Pejoski4814] and its variations, such as the paired t-test.  
+One of the main goals of this workflow was to highlight how a model-based approach that is able to handle complex experimental designs.  This becomes important in many experimental situations where covariates (e.g., age, gender, batch) may affect the observed HDCyto data.  Thus, the classical regression framework allows also to flexibly test situations well beyond two-group differences.  Of course, alternatives exist for two group comparisons, such as the nonparametric Mann-Whitney-Wilcoxon test [@Hartmann2016], which makes no assumptions about normality of the data, or the Student's t-test [@Pejoski4814] and its variations, such as the paired t-test.  
 
 We note that the the LM, LMM and GLMM, may perform poorly for extremely small samples.  Solutions similar to those widely accepted in transcriptomics that share information over variance parameters [@Robinson2007; @Love2014; @Ritchie2015] could be leveraged.  An example of such an approach is `r Githubpkg("MarioniLab/cydar")`, which performs the differential abundance analysis (on hypersphere counts) using the generalized linear modeling capabilities of `r Biocpkg("edgeR")` [@McCarthy2012].
 
