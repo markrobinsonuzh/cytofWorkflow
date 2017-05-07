@@ -1090,7 +1090,7 @@ differential_abundance_wrapper <- function(counts, md, formula, K){
 ```{r diff_freqs_fit_model}
 da_out <- differential_abundance_wrapper(counts, md = md, 
   formula = formula_glmer_binomial, K = K)
-apply(da_out$adjp < 0.05, 2, table)
+apply(da_out$adjp < FDR_cutoff, 2, table)
 ```
 
 
@@ -1099,14 +1099,17 @@ apply(da_out$adjp < 0.05, 2, table)
 ```{r diff_freqs_fit_model2}
 da_out <- differential_abundance_wrapper(counts, md = md, 
   formula = y/total ~ condition + (1|patient_id) + (1|sample_id), K = K)
-da_out$adjp < 0.05
+da_out$adjp < FDR_cutoff
 ```
 
 
-An output table containing the observed cell population proportions in each sample and p-values can be assembled. 
+An output table containing the observed cell population proportions in each sample and p-values can be assembled (and optionally written to a file). 
 
 ```{r diff_freqs_fit_model_output}
-da_output <- data.frame(cluster = rownames(props), props, da_out$pvals, da_out$adjp)
+da_output <- data.frame(cluster = rownames(props), 
+                        props, 
+                        da_out$pvals, da_out$adjp)
+print(head(da_output),digits = 2)
 ```
 
 We use a heatmap to report the differential cell populations.  Proportions are first scaled with the arcsine-square-root transformation (as an alternative to logit that does not return NAs when ratios are equal to zero or one). Then, Z-score normalization is applied to each population to better highlight the relative differences between compared conditions.  We created two wrapper functions: `normalization_wrapper` performs the normalization of submitted expression `expr` to mean 0 and standard deviation 1, and `plot_differential_heatmap_wrapper` generates a heatmap of submitted expression `expr_norm`, where samples are grouped by `condition`, indicated with a color bar on top of the plot. Additionally, labels of clusters contain the adjusted p-values in parenthesis.
@@ -1187,7 +1190,7 @@ For this part of the analysis, we calculate the median expression of the 14 sign
 The linear model is formulated as follows:
 
 $$Y_{ij} = \beta_0 + \beta_1 x_{ij} + \epsilon_{ij},$$
-where $\epsilon_{ij} \sim N(0, \sigma^2)$, and the mixed model includes a random interecept for each patient:
+where $\epsilon_{ij} \sim N(0, \sigma^2)$, and the mixed model includes a random intercept for each patient:
 
 $$Y_{ij} = \beta_0 + \beta_1 x_{ij} + \gamma_{i} + \epsilon_{ij},$$
 where $\gamma_{i} \sim N(0, \sigma^2_\gamma)$.  In the current experiment, we have an intercept (basal level) and a single covariate, $x_{ij}$, which is represented as a binary (stimulated/unstimulated) variable.  For more complicated designs or batch effects, additional columns of a design matrix can be used.
@@ -1297,18 +1300,20 @@ By accounting for the patient effect, we detect almost twice as many cases of di
 ```{r diff_expr2_fit_model}
 de_out1 <- differential_expression_wrapper(expr_median = expr_median_sample_cluster, 
   md = md, model = "lm", formula = formula_lm, K = K)
-apply(de_out1$adjp < 0.05, 2, table)
+apply(de_out1$adjp < FDR_cutoff, 2, table)
 
 de_out2 <- differential_expression_wrapper(expr_median = expr_median_sample_cluster, 
   md = md, model = "lmer", formula = formula_lmer, K = K)
-apply(de_out2$adjp < 0.05, 2, table)
+apply(de_out2$adjp < FDR_cutoff, 2, table)
 
 ```
 
 One can assemble together an output table with the information about median marker expression in each cluster and sample and the obtained p-values.
 
 ```{r diff_expr2_fit_model_output}
-de_output2 <- data.frame(expr_median_sample_cluster, de_out2$pvals, de_out2$adjp)
+de_output2 <- data.frame(expr_median_sample_cluster, 
+                         de_out2$pvals, de_out2$adjp)
+print(head(de_output2),digits=2)
 ```
 
 To report the significant results, we use a heatmap.  Instead of plotting the absolute expression, we display the normalized expression, which better highlights the direction of marker changes.  Additionally, we order the cluster-marker instances by their significance and group them by cell type (cluster).
@@ -1371,21 +1376,23 @@ Similar to the analysis above, we identify more markers being differentially exp
 de_out3 <- differential_expression_wrapper(expr_median = 
     expr_median_sample[functional_markers, ], 
   md = md, model = "lm", formula = formula_lm, K = K)
-apply(de_out3$adjp < 0.05, 2, table)
+apply(de_out3$adjp < FDR_cutoff, 2, table)
 
 ## Fit a linear mixed model with patient ID as a random effect
 de_out4 <- differential_expression_wrapper(expr_median = 
     expr_median_sample[functional_markers, ], 
   md = md, model = "lmer", formula = formula_lmer, K = K)
-apply(de_out4$adjp < 0.05, 2, table)
+apply(de_out4$adjp < FDR_cutoff, 2, table)
 
 ```
 
 As before, we create an output table with the median marker expression calculated in each sample and the p-values, and we plot a heatmap with the significant markers sorted by their statistical significance.
 
 ```{r diff_expr1_fit_model_output}
-de_output4 <- data.frame(antigen = functional_markers, 
-  expr_median_sample[functional_markers, ], de_out4$pvals, de_out4$adjp)
+de_output4 <- data.frame(antigen = functional_markers,
+                         expr_median_sample[functional_markers, ], 
+                         de_out4$pvals, de_out4$adjp)
+print(head(de_output4), digits=2)
 ```
 
 
