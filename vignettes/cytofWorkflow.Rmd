@@ -64,9 +64,8 @@ vignette: >
 ---
 
 <!-- To render this document: -->
+<!-- rmarkdown::render('cytofWorkflow.Rmd') -->
 
-<!-- 
--->
 <!-- rmarkdown::render('cytofWorkflow.Rmd', clean=FALSE) -->
 <!-- system("pandoc -o cytofWorkflow.knit.docx cytofWorkflow.knit.md") -->
 
@@ -1015,7 +1014,7 @@ ggplot(ggdf, aes(x = sample_id, y = proportion, fill = cluster)) +
 
 ```
 
-It may be quite hard to see the differences in the cluster abundances in the plot above, especially for clusters with very low frequency.  And, since boxplots cannot represent multimodal distributions, we show boxplots with jittered points of the sample-level cluster proportions overlaid.  The y-axes are scaled to the range of data plotted for each cluster to better visualize the differences in frequency of lower abundance clusters. For this experiment, it may be interesting to additionally depict the patient information. We do this by plotting a different point shape for each patient. Indeed, we can see that often the direction of abundance changes between the two conditions is concordant between the patients.
+It may be quite hard to see the differences in the cluster abundances in the plot above, especially for clusters with very low frequency.  And, since boxplots cannot represent multimodal distributions, we show boxplots with jittered points of the sample-level cluster proportions overlaid.  The y-axes are scaled to the range of data plotted for each cluster to better visualize the differences in frequency of lower abundance clusters. For this experiment, it may be interesting to additionally depict the patient information. We do this by plotting a different point shape for each patient. Indeed, we can see that often the direction of abundance changes between the two conditions is concordant among the patients.
 
 
 ```{r diff_freqs_plot_props_boxplot, fig.width = 8, fig.height = 4, fig.cap="Relative abundance of PBMC populations in each sample plotted using boxplots."}
@@ -1039,18 +1038,28 @@ ggplot(ggdf) +
 
 <!-- A more suitable model would be based on the beta-binomial distribution, or similar results can be achieved by modeling the extra variance of ratios as random effects for each individual sample in the -->
 
-As our goal is to compare proportions, one could take these values, transform them (e.g., logit) and use them as a dependent variable in a linear model.  However, this approach does not take into account the uncertainty of proportion estimates, which is higher when ratios are calculated for samples with lower total cell counts.  A distribution that naturally accounts for such uncertainty is the binomial distribution (i.e., logistic regression), which takes the cell counts as input (relative to the total for each sample). Nevertheless, as in the genomic data analysis, the pure logistic regression is not able to capture the overdispersion that is present in HDCyto data.  A natural extension to model the extra variation is the generalized linear mixed model (GLMM) [@Zhao2013; @Jia2014].  Thus, we conduct the differential abundance analysis using GLMMs, but not specifically due to the pairing in the experiment.  Even in the absence of pairing, GLMMs allow overdispersion in proportions to be modeled, where the random effect is defined by the sample ID instead of the patient ID, as will be the case in the marker expression analyses.
+As our goal is to compare proportions, one could take these values, transform them (e.g., logit) and use them as a dependent variable in a linear model.  However, this approach does not take into account the uncertainty of proportion estimates, which is higher when ratios are calculated for samples with lower total cell counts.  A distribution that naturally accounts for such uncertainty is the binomial distribution (i.e., logistic regression), which takes the cell counts as input (relative to the total for each sample). Nevertheless, as in the genomic data analysis, the pure logistic regression is not able to capture the overdispersion that is present in HDCyto data.  A natural extension to model the extra variation is the generalized linear mixed model (GLMM) where the random effect is defined by the sample ID [@Zhao2013; @Jia2014]. In our example, additionally the patient pairing could be accounted in the model by incorporating a random intercept for each patient. Thus, we present two GLMMs. Both of them comprise a random effect defined by the sample ID to model the overdispersion in proportions. The second model, includes additionally a random effect defined by the patient ID to account for the experiment pairing.
+<!-- Thus, we conduct the differential abundance analysis using GLMMs, but not specifically due to the pairing in the experiment.  -->
+<!-- Even in the absence of pairing, GLMMs allow overdispersion in proportions to be modeled, where the random effect is defined by the sample ID instead of the patient ID, as will be the case in the marker expression analyses. -->
 
-In our model, the blocking variable is patient ID $i = 1, ..., n$, where $n=8$. For each patient, there are $n_i$ samples measured, and $j = 1,..., n_i$ indicates the sample ID.  Here, $n_i=2$ for all $i$ (one from reference and one from BCR/FcR-XL stimulated).  We assume that for a given cell population, the cell counts $Y_{ij}$ follow a binomial distribution $Y_{ij} \sim Bin(m_{ij}, \pi_{ij}|\beta_0, \beta_1, \gamma_{ij})$, where $m_{ij}$ is a total number of cells in a sample corresponding to patient $i$ and condition $j$.  The generalized linear mixed model with observation-level random effects $\gamma_{ij}$ is defined as follows:
+In our model, the blocking variable is patient ID $i = 1, ..., n$, where $n=8$. For each patient, there are $n_i$ samples measured, and $j = 1,..., n_i$ indicates the sample ID.  Here, $n_i=2$ for all $i$ (one from reference and one from BCR/FcR-XL stimulated).  
+We assume that for a given cell population, the cell counts $Y_{ij}$ follow a binomial distribution $Y_{ij} \sim Bin(m_{ij}, \pi_{ij})$, where $m_{ij}$ is a total number of cells in a sample corresponding to patient $i$ and condition $j$. The generalized linear mixed model with observation-level random effects $\xi_{ij}$ is defined as follows:
 
-$$E(Y_{ij}|\beta_0, \beta_1, \gamma_{ij}) = logit^{-1}(\beta_0 + \beta_1 x_{ij} + \gamma_{ij}),$$
-where $\gamma_{ij} \sim N(0, \sigma^2_\gamma)$ and $x_{ij}$ corresponds to the `conditionBCRXL` column in the design matrix and indicates whether a sample $ij$ belongs to the reference ($x_{ij}=0$) or treated condition ($x_{ij}=1$).  Since $E(Y_{ij}|\beta_0, \beta_1, \gamma_{ij}) = \pi_{ij}$, the above formula can be written as follows:
+$$E(Y_{ij}|\beta_0, \beta_1, \xi_{ij}) = logit^{-1}(\beta_0 + \beta_1 x_{ij} + \xi_{ij}),$$
+where $\xi_{ij} \sim N(0, \sigma^2_\xi)$ and $x_{ij}$ corresponds to the `conditionBCRXL` column in the design matrix and indicates whether a sample $ij$ belongs to the reference ($x_{ij}=0$) or treated condition ($x_{ij}=1$).  Since $E(Y_{ij}|\beta_0, \beta_1, \xi_{ij}) = \pi_{ij}$, the above formula can be written as follows:
 
-$$ logit(\pi_{ij}) = \beta_0 + \beta_1 x_{ij} + \gamma_{ij}.$$
+$$ logit(\pi_{ij}) = \beta_0 + \beta_1 x_{ij} + \xi_{ij}.$$
+
+The generalized linear mixed model that furthermore accounts for the patient pairing incorporates additionally a random intercept for each patient $i$:
+
+$$E(Y_{ij}|\beta_0, \beta_1, \gamma_i, \xi_{ij}) = logit^{-1}(\beta_0 + \beta_1 x_{ij} + \gamma_i + \xi_{ij}),$$
+$$ logit(\pi_{ij}) = \beta_0 + \beta_1 x_{ij} + \xi_{ij},$$
+where $\gamma_{i} \sim N(0, \sigma^2_\gamma)$.
 
 
 ```{r diff_formula_glmer_binomial}
-formula_glmer_binomial <- y/total ~ condition + (1|sample_id)
+formula_glmer_binomial1 <- y/total ~ condition + (1|sample_id)
+formula_glmer_binomial2 <- y/total ~ condition + (1|patient_id) + (1|sample_id)
 ```
 
 The wrapper function below takes as input a data frame with cell counts (each row is a population, each column is a sample), the metadata table, the formula and performs the differential analysis specified with contrast `K` for each population separately and returns a table with non-adjusted and adjusted p-values.
@@ -1086,30 +1095,24 @@ differential_abundance_wrapper <- function(counts, md, formula, K){
 }
 ```
 
+We fit both of the GLMMs specified above. We can see that accounting for the patient pairing increases the sensitivity to detect differentially abundant cell populations. 
 
 ```{r diff_freqs_fit_model}
-da_out <- differential_abundance_wrapper(counts, md = md, 
-  formula = formula_glmer_binomial, K = K)
-apply(da_out$adjp < FDR_cutoff, 2, table)
+da_out1 <- differential_abundance_wrapper(counts, md = md, 
+  formula = formula_glmer_binomial1, K = K)
+apply(da_out1$adjp < FDR_cutoff, 2, table)
+
+da_out2 <- differential_abundance_wrapper(counts, md = md, 
+  formula = formula_glmer_binomial2, K = K)
+apply(da_out2$adjp < FDR_cutoff, 2, table)
 ```
-
-
-[NEW: Just testing this model with patient and sample as random effects.]
-
-```{r diff_freqs_fit_model2}
-da_out <- differential_abundance_wrapper(counts, md = md, 
-  formula = y/total ~ condition + (1|patient_id) + (1|sample_id), K = K)
-da_out$adjp < FDR_cutoff
-```
-
 
 An output table containing the observed cell population proportions in each sample and p-values can be assembled (and optionally written to a file). 
 
 ```{r diff_freqs_fit_model_output}
-da_output <- data.frame(cluster = rownames(props), 
-                        props, 
-                        da_out$pvals, da_out$adjp)
-print(head(da_output),digits = 2)
+da_output2 <- data.frame(cluster = rownames(props),  props, 
+  da_out2$pvals, da_out2$adjp, row.names = NULL)
+print(head(da_output2), digits = 2)
 ```
 
 We use a heatmap to report the differential cell populations.  Proportions are first scaled with the arcsine-square-root transformation (as an alternative to logit that does not return NAs when ratios are equal to zero or one). Then, Z-score normalization is applied to each population to better highlight the relative differences between compared conditions.  We created two wrapper functions: `normalization_wrapper` performs the normalization of submitted expression `expr` to mean 0 and standard deviation 1, and `plot_differential_heatmap_wrapper` generates a heatmap of submitted expression `expr_norm`, where samples are grouped by `condition`, indicated with a color bar on top of the plot. Additionally, labels of clusters contain the adjusted p-values in parenthesis.
@@ -1167,20 +1170,18 @@ plot_differential_heatmap_wrapper <- function(expr_norm, sign_adjp,
 asin_table <- asin(sqrt((t(t(counts_table) / colSums(counts_table)))))
 asin <- as.data.frame.matrix(asin_table)
 ## Keep significant clusters and sort them by significance
-sign_clusters <- names(which(sort(da_out$adjp[, "adjp_BCRXLvsRef"]) < FDR_cutoff))
+sign_clusters <- names(which(sort(da_out2$adjp[, "adjp_BCRXLvsRef"]) < FDR_cutoff))
 ## Get the adjusted p-values
-sign_adjp <- da_out$adjp[sign_clusters , "adjp_BCRXLvsRef", drop=FALSE]
+sign_adjp <- da_out2$adjp[sign_clusters , "adjp_BCRXLvsRef", drop=FALSE]
 ## Keep samples for condition A and normalize to mean = 0 and sd = 1
 asin_norm <- normalization_wrapper(asin[sign_clusters, ])
 ```
 
 
-```{r diff_freqs_plot_heatmap_with_significant_clusters, fig.height = 2, fig.cap="Normalized proportions of PBMC cell populations that are significantly differentially abundant between BCR/FcR-XL stimulated and unstimulated condition."}
-
+```{r diff_freqs_plot_heatmap_with_significant_clusters, fig.height = 3, fig.cap="Normalized proportions of PBMC cell populations that are significantly differentially abundant between BCR/FcR-XL stimulated and unstimulated condition."}
 mm <- match(colnames(asin_norm), md$sample_id)
 plot_differential_heatmap_wrapper(expr_norm = asin_norm, sign_adjp = sign_adjp, 
   condition = md$condition[mm], color_conditions = color_conditions)
-
 ```
 
 
@@ -1312,8 +1313,8 @@ One can assemble together an output table with the information about median mark
 
 ```{r diff_expr2_fit_model_output}
 de_output2 <- data.frame(expr_median_sample_cluster, 
-                         de_out2$pvals, de_out2$adjp)
-print(head(de_output2),digits=2)
+  de_out2$pvals, de_out2$adjp, row.names = NULL)
+print(head(de_output2), digits = 2)
 ```
 
 To report the significant results, we use a heatmap.  Instead of plotting the absolute expression, we display the normalized expression, which better highlights the direction of marker changes.  Additionally, we order the cluster-marker instances by their significance and group them by cell type (cluster).
