@@ -291,7 +291,7 @@ sample_ids <- rep(md$sample_id, fsApply(fcs_raw, nrow))
 ```
 
 
-```{r plot-merker-expression-distribution, fig.cap = "**Figure 1.** Per-sample distributions of marker expression (arcsinh-transformed) of 10 lineage markers and 14 functional markers in the PBMC dataset. Two samples: unstimulated (Ref) and stimulated with BCR/FcR-XL (BCRXL) for each of the 8 healthy donors are presented, and colored according to the experimental condition."}
+```{r plot-merker-expression-distribution, fig.cap = "**Figure 1.** Per-sample smoothed densities of marker expression (arcsinh-transformed) of 10 lineage markers and 14 functional markers in the PBMC dataset. Two conditions: unstimulated (Ref) and stimulated with BCR/FcR-XL (BCRXL) for each of the 8 healthy donors are presented and colored by experimental condition."}
 library(ggplot2)
 library(reshape2)
 
@@ -317,7 +317,7 @@ Another spot check is the number of cells per sample (see Figure 2). This plot c
 <!-- [CARSTEN] What is the minimum amount of cells recommended for analysis???? What is the maximum??? -->
 
 
-```{r plot-number-of-cells, fig.cap = "**Figure 2.** Barplot with the number of cells in each of the two samples: unstimulated (Ref) and stimulated with BCR/FcR-XL (BCRXL) obtained for each of the 8 healthy donors in the PBMC dataset. Bars are colored according to the experimental condition. Numbers in the names on the x-axis indicate patient IDs. Numbers on top of the bars indicate the exact cell counts."}
+```{r plot-number-of-cells, fig.cap = "**Figure 2.** Barplot with the number of cells assayed in each sample, 8 unstimulated (Ref) and 8 stimulated with BCR/FcR-XL (BCRXL) for each of the donors in the PBMC dataset. Bars are colored by experimental condition. Numbers in the names on the x-axis indicate patient IDs. Numbers on top of the bars indicate the cell counts."}
 cell_table <- table(sample_ids)
 
 ggdf <- data.frame(sample_id = names(cell_table), 
@@ -343,7 +343,7 @@ In transcriptomics applications, one of the most utilized exploratory plots is t
 In our MDS plot on median marker expression values (see Figure 3), we can see that the first dimension (MDS1) separates the unstimulated and stimulated samples reasonably well.  The second dimension (MDS2) represents, to some degree, differences between patients. Most of the samples that originate from the same patient are placed at a similar point along the y-axis, for example, samples from patients 7, 5, and 8  are at the top of the plot, samples from patient 4 are located at the bottom of the plot.  This also indicates that the marker expression of individual patients is driving similarity and perhaps should be formally accounted for in the downstream statistical modeling.
 
 
-```{r plot-mds, fig.cap = "**Figure 3.** MDS plot for the unstimulated (Ref) and stimulated with BCR/FcR-XL (BCRXL) samples obtained for each of the 8 healthy donors in the PBMC dataset. Calculations are based on the median (arcsinh-transformed) marker expression of 10 lineage markers and 14 functional markers. Numbers in the label names indicate patient IDs."}
+```{r plot-mds, fig.cap = "**Figure 3.** MDS plot for the unstimulated (Ref) and stimulated with BCR/FcR-XL (BCRXL) samples obtained for each of the 8 healthy donors in the PBMC dataset. Calculations are based on the median (arcsinh-transformed) marker expression of 10 lineage markers and 14 functional markers across all cells measured for each sample.  Distances between samples on the plot approximate the typical change in medians. Numbers in the label names indicate patient IDs."}
 # Get the median marker expression per sample
 library(dplyr)
 
@@ -376,7 +376,7 @@ In contrast to genomic applications, the number of variables measured for each s
 
 As with the MDS plot, the dendrogram separates the reference and stimulated samples very well. Also, similar groupings of patients within experimental conditions are observed (patients 1-2, 5-7-8 and 3-4 are together in both conditions).
 
-```{r plot-dendogram, fig.cap = "**Figure 4.** Clustering of samples (columns) and markers (rows) based on the median (arcsinh-transformed) marker expression of 10 lineage markers and 14 functional markers in the PBMC dataset. Two samples: unstimulated (Ref) and stimulated with BCR/FcR-XL (BCRXL) for each of the 8 healthy donors are presented, and colored according to the experimental condition. Numbers in the column label names indicate patient IDs."}
+```{r plot-dendogram, fig.cap = "**Figure 4.** Clustering of samples (columns) and markers (rows) based on the median (arcsinh-transformed) marker expression of 10 lineage markers and 14 functional markers across all cells measured for each sample.  The two conditions: unstimulated (Ref) and stimulated with BCR/FcR-XL (BCRXL) for each of the 8 healthy donors are presented and colored by experimental condition.  Dendrograms are based on hierarchical clustering with Euclidean distance metric and complete linkage. Numbers in the column label names indicate patient IDs."}
 library(RColorBrewer)
 library(pheatmap)
 
@@ -420,7 +420,7 @@ The average NRS can be used to select a subset of markers that are non-redundant
 
 In the dataset considered here [@Bodenmiller2012; @Bruggner2014] we want to use all the 10 lineage markers, so that there is no explicit need to restrict the set of cell surface markers.  There may be other situations where this feature selection step would be of interest. 
 
-```{r nrs, fig.cap = "**Figure 5.** Non-redundancy scores based on the 10 lineage markers for the unstimulated (Ref) and stimulated with BCR/FcR-XL (BCRXL) samples obtained for each of the 8 healthy donors in the PBMC dataset. The colored points represent the per-sample NR scores, while open white circles indicate the mean NR scores from all the samples. Markers on the x-axis are sorted according to the decreasing average NRS."}
+```{r nrs, fig.cap = "**Figure 5.** Non-redundancy scores for each of the 10 lineage markers and all samples in the PBMC dataset. The points represent the per-sample NR scores (colored by experimental conditions), while open white circles indicate the mean NR scores from all the samples. Markers on the x-axis are sorted according to the decreasing average NRS."}
 ## Define a function that calculates the NRS per sample 
 NRS <- function(x, ncomp = 3){
   pr <- prcomp(x, center = TRUE, scale. = FALSE) 
@@ -527,7 +527,7 @@ color_clusters <- c("#DC050C", "#FB8072", "#1965B0", "#7BAFDE", "#882E72",
 ```
 
 
-```{r plot-clustering-heatmap1, fig.cap = "**Figure 6.** Heatmap of the median marker intensities of the 10 lineage markers in the 20 cell populations obtained with FlowSOM after the metaclustering step with ConsensusClusterPlus (PBMC data). The heat represents the median of arcsinh and 0-1 transformed marker expression. The dendrogram on the left represents the hierarchical similarity between the 20 metaclusters. Values in the brackets indicate the relative size of a given cluster."}
+```{r plot-clustering-heatmap1, fig.cap = "**Figure 6.** Heatmap of the median marker intensities of the 10 lineage markers across the 20 cell populations obtained with FlowSOM after the metaclustering step with ConsensusClusterPlus (PBMC data). The color in the heatmap represents the median of the arcsinh, 0-1 transformed marker expression. The dendrogram on the left represents the hierarchical similarity between the 20 metaclusters (metric: Euclidean distance; linkage: complete). Values in the brackets indicate the relative size of a given cluster."}
 
 plot_clustering_heatmap_wrapper <- function(expr, expr01, 
   cell_clustering, color_clusters, cluster_merging = NULL){
@@ -592,7 +592,7 @@ plot_clustering_heatmap_wrapper(expr = expr[, lineage_markers_ord],
 
 
 
-```{r plot-clustering-distribution1, fig.height = 8, fig.cap = "**Figure 7.** Distributions of marker intensities (arcsinh-transformed) of the 10 lineage markers in the 20 cell populations obtained with FlowSOM after the metaclustering step with ConsensusClusterPlus (PBMC data). Blue densities represent marker expression for cells in given clusters. Grey densities are calculated from all the cells and serve as a reference."}
+```{r plot-clustering-distribution1, fig.height = 8, fig.cap = "**Figure 7.** Distributions of marker intensities (arcsinh-transformed) of the 10 lineage markers in the 20 cell populations obtained with FlowSOM after the metaclustering step with ConsensusClusterPlus (PBMC data). Blue densities represent marker expression for cells in the given cluster. Grey densities are calculated from all the cells and serve as a reference."}
 plot_clustering_distr_wrapper <- function(expr, cell_clustering){
   
   cell_clustering <- factor(cell_clustering)
@@ -608,7 +608,7 @@ plot_clustering_distr_wrapper <- function(expr, cell_clustering){
   freq_clust <- table(cell_clustering)
   freq_clust <- round(as.numeric(freq_clust)/sum(freq_clust)*100, 2)
   cell_clustering <- factor(cell_clustering, 
-    labels = paste0(levels(cell_clustering), " (", freq_clust, "%)"))
+    labels = paste0(levels(cell_clustering), " \n(", freq_clust, "%)"))
   
   ggd <- melt(data.frame(cluster = cell_clustering, expr), 
     id.vars = "cluster", value.name = "expression", 
@@ -677,7 +677,7 @@ tsne_out <- Rtsne(tsne_expr, check_duplicates = FALSE, pca = FALSE)
 ```
 
 
-```{r tsne-plot-one-expr-CD4, fig.cap = "**Figure 8.** t-SNE plot based on the arcsinh-transformed expression of the 10 lineage markers in the cells from the PBMC dataset. From each of the 16 samples 2000 cells were randomly selected. Cells are colored according to the expression level of the CD4 marker."}
+```{r tsne-plot-one-expr-CD4, fig.cap = "**Figure 8.** t-SNE plot based on the arcsinh-transformed expression of the 10 lineage markers in the cells from the PBMC dataset (t-SNE was run with no PCA step, perplexity = 30, 1000 iterations). From each of the 16 samples, 2000 cells were randomly selected. Cells are colored according to the expression level of the CD4 marker."}
 ## Plot t-SNE colored by CD4 expression
 dr <- data.frame(tSNE1 = tsne_out$Y[, 1], tSNE2 = tsne_out$Y[, 2], 
   expr[tsne_inds, lineage_markers])
@@ -695,7 +695,7 @@ We can color the cells by cluster.  Ideally, cells of the same color should be c
 When the plots are further stratified by sample (see Figure 10), we can verify whether similar cell populations are present in all replicates, which can help in identifying outlying samples. Optionally, stratification can be done by condition (see Figure 11). With such a spot-check plot, we can inspect whether differences in cell abundance are strong between conditions, and we can identify distinguishing clusters. 
 
 
-```{r tsne-plot-one-clustering1, fig.cap = "**Figure 9.** t-SNE plot based on the arcsinh-transformed expression of the 10 lineage markers in the cells from the PBMC dataset. From each of the 16 samples 2000 cells were randomly selected. Cells are colored according to the 20 cell populations obtained with FlowSOM after the metaclustering step with ConsensusClusterPlus."}
+```{r tsne-plot-one-clustering1, fig.cap = "**Figure 9.** t-SNE plot based on the arcsinh-transformed expression of the 10 lineage markers in the cells from the PBMC dataset. From each of the 16 samples, 2000 cells were randomly selected. Cells are colored according to the 20 cell populations obtained with FlowSOM after the metaclustering step with ConsensusClusterPlus."}
 dr$sample_id <- sample_ids[tsne_inds]
 mm <- match(dr$sample_id, md$sample_id)
 dr$condition <- md$condition[mm]
@@ -711,13 +711,13 @@ ggp
 ```
 
 
-```{r tsne-plot-facet-sample, fig.cap = "**Figure 10.** t-SNE plot as in the Figure 9 but stratified by sample."}
+```{r tsne-plot-facet-sample, fig.cap = "**Figure 10.** t-SNE plot as in the Figure 9, but stratified by sample."}
 ## Facet per sample
 ggp + facet_wrap(~ sample_id) 
 ```
 
 
-```{r tsne-plot-facet-condition, fig.height = 4, fig.cap = "**Figure 11.** t-SNE plot as in the Figure 9 but stratified by condition."}
+```{r tsne-plot-facet-condition, fig.height = 4, fig.cap = "**Figure 11.** t-SNE plot as in the Figure 9, but stratified by condition."}
 ## Facet per condition
 ggp + facet_wrap(~ condition) 
 ```
@@ -760,7 +760,7 @@ gg_tsne_codes <- ggplot(codes_dr,  aes(x = tSNE1, y = tSNE2,
 ```
 
 
-```{r plot-som-codes1-pca, fig.height = 8, fig.cap = "**Figure 12.** (A) t-SNE plot and (B) PCA plot representing the 100 SOM codes in the PBMC dataset colored according to the metaclustering with ConsensusClusterPlus into 20 cell populations. The SOM codes represent characteristics of the 100 (by default) clusters generated in the first step of the FlowSOM pipeline. The size of the points corresponds to the number of cells that were assigned to a given code."}
+```{r plot-som-codes1-pca, fig.height = 8, fig.width=6, fig.cap = "**Figure 12.** (A) t-SNE plot and (B) PCA plot representing the 100 SOM codes in the PBMC dataset colored according to the metaclustering with ConsensusClusterPlus into 20 cell populations. The SOM codes represent characteristics of the 100 (by default) clusters generated in the first step of the FlowSOM pipeline. The size of the points corresponds to the number of cells that were assigned to a given code."}
 ## Plot PCA on codes
 gg_pca_codes <- ggplot(codes_dr,  aes(x = PCA1, y = PCA2, 
   color = code_clustering1, size = size)) +
@@ -811,7 +811,7 @@ code_clustering1m <- cluster_merging1$new_cluster[mm]
 
 We update the t-SNE plot with the new annotated cell populations, Figure 13.
 
-```{r tsne-plot-one-clustering1m, fig.cap = "**Figure 13.** t-SNE plot based on the arcsinh-transformed expression of the 10 lineage markers in the cells from the PBMC dataset. From each of the 16 samples 2000 cells were randomly selected. Cells are colored according to the manual merging of the 20 cell populations obtained with FlowSOM into 8 PBMC populations. "}
+```{r tsne-plot-one-clustering1m, fig.cap = "**Figure 13.** t-SNE plot based on the arcsinh-transformed expression of the 10 lineage markers in the cells from the PBMC dataset. From each of the 16 samples, 2000 cells were randomly selected. Cells are colored according to the manual merging of the 20 cell populations obtained with FlowSOM into 8 PBMC populations. "}
 dr$cell_clustering1m <- factor(cell_clustering1m[tsne_inds])
 ggplot(dr,  aes(x = tSNE1, y = tSNE2, color = cell_clustering1m)) +
   geom_point(size = 0.8) +
@@ -822,7 +822,7 @@ ggplot(dr,  aes(x = tSNE1, y = tSNE2, color = cell_clustering1m)) +
 
 One of the usefull representations of merging is a heatmap of median marker expression in each of the original clusters, which are labeled according to the proposed merging, Figure 14. 
 
-```{r plot-clustering-heatmap1m-merging, fig.cap = "**Figure 14.** Heatmap as in Figure 6 aditioanlly indicating with the color bars on the left how the 20 metaclusters obtained with FlowSOM are merged into the 8 PBMC populations. "}
+```{r plot-clustering-heatmap1m-merging, fig.cap = "**Figure 14.** Heatmap as in Figure 6 with the color bars on the left indicating how the 20 metaclusters obtained with FlowSOM are merged into the 8 PBMC populations. "}
 plot_clustering_heatmap_wrapper(expr = expr[, lineage_markers_ord],
   expr01 = expr01[, lineage_markers_ord], cell_clustering = cell_clustering1,
   color_clusters = color_clusters, cluster_merging = cluster_merging1)
@@ -830,7 +830,7 @@ plot_clustering_heatmap_wrapper(expr = expr[, lineage_markers_ord],
 
 To get a final summary of the annotated cell types, one can plot a heatmap of median marker expression, calculated based on the cells in each of the annotated populations, Figure 15.
 
-```{r plot-clustering-heatmap1m, fig.height = 3, fig.cap = "**Figure 15.** Heatmap of the median marker intensities of the 10 lineage markers in the 8 PBMC cell populations obtained by manual merging of the 20 metaclusters generated by FlowSOM. The heat represents the median of arcsinh and 0-1 transformed marker expression. Values in the brackets indicate the relative size of each of the cell populations across all the samples."}
+```{r plot-clustering-heatmap1m, fig.height = 3, fig.cap = "**Figure 15.** Heatmap of the median marker intensities of the 10 lineage markers in the 8 PBMC cell populations obtained by manual merging of the 20 metaclusters generated by FlowSOM. The heat represents the median of arcsinh 0-1 transformed marker expression. Values in the brackets indicate the relative size of each of the cell populations across all the samples."}
 plot_clustering_heatmap_wrapper(expr = expr[, lineage_markers_ord],
   expr01 = expr01[, lineage_markers_ord], cell_clustering = cell_clustering1m,
   color_clusters = color_clusters)
@@ -861,7 +861,7 @@ cell_clustering2 <- code_clustering2[som$map$mapping[, 1]]
 
 In the t-SNE plot (see Figure 17), we can see that many small clusters obtained when stratifying data into 20 groups are now merged together, which should simplify the new cluster annotation.  
 
-```{r tsne-plot-one-clustering2, fig.cap = "**Figure 17.** t-SNE plot based on the arcsinh-transformed expression of the 10 lineage markers in the cells from the PBMC dataset. From each of the 16 samples 2000 cells were randomly selected. Cells are colored according to the 12 cell populations obtained with FlowSOM after the metaclustering step with ConsensusClusterPlus."}
+```{r tsne-plot-one-clustering2, fig.cap = "**Figure 17.** t-SNE plot based on the arcsinh-transformed expression of the 10 lineage markers in the cells from the PBMC dataset. From each of the 16 samples, 2000 cells were randomly selected. Cells are colored according to the 12 cell populations obtained with FlowSOM after the metaclustering step with ConsensusClusterPlus."}
 dr$cell_clustering2 <- factor(cell_clustering2[tsne_inds], levels = 1:nmc2)
 ggplot(dr,  aes(x = tSNE1, y = tSNE2, color = cell_clustering2)) +
   geom_point(size = 0.8) +
@@ -871,7 +871,7 @@ ggplot(dr,  aes(x = tSNE1, y = tSNE2, color = cell_clustering2)) +
 ```
 
 
-```{r plot-clustering-heatmap2, fig.height = 3, fig.cap = "**Figure 18.** Heatmap of the median marker intensities of the 10 lineage markers in the 12 metaclusters obtained with FlowSOM after the metaclustering step with ConsensusClusterPlus (PBMC data). The heat represents the median of arcsinh and 0-1 transformed marker expression. The dendrogram on the left represents the hierarchical similarity between the 12 metaclusters. Values in the brackets indicate the relative size of a given cluster."}
+```{r plot-clustering-heatmap2, fig.height = 3, fig.cap = "**Figure 18.** Heatmap of the median marker intensities of the 10 lineage markers in the 12 metaclusters obtained with FlowSOM after the metaclustering step with ConsensusClusterPlus (PBMC data). The heat represents the median of arcsinh 0-1 transformed marker expression. The dendrogram on the left represents the hierarchical similarity between the 12 metaclusters (metric: Euclidean distance; linkage: complete). Values in the brackets indicate the relative size of a given cluster."}
 plot_clustering_heatmap_wrapper(expr = expr[, lineage_markers_ord],
   expr01 = expr01[, lineage_markers_ord], cell_clustering = cell_clustering2,
   color_clusters = color_clusters)
@@ -892,7 +892,7 @@ cell_clustering2m <- cluster_merging2$new_cluster[mm]
 ```
 
 
-```{r tsne-plot-one-clustering2m, fig.cap = "**Figure 19.** t-SNE plot based on the arcsinh-transformed expression of the 10 lineage markers in the cells from the PBMC dataset. From each of the 16 samples 2000 cells were randomly selected. Cells are colored according to the 12 metaclusters obtained with FlowSOM after the metaclustering step with ConsensusClusterPlus."}
+```{r tsne-plot-one-clustering2m, fig.cap = "**Figure 19.** t-SNE plot based on the arcsinh-transformed expression of the 10 lineage markers in the cells from the PBMC dataset. From each of the 16 samples, 2000 cells were randomly selected. Cells are colored according to the 12 metaclusters obtained with FlowSOM after the metaclustering step with ConsensusClusterPlus."}
 dr$cell_clustering2m <- factor(cell_clustering2m[tsne_inds])
 gg_tsne_cl2m <- ggplot(dr,  aes(x = tSNE1, y = tSNE2, color = cell_clustering2m)) +
   geom_point(size = 0.8) +
@@ -903,7 +903,7 @@ gg_tsne_cl2m
 ```
 
 
-```{r plot-clustering-heatmap2-merging, fig.cap = "**Figure 20.** Heatmap as in Figure 18 aditioanlly indicating with the color bars on the left how the 12 metaclusters obtained with FlowSOM are merged into the 8 PBMC populations."}
+```{r plot-clustering-heatmap2-merging, fig.cap = "**Figure 20.** Heatmap as in Figure 18 with color bars on the left indicating how the 12 metaclusters obtained with FlowSOM are merged into the 8 PBMC populations."}
 
 plot_clustering_heatmap_wrapper(expr = expr[, lineage_markers_ord],
   expr01 = expr01[, lineage_markers_ord], cell_clustering = cell_clustering2,
@@ -911,7 +911,7 @@ plot_clustering_heatmap_wrapper(expr = expr[, lineage_markers_ord],
 ```
 
 
-```{r plot-clustering-heatmap2m, fig.height = 3, fig.cap = "**Figure 21.** Heatmap of the median marker intensities of the 10 lineage markers in the 8 PBMC cell populations obtained by manual merging of the 12 metaclusters generated by FlowSOM. The heat represents the median of arcsinh and 0-1 transformed marker expression. Values in the brackets indicate the relative size of each of the cell populations across all the samples."}
+```{r plot-clustering-heatmap2m, fig.height = 3, fig.cap = "**Figure 21.** Heatmap of the median marker intensities of the 10 lineage markers in the 8 PBMC cell populations obtained by manual merging of the 12 metaclusters generated by FlowSOM. The heat represents the median of arcsinh 0-1 transformed marker expression. Values in the brackets indicate the relative size of each of the cell populations across all the samples."}
 plot_clustering_heatmap_wrapper(expr = expr[, lineage_markers_ord],
   expr01 = expr01[, lineage_markers_ord], cell_clustering = cell_clustering2m, 
   color_clusters = color_clusters)
@@ -946,7 +946,7 @@ plot_grid(gg_tsne_cl2m, gg_tsne_cl3, ncol = 1, labels = c('A', 'B'))
 ```
 
 
-```{r plot-clustering-heatmap3, fig.height = 3, fig.cap = "**Figure 23.** Heatmap of the median marker intensities of the 10 lineage markers in the 8 metaclusters obtained with FlowSOM after the metaclustering step with ConsensusClusterPlus (PBMC data). The heat represents the median of arcsinh and 0-1 transformed marker expression. The dendrogram on the left represents the hierarchical similarity between the 8 metaclusters. Values in the brackets indicate the relative size of a given cluster."}
+```{r plot-clustering-heatmap3, fig.height = 3, fig.cap = "**Figure 23.** Heatmap of the median marker intensities of the 10 lineage markers in the 8 metaclusters obtained with FlowSOM after the metaclustering step with ConsensusClusterPlus (PBMC data). The heat represents the median of arcsinh and 0-1 transformed marker expression. The dendrogram on the left represents the hierarchical similarity between the 8 metaclusters (metric: Euclidean distance; linkage: complete). Values in the brackets indicate the relative size of a given cluster."}
 plot_clustering_heatmap_wrapper(expr = expr[, lineage_markers_ord],
   expr01 = expr01[, lineage_markers_ord], cell_clustering = cell_clustering3, 
   color_clusters = color_clusters)
@@ -1006,7 +1006,7 @@ props <- as.data.frame.matrix(props_table)
 
 For each sample, we plot its PBMC cell type composition represented with colored bars, where the size of a given stripe reflects the proportion of the corresponding cell type in a given sample (see Figure 24).
 
-```{r diff-freqs-plot-props-barplot, fig.cap = "**Figure 24.** Relative abundance of the 8 PBMC populations in each sample (x-axis), in the PBMC dataset, represented with a barplot. The 8 cell populations are a result of manual merging of the 20 metaclusters. "}
+```{r diff-freqs-plot-props-barplot, fig.cap = "**Figure 24.** Relative abundance of the 8 PBMC populations in each sample (x-axis), in the PBMC dataset, represented with a barplot. The 8 cell populations are a result of manual merging of the 20 FlowSOM metaclusters. "}
 ggdf <- melt(data.frame(cluster = rownames(props), props), 
   id.vars = "cluster", value.name = "proportion", variable.name = "sample_id")
 
@@ -1026,7 +1026,7 @@ ggplot(ggdf, aes(x = sample_id, y = proportion, fill = cluster)) +
 It may be quite hard to see the differences in cluster abundances in the plot above, especially for clusters with very low frequency.  And, since boxplots cannot represent multimodal distributions, we show boxplots with jittered points of the sample-level cluster proportions overlaid (see Figure 25).  The y-axes are scaled to the range of data plotted for each cluster, to better visualize the differences in frequency of lower abundance clusters. For this experiment, it may be interesting to additionally depict the patient information. We do this by plotting a different point shape for each patient. Indeed, we can see that often the direction of abundance changes between the two conditions are concordant among the patients.
 
 
-```{r diff-freqs-plot-props-boxplot, fig.height = 4, fig.cap = "**Figure 25.** Relative abundance of the 8 PBMC populations in each sample, in the PBMC dataset, represented with boxplots. Different colors are used for the two conditions unstimulated (Ref) and stimulated with BCR/FcR-XL (BCRXL). Values for each patient are indicated with different shape. The 8 cell populations are a result of manual merging of the 20 metaclusters."}
+```{r diff-freqs-plot-props-boxplot, fig.height = 4, fig.cap = "**Figure 25.** Relative abundance of the 8 PBMC populations in each sample, in the PBMC dataset, represented with boxplots. Different colors are used for the two conditions: unstimulated (Ref) and stimulated with BCR/FcR-XL (BCRXL). Values for each patient are indicated with different shape. The 8 cell populations are a result of manual merging of the 20 FlowSOM metaclusters."}
 ggdf$patient_id <- factor(md$patient_id[mm])
 
 ggplot(ggdf) +
@@ -1238,7 +1238,7 @@ expr_median_sample_cluster <- expr_median_sample_cluster[keep0, ]
 
 It is helpful to plot the median expression of all the markers in each cluster for each sample colored by condition, to get a rough image of how strong the differences might be (see Figure 27).  We do this by combining boxplots and jitter.
 
-```{r diff-expr2-plot-median-expr, fig.height = 8, fig.cap = "**Figure 27.** Median (arcsinh-transformed) expression of 14 signaling markers in the 8 identified PBMC cell populations. Different colors are used for the two conditions unstimulated (Ref) and stimulated with BCR/FcR-XL (BCRXL). Values for each patient are indicated with different shape. The 8 cell populations are a result of manual merging of the 20 metaclusters."}
+```{r diff-expr2-plot-median-expr, fig.height = 8, fig.cap = "**Figure 27.** Median (arcsinh-transformed) expression of 14 signaling markers across the 8 identified PBMC cell populations. Different colors are used for the two conditions unstimulated (Ref) and stimulated with BCR/FcR-XL (BCRXL). Values for each patient are indicated with different shape. The 8 cell populations are a result of manual merging of the 20 metaclusters."}
 ggdf <- expr_median_sample_cluster_melt[expr_median_sample_cluster_melt$cluster 
   %in% clusters_keep, ]
 ## Add info about samples
