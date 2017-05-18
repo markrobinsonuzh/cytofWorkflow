@@ -133,27 +133,17 @@ cat("***Note:*** *to cite this article, please refer to http://f1000research.com
 
 # Data description
 
-<!-- Specifically, we perform our analysis on 16 samples of peripheral blood mononuclear cells (PBMCs) from 8 healthy donors where 8 were unstimulated and another 8 were stimulated for 30 minutes with B cell receptor/Fc receptor crosslinking (BCR/FcR-XL). -->
-<!-- [CLARA] Would this not mean you used data originating from a total of 16 donors? -->
 
+We use a subset of CyTOF data originating from Bodenmiller *et al.* [@Bodenmiller2012] that was also used in the `r Rpackage("Citrus")` paper [@Bruggner2014].  Specifically, we perform our analysis on samples of peripheral blood mononuclear cells (PBMCs) from 8 healthy donors, where for each individual, an unstimulated and a stimulated samples (for 30 minutes with B cell receptor/Fc receptor crosslinking, known as BCR/FcR-XL) were collected, resulting in 16 samples in total. For each sample, 14 signaling markers and 10 cell surface markers were measured.
 
-We use a subset of CyTOF data originating from Bodenmiller *et al.* [@Bodenmiller2012] that was also used in the `r Rpackage("Citrus")` paper [@Bruggner2014]. [CHANGED!] Specifically, we perform our analysis on samples of peripheral blood mononuclear cells (PBMCs) from 8 healthy donors, where for each individual one unstimulated sample and one stimulated for 30 minutes with B cell receptor/Fc receptor crosslinking (BCR/FcR-XL) sample are selected, resulting in 16 samples in total. For each sample, 14 signaling markers and 10 cell surface markers were measured.
+The original data is available from the [Cytobank report](http://reports.cytobank.org/105/v2). The subset used here can be downloaded from the [Citrus Cytobank repository](https://community.cytobank.org/cytobank/experiments/15713/) (files with `_BCR-XL.fcs` or `_Reference.fcs` endings) or from our web server (see [Data import](#data-import) section).
 
-
-<!-- The original data can be downloaded from the [Cytobank report](http://reports.cytobank.org/105/v2). The subset used here is also available from the [Citrus Cytobank repository](https://community.cytobank.org/cytobank/experiments/15713/download_files). -->
-<!-- [CLARA] Could you provide clearer instructions on what datasets to download? -->
-
-[CHANGED!] The original data is available in the [Cytobank report](http://reports.cytobank.org/105/v2). The subset used here can be downloaded from the [Citrus Cytobank repository](https://community.cytobank.org/cytobank/experiments/15713/download_files) (see [Data import](#data-import) section).
-
-In both the Bodenmiller *et al.* and `r Rpackage("Citrus")` manuscripts, the 10 lineage markers were used to identify cell subpopulations. These were then investigated for differences between reference and stimulated cell subpopulations separately for each of the 14 functional markers. The same strategy is used in this workflow; 10 lineage markers are used for cell clustering and 14 functional markers are tested for differential expression between the reference and BCR/FcR-XL stimulation.  Even though differential analysis of cell abundance was not in the scope of the Bodenmiller *et al.* experiment, we present them here to highlight the generality of the discovery.
+In both the Bodenmiller *et al.* and `r Rpackage("Citrus")` manuscripts, the 10 lineage markers were used to identify cell subpopulations. These were then investigated for differences between reference and stimulated cell subpopulations separately for each of the 14 functional markers. The same strategy is used in this workflow; 10 lineage markers are used for cell clustering and 14 functional markers are tested for differential expression between the reference and BCR/FcR-XL stimulation.  Even though differential analysis of cell abundance was not in the scope of the Bodenmiller *et al.* experiment, we present it here to highlight the generality of the discovery.
 
 
 # Data preprocessing
 
-<!-- Conventional flow cytometers and mass cytometers produce .fcs files that can be manually analyzed using programs such as FlowJo [TriStar] or Cytobank [@Kotecha2001]. -->
-<!-- [VITO] Mention flowCore. -->
-
-[CHANGED!]  Conventional flow cytometers and mass cytometers produce .fcs files that can be manually analyzed using programs such as FlowJo [TriStar] or Cytobank [@Kotecha2001], or using the R/Bioconductor packages such as the `r Biocpkg("flowCore")` package [@Ellis2017]. During this initial analysis step, dead cells are removed, compensation is checked and with simple two dimensional scatter plots (e.g. marker intensity versus time), marker expression patterns are checked.  Often, modern experiments are barcoded in order to remove analytical biases due to individual sample variation or acquisition time.  Preprocessing steps including normalization using bead standards, de-barcoding and compensation can be completed with the `r Biocpkg("CATALYST")` package, which provides an implementation of the de-barcoding algorithm described by Zunder *et al.* [@Zunder2015] and the bead-based normalization from Finck *et al.* [@Finck2013]. Of course, preprocessing steps can occur using custom scripts within R or outside of R (e.g. [Normalizer](https://github.com/nolanlab/bead-normalization/releases/latest) [@Finck2013]).
+Conventional flow cytometers and mass cytometers produce .fcs files that can be manually analyzed using programs such as FlowJo [TriStar] or Cytobank [@Kotecha2001], or using the R/Bioconductor packages, such as the `r Biocpkg("flowCore")` package [@Ellis2017]. During this initial analysis step, dead cells are removed, compensation is checked and with simple two dimensional scatter plots (e.g. marker intensity versus time), marker expression patterns are checked.  Often, modern experiments are barcoded in order to remove analytical biases due to individual sample variation or acquisition time.  Preprocessing steps including normalization using bead standards, de-barcoding and compensation can be completed with the `r Biocpkg("CATALYST")` package, which provides an implementation of the de-barcoding algorithm described by Zunder *et al.* [@Zunder2015] and the bead-based normalization from Finck *et al.* [@Finck2013]. Of course, preprocessing steps can occur using custom scripts within R or outside of R (e.g. [Normalizer](https://github.com/nolanlab/bead-normalization/releases/latest) [@Finck2013]).
 
 <!--Finally, compensation is performed via a two-step algorithm, which first uses single-cell debarcoding of single-stained beads to identify single positive populations. 
 Second, it estimates a spillover matrix from the identified populations and its inverse, called a compensation matrix, is used to compensate the observed intensities.-->
@@ -199,10 +189,7 @@ download.file(file.path(url, fcs_filename), destfile = fcs_filename)
 unzip(fcs_filename)
 ```
 
-<!-- We read in all files into a `flowSet` object, which is a general container for HDCyto data. -->
-<!-- [CLARA] consider revising -->
-
-To load the content of the .fcs files into R, we use the `r Biocpkg("flowCore")`. We read in all files into a `flowSet` object, which is a general container for HDCyto data.  Importantly, `read.flowSet` and the  `read.FCS` functions, by default, may transform the marker intensities and remove cells with extreme positive values.  We keep these options off to be sure that we control the exact preprocessing steps.
+To load the content of the .fcs files into R, we use the `r Biocpkg("flowCore")`. Using `read.flowSet`, we read in all files into a `flowSet` object, which is a general container for HDCyto data.  Importantly, `read.flowSet` and the underlying  `read.FCS` functions, by default, may transform the marker intensities and remove cells with extreme positive values.  We keep these options off to be sure that we control the exact preprocessing steps.
 
 ```{r load-fcs, include=FALSE}
 library(flowCore)
@@ -704,11 +691,8 @@ ggplot(dr,  aes(x = tSNE1, y = tSNE2, color = CD4)) +
 ```
 
 
-<!-- When the figure is stratified by sample, we can verify whether similar cell populations are present in replicates and if differences in cell abundance are strong, identify distinguishing clusters. -->
-<!-- [CLARA] The meaning here is unclear; please rephrase. -->
-
-We can color the cells by cluster and ideally, cells of the same color should be close to each other (see Figure 9). 
-[CHANGED!] When the figure is stratified by sample (see Figure 10), we can verify whether similar cell populations are present in replicates, which can help in identifying outlying samples if any are present. Optionally, stratification can be done by condition (see Figure 11). With such a spot-check plot, we can inspect whether differences in cell abundance are strong between conditions, and we can identify distinguishing clusters. 
+We can color the cells by cluster.  Ideally, cells of the same color should be close to each other (see Figure 9). 
+When the plots are further stratified by sample (see Figure 10), we can verify whether similar cell populations are present in all replicates, which can help in identifying outlying samples. Optionally, stratification can be done by condition (see Figure 11). With such a spot-check plot, we can inspect whether differences in cell abundance are strong between conditions, and we can identify distinguishing clusters. 
 
 
 ```{r tsne-plot-one-clustering1, fig.cap = "**Figure 9.** t-SNE plot based on the arcsinh-transformed expression of the 10 lineage markers in the cells from the PBMC dataset. From each of the 16 samples 2000 cells were randomly selected. Cells are colored according to the 20 cell populations obtained with FlowSOM after the metaclustering step with ConsensusClusterPlus."}
@@ -802,9 +786,7 @@ In our example, we expect around 6 specific cell types, and we have performed `r
 
 ### Manual cluster merging and annotating based on heatmaps
 
-<!-- [CLARA] Such plots give a good insight into the data structure because they aggregate information over many cells, thus showing an average picture of each cluster, and then this is combined with dimensionality reduction.  -->
-
-In our experience, the main reference for manual merging of clusters is the heatmap of marker characteristics across metaclusters, with dendrograms showing the hierarchy of similarities. Such plots aggregate information over many cells, thus showing an average picture of each cluster, but combined with dimensionality reduction, give a good insight into the data structure. Given expert knowledge of the cell types and markers, it is then left to the researcher to decide how exactly to merge clusters (e.g. with higher weight given to some markers).
+In our experience, the main reference for manual merging of clusters is the heatmap of marker characteristics across metaclusters, with dendrograms showing the hierarchy of similarities. Such plots aggregate information over many cells and thus show average marker expression for each cluster.  Together with dimensionality reduction, these plots give good insight into the relationships between clusters and the marker levels within each cluster. Given expert knowledge of the cell types and markers, it is then left to the researcher to decide how exactly to merge clusters (e.g., with higher weight given to some markers).
 
 The dendrogram highlights the similarity between the metaclusters and can be used explicitly for the merging.  However, there are reasons why we would not always follow the dendrogram exactly.  In general, when it comes to clustering, blindly following the hierarchy of codes will lead to identification of populations of similar cells, but it does not necessarily mean that they are of biological interest.  The distances between metaclusters are calculated across all the markers, and it may be that some markers carry higher weight for certain cell types.  In addition, different linkage methods may lead to different hierarchy, especially when clusters are not fully distinct.  Another aspect to consider in cluster merging is the cluster size, represented in the parentheses next to the cluster label in our plots. If the cluster size is very small, but the cluster seems relevant and distinct, one can keep it as separate.  However, if it is small and different from the neighboring clustering only in a somewhat unimportant marker, it could be merged.  And, if some of the metaclusters do not represent any specific cell types, they could be dropped out of the downstream analysis instead of being merged.   However, in case an automated solution for cluster merging is truly needed, one could use the `cutree()` function applied to the dendrogram.
 
@@ -981,11 +963,7 @@ However, in our example, only the manual merging results in biologically meaning
 
 For the dataset used in this workflow [@Bodenmiller2012; @Bruggner2014], we perform three types of analyses that aim to identify subsets of PBMCs and signaling markers that respond to BCR/FcR-XL stimulation, by comparing stimulated samples to unstimulated samples. We first describe the differential abundance of the defined cell populations, followed by differential analysis of marker expression within each cluster. Finally, differential analysis of the overall aggregated marker expression could also be of interest.
 
-<!-- In this way, one can formally account for within-patient variability, as noted above in the MDS plot, and should give a gain in power to detect differences between conditions. -->
-<!-- [CLARA] Which MDS plot? Also, the meaning here is unclear; please rewrite the sentence. -->
-
-
-The PBMC subset analyzed in this workflow originates from a paired experiment, where samples from 8 patients were treated with 12 different stimulation conditions for 30 minutes, together with unstimulated reference samples [@Bodenmiller2012]. This is a natural example where one would choose a mixed model to model the response (abundance or marker signal), and patients would be treated as a random effect. [CHANGED!] In this way, one can formally account for within-patient variability, observed to be quite strong in the MDS plot (see [MDS plot](#mds-plot) section), and this should give a gain in power to detect differences between conditions. 
+The PBMC subset analyzed in this workflow originates from a paired experiment, where samples from 8 patients were treated with 12 different stimulation conditions for 30 minutes, together with unstimulated reference samples [@Bodenmiller2012]. This is a natural example where one would choose a mixed model to model the response (abundance or marker signal), and patients would be treated as a random effect. In this way, one can formally account for within-patient variability, observed to be quite strong in the MDS plot (see [MDS plot](#mds-plot) section), and this should give a gain in power to detect differences between conditions. 
 
 
 We use the `r CRANpkg("stats")` and `r CRANpkg("lme4")` packages to fit the fixed and mixed models, respectively, and the `r CRANpkg("multcomp")` package for hypothesis testing.  In all differential analyses here, we want to test for differences between the reference (`Ref`) and BCR/FcR-XL treatment (`BCRXL`). The fixed model formula is straightforward: `~ condition`, where `condition` indicates the treatment group. The corresponding full model design matrix consists of the intercept and dummy variable indicating the treated samples.  In the presence of batches, one can include them in the model by using a formula `~ condition + batch`, or if they affect the treatment, a formula with interactions `~ condition * batch`.
@@ -1503,15 +1481,12 @@ No competing interests were disclosed.
 
 MN acknowledges the funding from a Swiss Institute of Bioinformatics (SIB) Fellowship.
 
-
 *The funders had no role in study design, data collection and analysis, decision to publish, or preparation of the manuscript.*
 
 
 # Acknowledgments
 
-<!-- [CLARA] Affiliation information? -->
-
-[CHANGED!] The authors wish to thank members of the Robinson, Bodenmiller and von Mering groups from the Institute of Molecular Life Sciences, University of Zurich for helpful discussions.
+The authors wish to thank members of the Robinson, Bodenmiller and von Mering groups from the Institute of Molecular Life Sciences, University of Zurich for helpful discussions.
 
 
 
