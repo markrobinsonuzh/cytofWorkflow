@@ -18,4 +18,5 @@ import(Rtsne)
 import(cowplot)
 import(lme4)
 import(multcomp)
+import(captioner)
 
