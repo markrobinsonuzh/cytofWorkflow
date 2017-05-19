@@ -8,4 +8,5 @@
 vignettes/*
 !vignettes/cytofWorkflow.Rmd
 !vignettes/bibliography.bib
+!vignettes/modify_TeX.R
 inst

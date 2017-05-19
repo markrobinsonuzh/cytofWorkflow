@@ -1396,7 +1396,7 @@ apply(de_out4$adjp < FDR_cutoff, 2, table)
 
 ```
 
-As before, we create an output table with the median marker expression calculated in each sample and the p-values, and we plot a heatmap with the significant markers sorted by their statistical significance, Figure 30.
+As before, we create an output table with the median marker expression calculated in each sample and the p-values, and we plot a heatmap with the significant markers sorted by their statistical significance (Figure 30).
 
 ```{r diff-expr1-fit-model-output}
 de_output4 <- data.frame(antigen = functional_markers,
