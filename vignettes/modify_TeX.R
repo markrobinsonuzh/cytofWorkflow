@@ -9,3 +9,7 @@ write.table(z, "main.tex", row.names = FALSE, col.names = FALSE, quote = FALSE)
 #%\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
 #\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\},fontsize=\small}
 #\setlength{\parskip}{.35em}
+
+## comment out pagestyle
+#%\pagestyle{main}
+
