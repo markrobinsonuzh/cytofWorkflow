@@ -283,7 +283,7 @@ expr01[expr01 > 1] <- 1
 
 We propose some quick checks to verify whether the data we analyze globally represents what we expect; for example, whether samples that are replicates of one condition are more similar and are distinct from samples from another condition.  Another important check is to verify that marker expression distributions do not have any abnormalities such as having different ranges or distinct distributions for a subset of the samples.  This could highlight problems with the sample collection or HDCyto acquisition, or batch effects that were unexpected.  Depending on the situation, one can then consider removing problematic markers or samples from further analysis; in the case of batch effects, a covariate column could be added to the metadata table and used below in the statistical analyses.
 
-The step below generates a plot with per-sample marker expression distributions, colored by condition (see Figure 1). Here, we can already see distinguishing markers, such as pNFkB and CD20, between stimulated and unstimulated conditions. 
+The step below generates a plot with per-sample marker expression distributions, colored by condition (see Figure `r ifelse(on.bioc, "1", "\\@ref(fig:plot-merker-expression-distribution)")`). Here, we can already see distinguishing markers, such as pNFkB and CD20, between stimulated and unstimulated conditions. 
 
 <!-- (see Figure `r ifelse(on.bioc, "1", "\\@ref(fig:plot-merker-expression-distribution)")`) -->
 
@@ -315,7 +315,7 @@ ggplot(ggdf, aes(x = expression, color = condition,
 
 ```
 
-Another spot check is the number of cells per sample (see Figure 2). This plot can be used as a guide together with other readouts to identify samples where not enough cells were assayed.
+Another spot check is the number of cells per sample (see Figure `r ifelse(on.bioc, "2", "\\@ref(fig:plot-number-of-cells)")`). This plot can be used as a guide together with other readouts to identify samples where not enough cells were assayed.
 <!-- [CARSTEN] What is the minimum amount of cells recommended for analysis???? What is the maximum??? -->
 
 
@@ -342,7 +342,7 @@ ggplot(ggdf, aes(x = sample_id, y = cell_counts, fill = condition)) +
 
 In transcriptomics applications, one of the most utilized exploratory plots is the multi-dimensional scaling (MDS) plot or a principal component analysis (PCA) plot.  Such plots show similarities between samples measured in an unsupervised way and give a sense of how much differential expression can be detected before conducting any formal tests.  An MDS plot can be generated with the `plotMDS` function from the `r Biocpkg("limma")` package.  In transcriptomics, distances between samples are calculated based on the expression of the top varying genes.  We propose a similar plot for HDCyto data using median marker expression over all cells to calculate dissimilarities between samples (other aggregations are also possible, and one could reduce the number of top varying markers to include in the calculation).  Ideally, samples should cluster well within the same condition, although this depends on the magnitude of the difference between experimental conditions.  With this diagnostic, one can identify the outlier samples and eliminate them if the circumstances warrant it.
 
-In our MDS plot on median marker expression values (see Figure 3), we can see that the first dimension (MDS1) separates the unstimulated and stimulated samples reasonably well.  The second dimension (MDS2) represents, to some degree, differences between patients. Most of the samples that originate from the same patient are placed at a similar point along the y-axis, for example, samples from patients 7, 5, and 8  are at the top of the plot, samples from patient 4 are located at the bottom of the plot.  This also indicates that the marker expression of individual patients is driving similarity and perhaps should be formally accounted for in the downstream statistical modeling.
+In our MDS plot on median marker expression values (see Figure `r ifelse(on.bioc, "3", "\\@ref(fig:plot-mds)")`), we can see that the first dimension (MDS1) separates the unstimulated and stimulated samples reasonably well.  The second dimension (MDS2) represents, to some degree, differences between patients. Most of the samples that originate from the same patient are placed at a similar point along the y-axis, for example, samples from patients 7, 5, and 8  are at the top of the plot, samples from patient 4 are located at the bottom of the plot.  This also indicates that the marker expression of individual patients is driving similarity and perhaps should be formally accounted for in the downstream statistical modeling.
 
 
 ```{r plot-mds, fig.cap = paste(ifelse(on.bioc, "**Figure 3.**", ""), "MDS plot for the unstimulated (Ref) and stimulated with BCR/FcR-XL (BCRXL) samples obtained for each of the 8 healthy donors in the PBMC dataset. Calculations are based on the median (arcsinh-transformed) marker expression of 10 lineage markers and 14 functional markers across all cells measured for each sample.  Distances between samples on the plot approximate the typical change in medians. Numbers in the label names indicate patient IDs.", " ")}
@@ -374,7 +374,7 @@ ggplot(ggdf, aes(x = MDS1, y = MDS2, color = condition)) +
 ```
 
 
-In contrast to genomic applications, the number of variables measured for each sample is much lower in HDCyto data. In the former, thousands of genes are surveyed, whereas in the latter, ~20-50 antigens are typically targeted. Similar to the MDS plot above, a heatmap of the same data also gives insight into the structure of the data.  The heatmap shows median marker intensities with clustered columns (samples) and rows (markers). We have used hierarchical clustering with average linkage and euclidean distance, but also Ward's linkage could be used [@Bruggner2014], and in CyTOF applications, a cosine distance shows good performance [@Bendall2014]. In this plot, we can see which markers drive the observed clustering of samples (see Figure 4).
+In contrast to genomic applications, the number of variables measured for each sample is much lower in HDCyto data. In the former, thousands of genes are surveyed, whereas in the latter, ~20-50 antigens are typically targeted. Similar to the MDS plot above, a heatmap of the same data also gives insight into the structure of the data.  The heatmap shows median marker intensities with clustered columns (samples) and rows (markers). We have used hierarchical clustering with average linkage and euclidean distance, but also Ward's linkage could be used [@Bruggner2014], and in CyTOF applications, a cosine distance shows good performance [@Bendall2014]. In this plot, we can see which markers drive the observed clustering of samples (see Figure `r ifelse(on.bioc, "4", "\\@ref(fig:plot-dendogram)")`).
 
 As with the MDS plot, the dendrogram separates the reference and stimulated samples very well. Also, similar groupings of patients within experimental conditions are observed (patients 1-2, 5-7-8 and 3-4 are together in both conditions).
 
@@ -416,7 +416,7 @@ cluster_rows <- hierarch_clust(phdf)
 
 In this step, we identify the ability of markers to explain the variance observed in each sample.  In particular, we calculate the PCA-based non-redundancy score (NRS) from Levine *et al.* [@Levine2015].  Markers with higher score explain a larger portion of variability present in a given sample.
 
-The average NRS can be used to select a subset of markers that are non-redundant in each sample but at the same time capture the overall diversity between samples.  Such a subset of markers can be then used for cell population identification analysis (i.e. clustering).  We note that there is no precise rule on how to choose the right cutoff for marker inclusion, but one of the approaches is to select a suitable number of the top-scoring markers.  The number can be chosen by analyzing the plot with the NR scores (see Figure 5), where the markers are sorted by the decreasing average NRS.  One can drop out markers that are not likely to distinguish cell populations of interest, even if they have high scores, and add in markers with low scores but known to be important in discerning cell subgroups [@Levine2015].
+The average NRS can be used to select a subset of markers that are non-redundant in each sample but at the same time capture the overall diversity between samples.  Such a subset of markers can be then used for cell population identification analysis (i.e. clustering).  We note that there is no precise rule on how to choose the right cutoff for marker inclusion, but one of the approaches is to select a suitable number of the top-scoring markers.  The number can be chosen by analyzing the plot with the NR scores (see Figure `r ifelse(on.bioc, "5", "\\@ref(fig:nrs)")`), where the markers are sorted by the decreasing average NRS.  One can drop out markers that are not likely to distinguish cell populations of interest, even if they have high scores, and add in markers with low scores but known to be important in discerning cell subgroups [@Levine2015].
 
 <!-- [VITO] NRS gives some hints what can be important but it is still recommended to use biological prior knowledge to refine the marker selection. -->
 
@@ -512,9 +512,9 @@ code_clustering1 <- mc[[nmc]]$consensusClass
 cell_clustering1 <- code_clustering1[som$map$mapping[,1]]
 ```
 
-We can then investigate characteristics of identified clusters with heatmaps that illustrate median marker expression in each cluster (see Figure 6). As the range of marker expression can vary substantially from marker to marker, we use the 0-1 transformed data for some visualizations.  However, to stay consistent with `r Biocpkg("FlowSOM")` and `r Biocpkg("ConsensusClusterPlus")`, we use the (arcsinh-transformed) unscaled data to generate the dendrogram of the hierarchical structure of metaclusters.
+We can then investigate characteristics of identified clusters with heatmaps that illustrate median marker expression in each cluster (see Figure `r ifelse(on.bioc, "6", "\\@ref(fig:plot-clustering-heatmap1)")`). As the range of marker expression can vary substantially from marker to marker, we use the 0-1 transformed data for some visualizations.  However, to stay consistent with `r Biocpkg("FlowSOM")` and `r Biocpkg("ConsensusClusterPlus")`, we use the (arcsinh-transformed) unscaled data to generate the dendrogram of the hierarchical structure of metaclusters.
 
-Instead of using only medians, which do not give a full representation of cluster specifics, one can plot the entire marker expression distribution in each cluster (see Figure 7). Such a plot gives more detailed profile of each cluster, but represents an increase in the amount of information to interpret. Heatmaps give the overall overview of clusters, are quicker and easier to interpret, and together with the dendrogram can be a good basis for further cluster merging (see [Cluster merging and annotation](#cluster-merging-and-annotation) section).
+Instead of using only medians, which do not give a full representation of cluster specifics, one can plot the entire marker expression distribution in each cluster (see Figure `r ifelse(on.bioc, "7", "\\@ref(fig:plot-clustering-distribution1)")`). Such a plot gives more detailed profile of each cluster, but represents an increase in the amount of information to interpret. Heatmaps give the overall overview of clusters, are quicker and easier to interpret, and together with the dendrogram can be a good basis for further cluster merging (see [Cluster merging and annotation](#cluster-merging-and-annotation) section).
 
 Since we will use the heatmap and density plots again later on in this workflow, in code chunks below, we create wrapper functions that generate these two types of plots.
 
@@ -642,9 +642,9 @@ Nevertheless, there are few notes of caution when using t-SNE or any other dimen
 
 <!-- [This is super important! Also: mention the relation to the amount of neighboring cells. Biologists tend to put too many neighbors!!!] -->
 
-t-SNE is a method that requires significant computational time to process the data even for tens of thousands of cells. CyTOF datasets are usually much larger and thus to keep running times reasonable, one may use a subset of cells; for example, here we use 2000 cells from each sample.  The t-SNE map below is colored according to the expression level of the CD4 marker, highlighting that the CD4+ T-cells are placed to the left side of the plot (see Figure 8). In this way, one can use a collection of markers to highlight where cell types of interest are located on the *map*.
+t-SNE is a method that requires significant computational time to process the data even for tens of thousands of cells. CyTOF datasets are usually much larger and thus to keep running times reasonable, one may use a subset of cells; for example, here we use 2000 cells from each sample.  The t-SNE map below is colored according to the expression level of the CD4 marker, highlighting that the CD4+ T-cells are placed to the left side of the plot (see Figure `r ifelse(on.bioc, "8", "\\@ref(fig:tsne-plot-one-expr-CD4)")`). In this way, one can use a collection of markers to highlight where cell types of interest are located on the *map*.
 
-Instead of t-SNE, one could also use other dimension reduction techniques, such as PCA, diffusion maps, SIMLR [@Wang2017] or isomaps, some of which are conveniently available via the `cytof_dimReduction` function from the `r Biocpkg("cytofkit")` package [@Chen2016].  To speed up the t-SNE analysis, one could use a multicore version that is available via the `r Githubpkg("RGLab/Rtsne.multicore")` package.  Alternative algorithms, such as `largeVis` [@Tang2016] (available via the `r Githubpkg("elbamos/largeVis")` package), can be used for dimensionality reduction of very large datasets without downsampling.  Alternatively, the dimensionality reduction can be performed on the *codes* of the SOM, at a resolution specified by the user (see Figure 12).
+Instead of t-SNE, one could also use other dimension reduction techniques, such as PCA, diffusion maps, SIMLR [@Wang2017] or isomaps, some of which are conveniently available via the `cytof_dimReduction` function from the `r Biocpkg("cytofkit")` package [@Chen2016].  To speed up the t-SNE analysis, one could use a multicore version that is available via the `r Githubpkg("RGLab/Rtsne.multicore")` package.  Alternative algorithms, such as `largeVis` [@Tang2016] (available via the `r Githubpkg("elbamos/largeVis")` package), can be used for dimensionality reduction of very large datasets without downsampling.  Alternatively, the dimensionality reduction can be performed on the *codes* of the SOM, at a resolution specified by the user (see Figure `r ifelse(on.bioc, "12", "\\@ref(fig:plot-som-codes1-pca)")`).
 
 
 ```{r tsne-duplicates-subsampling}
@@ -693,8 +693,8 @@ ggplot(dr,  aes(x = tSNE1, y = tSNE2, color = CD4)) +
 ```
 
 
-We can color the cells by cluster.  Ideally, cells of the same color should be close to each other (see Figure 9). 
-When the plots are further stratified by sample (see Figure 10), we can verify whether similar cell populations are present in all replicates, which can help in identifying outlying samples. Optionally, stratification can be done by condition (see Figure 11). With such a spot-check plot, we can inspect whether differences in cell abundance are strong between conditions, and we can identify distinguishing clusters. 
+We can color the cells by cluster.  Ideally, cells of the same color should be close to each other (see Figure `r ifelse(on.bioc, "9", "\\@ref(fig:tsne-plot-one-clustering1)")`). 
+When the plots are further stratified by sample (see Figure `r ifelse(on.bioc, "10", "\\@ref(fig:tsne-plot-facet-sample)")`), we can verify whether similar cell populations are present in all replicates, which can help in identifying outlying samples. Optionally, stratification can be done by condition (see Figure `r ifelse(on.bioc, "11", "\\@ref(fig:tsne-plot-facet-condition)")`). With such a spot-check plot, we can inspect whether differences in cell abundance are strong between conditions, and we can identify distinguishing clusters. 
 
 
 ```{r tsne-plot-one-clustering1, fig.cap = paste(ifelse(on.bioc, "**Figure 9.**", ""), "t-SNE plot based on the arcsinh-transformed expression of the 10 lineage markers in the cells from the PBMC dataset. From each of the 16 samples, 2000 cells were randomly selected. Cells are colored according to the 20 cell populations obtained with FlowSOM after the metaclustering step with ConsensusClusterPlus.", " ")}
@@ -725,9 +725,9 @@ ggp + facet_wrap(~ condition)
 ```
 
 
-The SOM codes represent characteristics of the 100 (by default) clusters generated in the first step of the `r Biocpkg("FlowSOM")` pipeline.  Their visualization can also be helpful in understanding the cell population structure and determining the number of clusters.  Ultimately, the metaclustering step uses the codes and not the original cells.  We treat the codes as new representative cells and apply the t-SNE dimension reduction to visualize them in 2D (see Figure 12).  The size of the points corresponds to the number of cells that were assigned to a given code.  The points are colored according to the results of metaclustering.  Since we have only 100 data points, the t-SNE analysis is fast.
+The SOM codes represent characteristics of the 100 (by default) clusters generated in the first step of the `r Biocpkg("FlowSOM")` pipeline.  Their visualization can also be helpful in understanding the cell population structure and determining the number of clusters.  Ultimately, the metaclustering step uses the codes and not the original cells.  We treat the codes as new representative cells and apply the t-SNE dimension reduction to visualize them in 2D (see Figure `r ifelse(on.bioc, "12", "\\@ref(fig:plot-som-codes1-pca)")`).  The size of the points corresponds to the number of cells that were assigned to a given code.  The points are colored according to the results of metaclustering.  Since we have only 100 data points, the t-SNE analysis is fast.
 
-As there are multiple ways to mathematically define similarity in high dimensional space, it is always good practice visualizing projections from other methods to see how consistent the observed patterns are.  For instance, we also represent the `r Biocpkg("FlowSOM")` codes via the first two principal components (see Figure 12). 
+As there are multiple ways to mathematically define similarity in high dimensional space, it is always good practice visualizing projections from other methods to see how consistent the observed patterns are.  For instance, we also represent the `r Biocpkg("FlowSOM")` codes via the first two principal components (see Figure `r ifelse(on.bioc, "12", "\\@ref(fig:plot-som-codes1-pca)")`). 
 
 
 ```{r som-codes-size}
@@ -811,7 +811,7 @@ mm <- match(code_clustering1, cluster_merging1$original_cluster)
 code_clustering1m <- cluster_merging1$new_cluster[mm]
 ```
 
-We update the t-SNE plot with the new annotated cell populations, Figure 13.
+We update the t-SNE plot with the new annotated cell populations, Figure `r ifelse(on.bioc, "13", "\\@ref(fig:tsne-plot-one-clustering1m)")`.
 
 ```{r tsne-plot-one-clustering1m, fig.cap = paste(ifelse(on.bioc, "**Figure 13.**", ""), "t-SNE plot based on the arcsinh-transformed expression of the 10 lineage markers in the cells from the PBMC dataset. From each of the 16 samples, 2000 cells were randomly selected. Cells are colored according to the manual merging of the 20 cell populations obtained with FlowSOM into 8 PBMC populations. ", " ")}
 dr$cell_clustering1m <- factor(cell_clustering1m[tsne_inds])
@@ -822,7 +822,7 @@ ggplot(dr,  aes(x = tSNE1, y = tSNE2, color = cell_clustering1m)) +
   guides(color = guide_legend(override.aes = list(size = 4)))
 ```
 
-One of the usefull representations of merging is a heatmap of median marker expression in each of the original clusters, which are labeled according to the proposed merging, Figure 14. 
+One of the usefull representations of merging is a heatmap of median marker expression in each of the original clusters, which are labeled according to the proposed merging, Figure `r ifelse(on.bioc, "14", "\\@ref(fig:plot-clustering-heatmap1m-merging)")`. 
 
 ```{r plot-clustering-heatmap1m-merging, fig.height = 5, fig.cap = paste(ifelse(on.bioc, "**Figure 14.**", ""), "Heatmap as in Figure 6 with the color bars on the left indicating how the 20 metaclusters obtained with FlowSOM are merged into the 8 PBMC populations. ", " ")}
 plot_clustering_heatmap_wrapper(expr = expr[, lineage_markers_ord],
@@ -830,7 +830,7 @@ plot_clustering_heatmap_wrapper(expr = expr[, lineage_markers_ord],
   color_clusters = color_clusters, cluster_merging = cluster_merging1)
 ```
 
-To get a final summary of the annotated cell types, one can plot a heatmap of median marker expression, calculated based on the cells in each of the annotated populations, Figure 15.
+To get a final summary of the annotated cell types, one can plot a heatmap of median marker expression, calculated based on the cells in each of the annotated populations, Figure `r ifelse(on.bioc, "15", "\\@ref(fig:plot-clustering-heatmap1m)")`.
 
 ```{r plot-clustering-heatmap1m, fig.height = 3, fig.cap = paste(ifelse(on.bioc, "**Figure 15.**", ""), "Heatmap of the median marker intensities of the 10 lineage markers in the 8 PBMC cell populations obtained by manual merging of the 20 metaclusters generated by FlowSOM. The heat represents the median of arcsinh and 0-1 transformed marker expression. Values in the brackets indicate the relative size of each of the cell populations across all the samples.", " ")}
 plot_clustering_heatmap_wrapper(expr = expr[, lineage_markers_ord],
@@ -843,7 +843,7 @@ plot_clustering_heatmap_wrapper(expr = expr[, lineage_markers_ord],
 
 <!-- Thus, this score could be used as a method for finding the "natural" number of clusters present in the data and this corresponds to the value of k where there is no appreciable increase in stability. -->
 
-The `r Biocpkg("ConsensusClusterPlus")` package provides visualizations that can help to understand the metaclustering process and the characteristics of the analyzed data.  For example, the delta area plot (see Figure 16) highlights the amount of extra cluster stability gained when clustering into k groups as compared to k-1 groups (from k=2 to k=20).  It can be expected that high stability of clusters can be reached when clustering into the number of groups that best fits the data.  Thus, using the delta area plot could help finding the "natural" number of clusters present in the data, which would correspond to the value of k where there is no appreciable increase in stability. This strategy can be referred as the  "elbow criterion".  For more details about the meaning of this plot, the user can refer to the original description of the consensus clustering method [@Monti2003].
+The `r Biocpkg("ConsensusClusterPlus")` package provides visualizations that can help to understand the metaclustering process and the characteristics of the analyzed data.  For example, the delta area plot (see Figure `r ifelse(on.bioc, "16", "\\@ref(fig:consensus-plot)")`) highlights the amount of extra cluster stability gained when clustering into k groups as compared to k-1 groups (from k=2 to k=20).  It can be expected that high stability of clusters can be reached when clustering into the number of groups that best fits the data.  Thus, using the delta area plot could help finding the "natural" number of clusters present in the data, which would correspond to the value of k where there is no appreciable increase in stability. This strategy can be referred as the  "elbow criterion".  For more details about the meaning of this plot, the user can refer to the original description of the consensus clustering method [@Monti2003].
 
 The elbow criterion is quite subjective since the "appreciable" increase is not defined exactly.  For example, in the delta plot below, we could say that the last point before plateau is for k=6, or for k=5, or for k=3, depending on our perception of sufficient decrease of the delta area score.  Moreover, the exact point where a plateau is reached may vary for runs with different random seeds, the drop may not always be so sharp and and the function is not guaranteed to be decreasing.  It is advisable to investigate more of those plots and the resulting t-SNE and heatmaps before drawing any conclusions about the final number of "natural" clusters. 
 
@@ -866,7 +866,7 @@ code_clustering2 <- mc[[nmc2]]$consensusClass
 cell_clustering2 <- code_clustering2[som$map$mapping[, 1]]
 ```
 
-In the t-SNE plot (see Figure 17), we can see that many small clusters obtained when stratifying data into 20 groups are now merged together, which should simplify the new cluster annotation.  
+In the t-SNE plot (see Figure `r ifelse(on.bioc, "17", "\\@ref(fig:tsne-plot-one-clustering2)")`), we can see that many small clusters obtained when stratifying data into 20 groups are now merged together, which should simplify the new cluster annotation.  
 
 ```{r tsne-plot-one-clustering2, fig.cap = paste(ifelse(on.bioc, "**Figure 17.**", ""), "t-SNE plot based on the arcsinh-transformed expression of the 10 lineage markers in the cells from the PBMC dataset. From each of the 16 samples, 2000 cells were randomly selected. Cells are colored according to the 12 cell populations obtained with FlowSOM after the metaclustering step with ConsensusClusterPlus.", " ")}
 dr$cell_clustering2 <- factor(cell_clustering2[tsne_inds], levels = 1:nmc2)
@@ -884,7 +884,7 @@ plot_clustering_heatmap_wrapper(expr = expr[, lineage_markers_ord],
   color_clusters = color_clusters)
 ```
 
-Over-clustering into as few as 12 groups still allows us to identify the same 8 cell populations as when merging 20 clusters (see Figures 18, 19, 20, 21), but it is simpler to define since fewer profiles need to be manually scanned.  The expert-based merging is saved in the PBMC8_cluster_merging2.xlsx file on the [Robinson Lab server](http://imlspenticton.uzh.ch/robinson_lab/cytofWorkflow).
+Over-clustering into as few as 12 groups still allows us to identify the same 8 cell populations as when merging 20 clusters (see Figures `r ifelse(on.bioc, "18", "\\@ref(fig:plot-clustering-heatmap2)")`, `r ifelse(on.bioc, "19", "\\@ref(fig:tsne-plot-one-clustering2m)")`, `r ifelse(on.bioc, "20", "\\@ref(fig:plot-clustering-heatmap2-merging)")`, `r ifelse(on.bioc, "21", "\\@ref(fig:plot-clustering-heatmap2m)")`), but it is simpler to define since fewer profiles need to be manually scanned.  The expert-based merging is saved in the PBMC8_cluster_merging2.xlsx file on the [Robinson Lab server](http://imlspenticton.uzh.ch/robinson_lab/cytofWorkflow).
 
 ```{r cluster-merging2}
 cluster_merging2_filename <- "PBMC8_cluster_merging2.xlsx"
@@ -940,7 +940,7 @@ cell_clustering3 <- code_clustering3[som$map$mapping[, 1]]
 table(algorithm=cell_clustering3, manual=cell_clustering2m)
 ```
 
-In the t-SNE map (see Figure 22), we can see that part of the new cell populations (cluster 7, 1 and 4, 2, 5 and 8) overlap substantially with populations obtained by the means of manual merging (CD4 T-cells, B-cells, surface-, monocytes and DC).  However, cells that belong to clusters 3 and 6 are subdivided in a different manner according to the manual merging.  Cluster 3 consists of CD8 T-cells and NK cells, and the latter cannot be identified anymore based on the heatmap corresponding to clustering into 8 groups (see Figures 23). 
+In the t-SNE map (see Figure `r ifelse(on.bioc, "22", "\\@ref(fig:tsne-plot-one-clustering3)")`), we can see that part of the new cell populations (cluster 7, 1 and 4, 2, 5 and 8) overlap substantially with populations obtained by the means of manual merging (CD4 T-cells, B-cells, surface-, monocytes and DC).  However, cells that belong to clusters 3 and 6 are subdivided in a different manner according to the manual merging.  Cluster 3 consists of CD8 T-cells and NK cells, and the latter cannot be identified anymore based on the heatmap corresponding to clustering into 8 groups (see Figure `r ifelse(on.bioc, "23", "\\@ref(fig:plot-clustering-heatmap3)")`). 
 
 ```{r tsne-plot-one-clustering3, fig.height = 8, fig.cap = paste(ifelse(on.bioc, "**Figure 22.**", ""), "t-SNE plot with cells colored according to (A) the expert merging of 12 metaclusters obtained with FlowSOM into 8 PBMC populations; and (B) the 8 automatically detected with FlowSOM metaclusters.", " ")}
 dr$cell_clustering3 <- factor(cell_clustering3[tsne_inds], levels = 1:nmc3)
@@ -1011,7 +1011,7 @@ counts <- as.data.frame.matrix(counts_table)
 props <- as.data.frame.matrix(props_table)
 ```
 
-For each sample, we plot its PBMC cell type composition represented with colored bars, where the size of a given stripe reflects the proportion of the corresponding cell type in a given sample (see Figure 24).
+For each sample, we plot its PBMC cell type composition represented with colored bars, where the size of a given stripe reflects the proportion of the corresponding cell type in a given sample (see Figure `r ifelse(on.bioc, "24", "\\@ref(fig:diff-freqs-plot-props-barplot)")`).
 
 ```{r diff-freqs-plot-props-barplot, fig.cap = paste(ifelse(on.bioc, "**Figure 24.**", ""), "Relative abundance of the 8 PBMC populations in each sample (x-axis), in the PBMC dataset, represented with a barplot. The 8 cell populations are a result of manual merging of the 20 FlowSOM metaclusters. ", " ")}
 ggdf <- melt(data.frame(cluster = rownames(props), props), 
@@ -1030,7 +1030,7 @@ ggplot(ggdf, aes(x = sample_id, y = proportion, fill = cluster)) +
 
 ```
 
-It may be quite hard to see the differences in cluster abundances in the plot above, especially for clusters with very low frequency.  And, since boxplots cannot represent multimodal distributions, we show boxplots with jittered points of the sample-level cluster proportions overlaid (see Figure 25).  The y-axes are scaled to the range of data plotted for each cluster, to better visualize the differences in frequency of lower abundance clusters. For this experiment, it may be interesting to additionally depict the patient information. We do this by plotting a different point shape for each patient. Indeed, we can see that often the direction of abundance changes between the two conditions are concordant among the patients.
+It may be quite hard to see the differences in cluster abundances in the plot above, especially for clusters with very low frequency.  And, since boxplots cannot represent multimodal distributions, we show boxplots with jittered points of the sample-level cluster proportions overlaid (see Figure `r ifelse(on.bioc, "25", "\\@ref(fig:diff-freqs-plot-props-boxplot)")`).  The y-axes are scaled to the range of data plotted for each cluster, to better visualize the differences in frequency of lower abundance clusters. For this experiment, it may be interesting to additionally depict the patient information. We do this by plotting a different point shape for each patient. Indeed, we can see that often the direction of abundance changes between the two conditions are concordant among the patients.
 
 
 ```{r diff-freqs-plot-props-boxplot, fig.height = 4, fig.cap = paste(ifelse(on.bioc, "**Figure 25.**", ""), "Relative abundance of the 8 PBMC populations in each sample, in the PBMC dataset, represented with boxplots. Different colors are used for the two conditions: unstimulated (Ref) and stimulated with BCR/FcR-XL (BCRXL). Values for each patient are indicated with different shape. The 8 cell populations are a result of manual merging of the 20 FlowSOM metaclusters.", " ")}
@@ -1131,7 +1131,7 @@ da_output2 <- data.frame(cluster = rownames(props),  props,
 print(head(da_output2), digits = 2)
 ```
 
-We use a heatmap to report the differential cell populations (see Figure 26).  Proportions are first scaled with the arcsine-square-root transformation (as an alternative to logit that does not return NAs when ratios are equal to zero or one). Then, Z-score normalization is applied to each population to better highlight the relative differences between compared conditions.  We created two wrapper functions: `normalization_wrapper` performs the normalization of submitted expression `expr` to mean 0 and standard deviation 1, and `plot_differential_heatmap_wrapper` generates a heatmap of submitted expression `expr_norm`, where samples are grouped by `condition`, indicated with a color bar on top of the plot. Additionally, labels of clusters contain the adjusted p-values in parenthesis.
+We use a heatmap to report the differential cell populations (see Figure `r ifelse(on.bioc, "26", "\\@ref(fig:diff-freqs-plot-heatmap-with-significant-clusters)")`).  Proportions are first scaled with the arcsine-square-root transformation (as an alternative to logit that does not return NAs when ratios are equal to zero or one). Then, Z-score normalization is applied to each population to better highlight the relative differences between compared conditions.  We created two wrapper functions: `normalization_wrapper` performs the normalization of submitted expression `expr` to mean 0 and standard deviation 1, and `plot_differential_heatmap_wrapper` generates a heatmap of submitted expression `expr_norm`, where samples are grouped by `condition`, indicated with a color bar on top of the plot. Additionally, labels of clusters contain the adjusted p-values in parenthesis.
 
 ```{r normalization-wrapper}
 normalization_wrapper <- function(expr, th = 2.5){
@@ -1243,7 +1243,7 @@ keep0 <- rowSums(expr_median_sample_cluster[, md$sample_id]) > 0
 expr_median_sample_cluster <- expr_median_sample_cluster[keep0, ]
 ```
 
-It is helpful to plot the median expression of all the markers in each cluster for each sample colored by condition, to get a rough image of how strong the differences might be (see Figure 27).  We do this by combining boxplots and jitter.
+It is helpful to plot the median expression of all the markers in each cluster for each sample colored by condition, to get a rough image of how strong the differences might be (see Figure `r ifelse(on.bioc, "27", "\\@ref(fig:diff-expr2-plot-median-expr)")`).  We do this by combining boxplots and jitter.
 
 ```{r diff-expr2-plot-median-expr, fig.height = 8, fig.cap = paste(ifelse(on.bioc, "**Figure 27.**", ""), "Median (arcsinh-transformed) expression of 14 signaling markers across the 8 identified PBMC cell populations. Different colors are used for the two conditions unstimulated (Ref) and stimulated with BCR/FcR-XL (BCRXL). Values for each patient are indicated with different shape. The 8 cell populations are a result of manual merging of the 20 metaclusters.", " ")}
 ggdf <- expr_median_sample_cluster_melt[expr_median_sample_cluster_melt$cluster 
@@ -1333,7 +1333,7 @@ de_output2 <- data.frame(expr_median_sample_cluster,
 print(head(de_output2), digits = 2)
 ```
 
-To report the significant results, we use a heatmap (see Figure 28).  Instead of plotting the absolute expression, we display the normalized expression, which better highlights the direction of marker changes.  Additionally, we order the cluster-marker instances by their significance and group them by cell type (cluster).
+To report the significant results, we use a heatmap (see Figure `r ifelse(on.bioc, "28", "\\@ref(fig:diff-expr2-plot-heatmap-with-significant-markers)")`).  Instead of plotting the absolute expression, we display the normalized expression, which better highlights the direction of marker changes.  Additionally, we order the cluster-marker instances by their significance and group them by cell type (cluster).
 
 ```{r diff-expr2-plot-heatmap-with-significant-markers, fig.height = 10, fig.cap = paste(ifelse(on.bioc, "**Figure 28.**", ""), "Normalized expression of signaling markers in the 8 PBMC populations that are significantly differentially expressed between BCR/FcR-XL stimulated and unstimulated condition.", " ")}
 
@@ -1360,7 +1360,7 @@ plot_differential_heatmap_wrapper(expr_norm = expr_median_sample_cluster_norm,
 
 ## DA of the overall marker expression
 
-The analysis of *overall* expression is analogous to the previous section, except that median marker expression is aggregated from all the cells in a given sample, Figure 29.
+The analysis of *overall* expression is analogous to the previous section, except that median marker expression is aggregated from all the cells in a given sample, Figure `r ifelse(on.bioc, "29", "\\@ref(fig:diff-expr1-plot-median-expr)")`.
 
 
 ```{r diff-expr1-plot-median-expr, fig.height = 8, fig.cap = paste(ifelse(on.bioc, "**Figure 29.**", ""), "Median (arcsinh-transformed) expression of 14 signaling markers calculated from all the cells in a given sample in the PBMC dataset. Different colors are used for the two conditions unstimulated (Ref) and stimulated with BCR/FcR-XL (BCRXL). Values for each patient are indicated with different shape.", " ")}
@@ -1403,7 +1403,7 @@ apply(de_out4$adjp < FDR_cutoff, 2, table)
 
 ```
 
-As before, we create an output table with the median marker expression calculated in each sample and the p-values, and we plot a heatmap with the significant markers sorted by their statistical significance (Figure 30).
+As before, we create an output table with the median marker expression calculated in each sample and the p-values, and we plot a heatmap with the significant markers sorted by their statistical significance (Figure `r ifelse(on.bioc, "30", "\\@ref(fig:diff-expr1-plot-heatmap-with-significant-markers)")`).
 
 ```{r diff-expr1-fit-model-output}
 de_output4 <- data.frame(antigen = functional_markers,
