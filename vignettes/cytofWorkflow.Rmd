@@ -38,7 +38,7 @@ output:
    fig_caption: true
    self_contained: yes
 vignette: >
-  %\VignetteIndexEntry{CyTOF workflow}
+  %\VignetteIndexEntry{A workflow for differential discovery in high-throughput high-dimensional cytometry datasets}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -76,8 +76,32 @@ on.bioc <- TRUE
 library(knitr)
 # Use fig.width = 7 for html and fig.width = 6 for pdf
 fig.width <- ifelse(on.bioc, 7, 6)
-knitr::opts_chunk$set(cache = 2, warning = FALSE, message = FALSE, cache.path = "cache/", fig.path = "figure/", fig.width = fig.width)
+knitr::opts_chunk$set(cache = 2, warning = FALSE, message = FALSE, 
+  cache.path = "cache/", fig.path = "figure/", fig.width = fig.width)
 library(BiocStyle)
+```
+
+
+```{r libraries, echo = FALSE, results = "hide"}
+suppressPackageStartupMessages({
+  library(captioner)
+  library(readxl)
+  library(flowCore)
+  library(matrixStats)
+  library(ggplot2)
+  library(reshape2)
+  library(dplyr)
+  library(limma)
+  library(ggrepel)
+  library(RColorBrewer)
+  library(pheatmap)
+  library(FlowSOM)
+  library(ConsensusClusterPlus)
+  library(Rtsne)
+  library(cowplot)
+  library(lme4)
+  library(multcomp)
+})
 ```
 
 
@@ -313,7 +337,7 @@ Usually, the raw marker intensities read by a cytometer have strongly skewed dis
 
 ```{r arcsinh-transformation}
 ## arcsinh transformation and column subsetting
-fcs <- fsApply(fcs_raw, function(x, cofactor=5){
+fcs <- fsApply(fcs_raw, function(x, cofactor = 5){
   colnames(x) <- panel_fcs$desc
   expr <- exprs(x)
   expr <- asinh(expr[, c(lineage_markers, functional_markers)] / cofactor)

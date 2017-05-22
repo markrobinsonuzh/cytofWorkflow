@@ -1,14 +1,15 @@
 Package: cytofWorkflow
 Title: Dummy Package
-Version: 0.0.9
-Authors@R: person("Malgorzata", "Nowicka", email = "gosia.nowicka@uzh.ch", role = c("aut", "cre"))
+Version: 0.99.0
+Authors@R: person(role=c("aut", "cre"), "Bioconductor Package", "Maintainer", email = "maintainer@bioconductor.org")
 Description: Dummy Package
-Depends: R (>= 3.3.0)
+Depends: R (>= 3.4.0)
 License: Artistic-2.0
 Encoding: UTF-8
 LazyData: true
+biocViews: WorkflowStep, SingleCell
 VignetteBuilder: knitr
-biocViews: Workflows
-Imports: BiocStyle, knitr, rmarkdown, readxl, flowCore, matrixStats, ggplot2, reshape2, dplyr, limma, ggrepel, RColorBrewer, pheatmap, FlowSOM, ConsensusClusterPlus, Rtsne, cowplot, lme4, multcomp, captioner
+Imports: BiocStyle, knitr, readxl, matrixStats, flowCore, ggplot2, reshape2, dplyr, limma, ggrepel, RColorBrewer, pheatmap, FlowSOM, ConsensusClusterPlus, Rtsne, cowplot, lme4, multcomp, captioner
 Suggests: knitcitations
 NeedsCompilation: no
+Workflow: true
