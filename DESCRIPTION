@@ -1,8 +1,15 @@
 Package: cytofWorkflow
-Title: Dummy Package
-Version: 0.99.0
-Authors@R: person(role=c("aut", "cre"), "Bioconductor Package", "Maintainer", email = "maintainer@bioconductor.org")
-Description: Dummy Package
+Title: CyTOF workflow: differential discovery in high-throughput high-dimensional cytometry datasets
+Version: 0.99.1
+Authors@R: c(person(role=c("aut", "cre"), "Malgorzata", "Nowicka", email = "gosia.nowicka@uzh.ch"),
+person(role=c("aut"), "Carsten", "Krieg"),
+person(role=c("aut"), "Lukas M.", "Weber"),
+person(role=c("aut"), "Felix J.", "Hartmann"),
+person(role=c("aut"), "Silvia", "Guglietta"),
+person(role=c("aut"), "Burkhard", "Becher"),
+person(role=c("aut"), "Mitchell P.", "Levesque"),
+person(role=c("aut"), "Mark D.", "Robinson", email = "mark.robinson@imls.uzh.ch"))
+Description: R package that supports the F1000Research workflow article: "CyTOF workflow: differential discovery in high-throughput high-dimensional cytometry datasets" by Nowicka et al. (2017).
 Depends: R (>= 3.4.0)
 License: Artistic-2.0
 Encoding: UTF-8
