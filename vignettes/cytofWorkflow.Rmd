@@ -216,8 +216,8 @@ Notably, this workflow is equally applicable to flow or mass cytometry datasets,
 
 
 ```{r, results = 'asis', eval = on.bioc, echo = FALSE}
-# cat("***Note:*** *to cite this article, please refer to 
-#   http://f1000research.com for instructions.*")
+cat("***Note:*** *to cite this article, please refer to
+  https://f1000research.com/articles/6-748/v1 for instructions.*")
 ```
 
 
@@ -259,7 +259,7 @@ The `sample_id` variable is used as row names in metadata and will be used all o
 library(readxl)
 url <- "http://imlspenticton.uzh.ch/robinson_lab/cytofWorkflow"
 metadata_filename <- "PBMC8_metadata.xlsx"
-download.file(file.path(url, metadata_filename), destfile = metadata_filename)
+download.file(paste0(url, "/", metadata_filename), destfile = metadata_filename)
 md <- read_excel(metadata_filename)
 
 ## Make sure condition variables are factors with the right levels
@@ -275,7 +275,7 @@ The .fcs files listed in the metadata can be downloaded manually from the [Citru
 
 ```{r download-fcs}
 fcs_filename <- "PBMC8_fcs_files.zip"
-download.file(file.path(url, fcs_filename), destfile = fcs_filename)
+download.file(paste0(url, "/", fcs_filename), destfile = fcs_filename)
 unzip(fcs_filename)
 ```
 
@@ -305,7 +305,7 @@ In the following analysis, we will often use marker IDs as column names in the t
 
 ```{r load-panel}
 panel_filename <- "PBMC8_panel.xlsx"
-download.file(file.path(url, panel_filename), destfile = panel_filename)
+download.file(paste0(url, "/", panel_filename), destfile = panel_filename)
 panel <- read_excel(panel_filename)
 head(data.frame(panel))
 # Replace problematic characters 
@@ -887,7 +887,7 @@ The expert has annotated 8 cell populations: CD8 T-cells, CD4 T-cells, B-cells I
 
 ```{r cluster-merging1}
 cluster_merging1_filename <- "PBMC8_cluster_merging1.xlsx"
-download.file(file.path(url, cluster_merging1_filename), 
+download.file(paste0(url, "/", cluster_merging1_filename), 
   destfile = cluster_merging1_filename)
 cluster_merging1 <- read_excel(cluster_merging1_filename)
 data.frame(cluster_merging1)
@@ -975,7 +975,7 @@ Over-clustering into as few as 12 groups still allows us to identify the same 8 
 
 ```{r cluster-merging2}
 cluster_merging2_filename <- "PBMC8_cluster_merging2.xlsx"
-download.file(file.path(url, cluster_merging2_filename), 
+download.file(paste0(url, "/", cluster_merging2_filename), 
   destfile = cluster_merging2_filename)
 cluster_merging2 <- read_excel(cluster_merging2_filename)
 data.frame(cluster_merging2)
