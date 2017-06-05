@@ -1,6 +1,6 @@
 Package: cytofWorkflow
 Title: CyTOF workflow: differential discovery in high-throughput high-dimensional cytometry datasets
-Version: 0.99.5
+Version: 0.99.6
 Authors@R: c(person(role=c("aut", "cre"), "Malgorzata", "Nowicka", email = "gosia.nowicka@uzh.ch"), person(role=c("aut"), "Mark D.", "Robinson", email = "mark.robinson@imls.uzh.ch"))
 Description: R package that supports the F1000Research workflow article: "CyTOF workflow: differential discovery in high-throughput high-dimensional cytometry datasets" by Nowicka et al. (2017).
 Depends: R (>= 3.4.0)
