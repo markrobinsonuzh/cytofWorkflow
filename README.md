@@ -2,13 +2,21 @@
 
 ## Installation 
 
-All the packages necessary to run the workflow become available by installing the `cytofWorkflow` package, which can be installed via Github. First, you need to install `devtools` if you haven't already:
+First, you need to install `devtools` if you haven't already:
 
 ```
 install.packages("devtools")
 ```
 
-Now you can install `cytofWorkflow`:
+Bioconductor dependencies need to be installed manually (since `install_github` can only install CRAN dependencies automatically):
+
+```{r}
+source("https://bioconductor.org/biocLite.R")
+biocLite(c("BiocStyle", "flowCore", "FlowSOM", "ConsensusClusterPlus", "limma"))
+```
+
+
+After the Bioconductor dependencies are installed, the package and its CRAN dependencies can be installed from GitHub:
 
 ```
 devtools::install_github("gosianow/cytofWorkflow")
