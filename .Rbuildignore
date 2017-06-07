@@ -1,0 +1,16 @@
+^vignettes/cache$
+^vignettes/figure$
+^.*\.Rproj$
+^\.Rproj\.user$
+^.git$
+^.*\.toc$
+^.*\.aux$
+^.*\.log$
+^.*\.out$
+^.*\.tex$
+^.*\.gz$
+^.*\.blg$
+^.*\.bbl$
+^.*\.sty$
+^.*\.png$
+^.*\.R$

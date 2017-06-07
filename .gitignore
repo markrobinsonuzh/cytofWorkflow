@@ -1,0 +1,11 @@
+*.zip
+*._*
+*.DS_Store
+.Rproj.user
+*.Rhistory
+*.Rproj
+.dropbox
+vignettes/*
+!vignettes/cytofWorkflow.Rmd
+!vignettes/bibliography.bib
+inst
