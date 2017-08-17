@@ -443,7 +443,7 @@ library(dplyr)
 
 expr_median_sample_tbl <- data.frame(sample_id = sample_ids, expr) %>%
   group_by(sample_id) %>% 
-  summarize_each(funs(median))
+  summarize_all(funs(median))
 
 expr_median_sample <- t(expr_median_sample_tbl[, -1])
 colnames(expr_median_sample) <- expr_median_sample_tbl$sample_id
@@ -629,10 +629,10 @@ plot_clustering_heatmap_wrapper <- function(expr, expr01,
   # Calculate the median expression
   expr_median <- data.frame(expr, cell_clustering = cell_clustering) %>%
     group_by(cell_clustering) %>% 
-    summarize_each(funs(median))
+    summarize_all(funs(median))
   expr01_median <- data.frame(expr01, cell_clustering = cell_clustering) %>%
     group_by(cell_clustering) %>% 
-    summarize_each(funs(median))
+    summarize_all(funs(median))
   
   # Calculate cluster frequencies
   clustering_table <- as.numeric(table(cell_clustering))
@@ -692,7 +692,7 @@ plot_clustering_distr_wrapper <- function(expr, cell_clustering){
   cell_clustering <- factor(cell_clustering)
   expr_median <- data.frame(expr, cell_clustering = cell_clustering) %>%
   group_by(cell_clustering) %>% 
-  summarize_each(funs(median))
+  summarize_all(funs(median))
   
   d <- dist(expr_median[, colnames(expr)], method = "euclidean")
   cluster_rows <- hclust(d, method = "average")
@@ -1314,7 +1314,7 @@ There might be instances of small cell populations for which no cells are observ
 expr_median_sample_cluster_tbl <- data.frame(expr[, functional_markers], 
   sample_id = sample_ids, cluster = cell_clustering1m) %>%
   group_by(sample_id, cluster) %>% 
-  summarize_each(funs(median))
+  summarize_all(funs(median))
 ## Melt
 expr_median_sample_cluster_melt <- melt(expr_median_sample_cluster_tbl, 
   id.vars = c("sample_id", "cluster"), value.name = "median_expression", 
