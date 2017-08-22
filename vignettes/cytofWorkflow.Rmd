@@ -90,6 +90,7 @@ suppressPackageStartupMessages({
   library(matrixStats)
   library(ggplot2)
   library(reshape2)
+  library(ggjoy)
   library(dplyr)
   library(limma)
   library(ggrepel)
@@ -122,7 +123,7 @@ fig_nums(name = "nrs", caption = "Non-redundancy scores for each of the 10 linea
 # 6
 fig_nums(name = "plot-clustering-heatmap1", caption = "Heatmap of the median marker intensities of the 10 lineage markers across the 20 cell populations obtained with FlowSOM after the metaclustering step with ConsensusClusterPlus (PBMC data). The color in the heatmap represents the median of the arcsinh, 0-1 transformed marker expression. The dendrogram on the left represents the hierarchical similarity between the 20 metaclusters (metric: Euclidean distance; linkage: average). Values in the brackets indicate the relative size of a given cluster.")
 # 7
-fig_nums(name = "plot-clustering-distribution1", caption = "Distributions of marker intensities (arcsinh-transformed) of the 10 lineage markers in the 20 cell populations obtained with FlowSOM after the metaclustering step with ConsensusClusterPlus (PBMC data). Blue densities represent marker expression for cells in the given cluster. Grey densities are calculated from all the cells and serve as a reference.")
+fig_nums(name = "plot-clustering-distribution1", caption = "Distributions of marker intensities (arcsinh-transformed) of the 10 lineage markers in the 20 cell populations obtained with FlowSOM after the metaclustering step with ConsensusClusterPlus (PBMC data). Red densities represent marker expression for cells in the given cluster. Green densities are calculated from all the cells and serve as a reference.")
 # 8
 fig_nums(name = "tsne-plot-one-expr-CD4", caption = "t-SNE plot based on the arcsinh-transformed expression of the 10 lineage markers in the cells from the PBMC dataset (t-SNE was run with no PCA step, perplexity = 30, 1000 iterations). From each of the 16 samples, 2000 cells were randomly selected. Cells are colored according to the expression level of the CD4 marker.")
 # 9
@@ -687,6 +688,8 @@ plot_clustering_heatmap_wrapper(expr = expr[, lineage_markers_ord],
 
 
 ```{r plot-clustering-distribution1, fig.height = 8, fig.cap = gsub(ifelse(on.bioc, "", "Figure  [0-9]{1,2}: "), "", fig_nums("plot-clustering-distribution1"))}
+library(ggjoy)
+
 plot_clustering_distr_wrapper <- function(expr, cell_clustering){
   
   cell_clustering <- factor(cell_clustering)
@@ -696,28 +699,34 @@ plot_clustering_distr_wrapper <- function(expr, cell_clustering){
   
   d <- dist(expr_median[, colnames(expr)], method = "euclidean")
   cluster_rows <- hclust(d, method = "average")
-  cell_clustering <- factor(cell_clustering, 
-    levels = levels(cell_clustering)[cluster_rows$order])
   
   freq_clust <- table(cell_clustering)
   freq_clust <- round(as.numeric(freq_clust)/sum(freq_clust)*100, 2)
   cell_clustering <- factor(cell_clustering, 
-    labels = paste0(levels(cell_clustering), " \n(", freq_clust, "%)"))
-  
+    labels = paste0(levels(cell_clustering), " (", freq_clust, "%)"))
+
   ggd <- melt(data.frame(cluster = cell_clustering, expr), 
     id.vars = "cluster", value.name = "expression", 
     variable.name = "antigen")
   ggd$antigen <- factor(ggd$antigen, levels = colnames(expr))
-  
-  ggplot(data = ggd, aes(x = expression, y = ..scaled..)) +
-    geom_density(data = transform(ggd, cluster = NULL), 
-      color = "darkgrey", fill = "black", adjust = 1, alpha = 0.3) +
-    geom_density(color = "blue", fill = "blue", adjust = 1, alpha = 0.3) +
-    facet_grid(cluster ~ antigen, scales = "free") +
-    theme_bw() +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1), 
-      axis.text = element_text(size = 5), 
-      strip.text = element_text(size = 5)) 
+  ggd$reference <- "no"
+
+  ggd_bg <- ggd
+  ggd_bg$cluster <- "reference"
+  ggd_bg$reference <- "yes"
+
+  ggd_plot <- rbind(ggd, ggd_bg)
+
+  ggd_plot$cluster <- factor(ggd_plot$cluster, 
+    levels = c(levels(cell_clustering)[rev(cluster_rows$order)], "reference"))
+
+  ggplot() +
+    geom_joy(data = ggd_plot, aes(x = expression, y = cluster, 
+      color = reference, fill = reference), alpha = 0.3) +
+    facet_wrap( ~ antigen, scales = "free_x", nrow = 2) +
+    theme_joy() +
+    theme(axis.text = element_text(size = 7), 
+      strip.text = element_text(size = 7)) 
   
 }
 
