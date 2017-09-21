@@ -34,7 +34,7 @@ abstract: High dimensional mass and flow cytometry (HDCyto) experiments have bec
 bibliography: bibliography.bib
 # output: BiocWorkflowTools::f1000_article
 output:
- BiocStyle::html_document:
+ BiocStyle::html_document2:
    fig_caption: true
    self_contained: yes
 vignette: >
@@ -47,10 +47,13 @@ vignette: >
 
 <!-- rmarkdown::render('cytofWorkflow.Rmd') -->
 
+<!-- To extract the R code: -->
+
 <!-- knitr::purl('cytofWorkflow.Rmd') -->
 
 
-```{r setup_knitr, include=FALSE, cache=FALSE}
+```{r setup_knitr, include = FALSE, cache = FALSE}
+library(BiocStyle)
 # Decide whether to display parts for BioC (TRUE) or F1000 (FALSE)
 on.bioc <- TRUE
 library(knitr)
@@ -58,7 +61,6 @@ library(knitr)
 fig.width <- ifelse(on.bioc, 7, 6)
 knitr::opts_chunk$set(cache = 2, warning = FALSE, message = FALSE, error = FALSE,
   cache.path = "cache/", fig.path = "figure/", fig.width = fig.width)
-library(BiocStyle)
 ```
 
 
@@ -69,7 +71,7 @@ suppressPackageStartupMessages({
   library(flowCore)
   library(matrixStats)
   library(ggplot2)
-  library(ggjoy)
+  library(ggridges)
   library(reshape2)
   library(dplyr)
   library(limma)
@@ -358,7 +360,8 @@ expr01[expr01 > 1] <- 1
 
 We propose some quick checks to verify whether the data we analyze globally represents what we expect; for example, whether samples that are replicates of one condition are more similar and are distinct from samples from another condition.  Another important check is to verify that marker expression distributions do not have any abnormalities such as having different ranges or distinct distributions for a subset of the samples.  This could highlight problems with the sample collection or HDCyto acquisition, or batch effects that were unexpected.  Depending on the situation, one can then consider removing problematic markers or samples from further analysis; in the case of batch effects, a covariate column could be added to the metadata table and used below in the statistical analyses.
 
-The step below generates a plot with per-sample marker expression distributions, colored by condition (see Figure `r ifelse(on.bioc, fig_nums("plot-merker-expression-distribution", display = "num"), "\\@ref(fig:plot-merker-expression-distribution)")`). Here, we can already see distinguishing markers, such as pNFkB and CD20, between stimulated and unstimulated conditions. 
+The step below generates a plot with per-sample marker expression distributions, colored by condition (see Figure \@ref(fig:plot-merker-expression-distribution)). Here, we can already see distinguishing markers, such as pNFkB and CD20, between stimulated and unstimulated conditions. 
+
 
 
 ```{r sample-ids}
@@ -367,7 +370,7 @@ sample_ids <- rep(md$sample_id, fsApply(fcs_raw, nrow))
 ```
 
 
-```{r plot-merker-expression-distribution, fig.cap = gsub(ifelse(on.bioc, "", "Figure  [0-9]{1,2}: "), "", fig_nums("plot-merker-expression-distribution"))}
+```{r plot-merker-expression-distribution, fig.cap = "Per-sample smoothed densities of marker expression (arcsinh-transformed) of 10 lineage markers and 14 functional markers in the PBMC dataset. Two conditions: unstimulated (Ref) and stimulated with BCR/FcR-XL (BCRXL) for each of the 8 healthy donors are presented and colored by experimental condition."}
 library(ggplot2)
 library(reshape2)
 
@@ -659,7 +662,7 @@ plot_clustering_heatmap_wrapper(expr = expr[, lineage_markers_ord],
 
 ```{r plot-clustering-distribution1, fig.height = 8, fig.cap = gsub(ifelse(on.bioc, "", "Figure  [0-9]{1,2}: "), "", fig_nums("plot-clustering-distribution1"))}
 
-library(ggjoy)
+library(ggridges)
 
 plot_clustering_distr_wrapper <- function(expr, cell_clustering){
   
@@ -692,10 +695,10 @@ plot_clustering_distr_wrapper <- function(expr, cell_clustering){
     levels = c(levels(cell_clustering)[rev(cluster_rows$order)], "reference"))
 
   ggplot() +
-    geom_joy(data = ggd_plot, aes(x = expression, y = cluster, 
+    geom_density_ridges(data = ggd_plot, aes(x = expression, y = cluster, 
       color = reference, fill = reference), alpha = 0.3) +
     facet_wrap( ~ antigen, scales = "free_x", nrow = 2) +
-    theme_joy() +
+    theme_ridges() +
     theme(axis.text = element_text(size = 7), 
       strip.text = element_text(size = 7)) 
   
