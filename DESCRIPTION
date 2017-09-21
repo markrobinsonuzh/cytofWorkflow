@@ -40,8 +40,7 @@ biocViews: WorkflowStep, SingleCell
 VignetteBuilder: knitr
 Imports: BiocStyle, knitr, readxl, matrixStats, flowCore, ggplot2, ggridges,
         reshape2, dplyr, limma, ggrepel, RColorBrewer, pheatmap,
-        FlowSOM, ConsensusClusterPlus, Rtsne, cowplot, lme4, multcomp,
-        captioner
+        FlowSOM, ConsensusClusterPlus, Rtsne, cowplot, lme4, multcomp
 Suggests: knitcitations
 NeedsCompilation: no
 Workflow: true
