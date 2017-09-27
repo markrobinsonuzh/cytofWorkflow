@@ -77,6 +77,7 @@ suppressPackageStartupMessages({
   library(ggrepel)
   library(RColorBrewer)
   library(pheatmap)
+  library(ComplexHeatmap)
   library(FlowSOM)
   library(ConsensusClusterPlus)
   library(Rtsne)
@@ -126,19 +127,22 @@ We use the `r CRANpkg("ggplot2")` package as our graphical engine.  Notably, we 
 
 The workflow is intentionally not fully automatic.  First, we strongly advocate for exploratory data analysis to get an understanding of data characteristics before formal statistical modeling.  Second, the workflow involves an optional step where the user can manually merge and annotate clusters (see [Cluster merging and annotation](#cluster-merging-and-annotation) section) but in a way that is easily reproducible.  The CyTOF data used here (see [Data description](#data-description) section) is already preprocessed; i.e. the normalization and de-barcoding, as well as removal of doublets, debris and dead cells, were already performed.  To see how such an analysis could be performed, please see the [Data preprocessing](#data-preprocessing) section.
 
-Notably, this workflow is equally applicable to flow or mass cytometry datasets, for which the preprocessing steps have already been performed.  In addition, the workflow is modular and can be adapted as new algorithms or new knowledge about how to best use existing tools comes to light. Alternative clustering algorithms such as the popular PhenoGraph algorithm [@Levine2015] (e.g. via the `r Githubpkg("JinmiaoChenLab/Rphenograph")` package), dimensionality reduction techniques, such as diffusion maps [@Haghverdi2015] via the `r Biocpkg("destiny")` package [@Angerer2016]), and SIMLR [@Wang2017] via the `r Biocpkg("SIMLR")` package could be inserted to the workflow.
+Notably, this workflow is equally applicable to flow or mass cytometry datasets, for which the preprocessing steps have already been performed.  In addition, the workflow is modular and can be adapted as new algorithms or new knowledge about how to best use existing tools comes to light. Alternative clustering algorithms such as the popular PhenoGraph algorithm [@Levine2015] (e.g. via the `r Githubpkg("JinmiaoChenLab/Rphenograph")` package), dimensionality reduction techniques, such as diffusion maps [@Haghverdi2015] via the `r Biocpkg("destiny")` package [@Angerer2016], and SIMLR [@Wang2017] via the `r Biocpkg("SIMLR")` package could be inserted to the workflow.
 
 
 ```{r, results = 'asis', eval = on.bioc, echo = FALSE}
-cat("***Note:*** *to cite this article, please refer to
-  https://f1000research.com/articles/6-748/v1 for instructions.*")
+cat("***Note:*** *To cite this workflow, please refer to this F1000 article 
+  https://f1000research.com/articles/6-748/v1 .*")
 ```
 
 
 # Data description
 
+We use a subset of CyTOF data originating from Bodenmiller *et al.* [@Bodenmiller2012] that was also used in the `r Githubpkg("nolanlab/citrus")` paper [@Bruggner2014]. 
 
-We use a subset of CyTOF data originating from Bodenmiller *et al.* [@Bodenmiller2012] that was also used in the `r Githubpkg("nolanlab/citrus")` paper [@Bruggner2014].  Specifically, we perform our analysis on samples of peripheral blood mononuclear cells (PBMCs) from 8 healthy donors, where for each individual, an unstimulated and a stimulated samples (for 30 minutes with B cell receptor/Fc receptor crosslinking, known as BCR/FcR-XL) were collected, resulting in 16 samples in total. For each sample, 14 signaling markers and 10 cell surface markers were measured.
+[- Specifically, we perform our analysis on samples of peripheral blood mononuclear cells (PBMCs) from 8 healthy donors, where for each individual, an unstimulated and a stimulated samples (for 30 minutes with B cell receptor/Fc receptor crosslinking, known as BCR/FcR-XL) were collected, resulting in 16 samples in total. For each sample, 14 signaling markers and 10 cell surface markers were measured.] 
+
+[+ In the original study, peripheral blood mononuclear cells (PBMCs) in unstimulated and after 11 different stimulation conditions were measured for 8 healthy donors. For each sample, expression of 10 cell surface markers and 14 signaling markers was recorded. We perform our analysis on samples from the reference and one stimulated condition where cell were crosslinked for 30 minutes with B cell receptor/Fc receptor known as BCR/FcR-XL, resulting in 16 samples in total.]
 
 The original data is available from the [Cytobank report](http://reports.cytobank.org/105/v2). The subset used here can be downloaded from the [Citrus Cytobank repository](https://community.cytobank.org/cytobank/experiments/15713/) (files with `_BCR-XL.fcs` or `_Reference.fcs` endings) or from our web server (see [Data import](#data-import) section).
 
@@ -147,7 +151,7 @@ In both the Bodenmiller *et al.* and `r Githubpkg("nolanlab/citrus")` manuscript
 
 # Data preprocessing
 
-Conventional flow cytometers and mass cytometers produce .fcs files that can be manually analyzed using programs such as FlowJo [TriStar] or Cytobank [@Kotecha2001], or using the R/Bioconductor packages, such as `r Biocpkg("flowWorkspace")` [@Finak2011] and `r Biocpkg("openCyto")` [@Finak2014b]. During this initial analysis step, dead cells are removed, compensation is checked and with simple two dimensional scatter plots (e.g. marker intensity versus time), marker expression patterns are checked.  Often, modern experiments are barcoded in order to remove analytical biases due to individual sample variation or acquisition time.  Preprocessing steps including normalization using bead standards [@Finck2013], de-barcoding [@Zunder2015] and compensation can be completed with the `r Biocpkg("CATALYST")` package. Of course, preprocessing steps can occur using custom scripts within R or outside of R (e.g. [Normalizer](https://github.com/nolanlab/bead-normalization/releases/latest) [@Finck2013]).
+Conventional flow cytometers and mass cytometers produce .fcs files that can be manually analyzed using programs such as FlowJo [TriStar] or Cytobank [@Kotecha2001], or using the R/Bioconductor packages, such as `r Biocpkg("flowWorkspace")` [@Finak2011] and `r Biocpkg("openCyto")` [@Finak2014b]. During this initial analysis step, dead cells are removed, compensation is checked and with simple two dimensional scatter plots (e.g. marker intensity versus time), marker expression patterns are checked.  Often, modern experiments are barcoded in order to remove analytical biases due to individual sample variation or acquisition time.  Preprocessing steps including normalization using bead standards [@Finck2013], de-barcoding [@Zunder2015] and compensation can be completed with the `r Biocpkg("CATALYST")` package [@Chevrier2017], which also provides a [Shiny app](https://catalyst-project.github.io/) for the interactive analysis. Of course, preprocessing steps can occur using custom scripts within R or outside of R (e.g. [Normalizer](https://github.com/nolanlab/bead-normalization/releases/latest) [@Finck2013]).
 
 <!--Finally, compensation is performed via a two-step algorithm, which first uses single-cell debarcoding of single-stained beads to identify single positive populations. 
 Second, it estimates a spillover matrix from the identified populations and its inverse, called a compensation matrix, is used to compensate the observed intensities.-->
@@ -410,11 +414,10 @@ pheatmap(expr_median_sample, color = color, display_numbers = TRUE,
 
 In this step, we identify the ability of markers to explain the variance observed in each sample.  In particular, we calculate the PCA-based non-redundancy score (NRS) [@Levine2015].  Markers with higher score explain a larger portion of variability present in a given sample.
 
-The average NRS can be used to select a subset of markers that are non-redundant in each sample but at the same time capture the overall diversity between samples.  Such a subset of markers can be then used for cell population identification analysis (i.e. clustering).  We note that there is no precise rule on how to choose the right cutoff for marker inclusion, but one of the approaches is to select a suitable number of the top-scoring markers.  The number can be chosen by analyzing the plot with the NR scores (see Figure \@ref(fig:nrs)), where the markers are sorted by the decreasing average NRS.  One can drop out markers that are not likely to distinguish cell populations of interest, even if they have high scores, and add in markers with low scores but known to be important in discerning cell subgroups [@Levine2015].
+The average NRS can be used to select a subset of markers that are non-redundant in each sample but at the same time capture the overall diversity between samples.  Such a subset of markers can be then used for cell population identification analysis (i.e. clustering). We note that there is no precise rule on how to choose the right cutoff for marker inclusion, but one of the approaches is to select a suitable number of the top-scoring markers.  The number can be chosen by analyzing the plot with the NR scores (see Figure \@ref(fig:nrs)), where the markers are sorted by the decreasing average NRS. Based on the prior biological knowledge, one can refine the marker selection and drop out markers that are not likely to distinguish cell populations of interest, even if they have high scores, and add in markers with low scores but known to be important in discerning cell subgroups [@Levine2015].
 
-<!-- [VITO] NRS gives some hints what can be important but it is still recommended to use biological prior knowledge to refine the marker selection. -->
+In the dataset considered here [@Bodenmiller2012; @Bruggner2014] we want to use all the 10 lineage markers, so there is no explicit need to restrict the set of cell surface markers [+ , and the NRS serve as another quality control step. ] There may be other situations where this feature selection step would be of interest, [+ for example, in panel design [@Levine2015]. ]
 
-In the dataset considered here [@Bodenmiller2012; @Bruggner2014] we want to use all the 10 lineage markers, so that there is no explicit need to restrict the set of cell surface markers.  There may be other situations where this feature selection step would be of interest. 
 
 ```{r nrs, fig.cap = "Non-redundancy scores for each of the 10 lineage markers and all samples in the PBMC dataset. The points represent the per-sample NR scores (colored by experimental conditions), while open white circles indicate the mean NR scores from all the samples. Markers on the x-axis are sorted according to the decreasing average NRS."}
 ## Define a function that calculates the NRS per sample 
@@ -468,7 +471,9 @@ The `r Biocpkg("FlowSOM")` workflow consists of three main steps. First, a self-
 
 `r Biocpkg("FlowSOM")` output can be sensitive to random starts [@Weber2016].  To make results reproducible, one must specify the seed for the random number generation in R using function `set.seed`.  It is also advisable to rerun analyses with multiple random seeds, for two reasons. First, one can see how robust the detected clusters are, and second, when the goal is to find smaller cell populations, it may happen that, in some runs, random starting points do not represent rare cell populations, as the chance of selecting starting cells from them is low and they are merged into a larger cluster.
 
-It is important to point out that we cluster all cells from all samples together.  This strategy is beneficial, since we label cell populations only once and the mapping of cell types between samples is automatically consistent.  In our analysis, cell populations are identified using only the 10 lineage markers as defined in the `BuildSOM` function with the `colsToUse` argument.
+It is important to point out that we cluster all cells from all samples together. This strategy is beneficial, since [+ we directly obtain cluster assignmnet for each cell,] we label cell populations only once and the mapping of cell types between samples is automatically consistent. [+ For a list of alternative appraoches its advantages and disadvantages, please reffer to the Discussion section, where we discuss, for instance, clustering per sample, clustering of data from different measurement batches, cell down-sampling in case of unequal number of cells in samples.]
+
+In our analysis, cell populations are identified using only the 10 lineage markers as defined in the `BuildSOM` function with the `colsToUse` argument.
 
 <!-- Also in the experimental design it already is crucial to think of which positive and negative control cells to include into a unique barcode and run them within the same subsequent analysis. -->
 
@@ -479,14 +484,16 @@ library(FlowSOM)
 fsom <- ReadInput(fcs, transform = FALSE, scale = FALSE)
 set.seed(1234)
 som <- BuildSOM(fsom, colsToUse = lineage_markers)
-
+cell_clustering_som <- som$map$mapping[,1]
 ```
 
 Automatic approaches for selecting the number of clusters in HDCyto data do not always succeed [@Weber2016].  In general, we therefore recommend some level of over-clustering, and if desired, manual merging of clusters.  Such a hierarchical approach is especially suited when the goal is to detect smaller cell populations.
 
-The SPADE analysis performed by Bodenmiller *et al.* [@Bodenmiller2012] identified 6 main cell types (T-cells, monocytes, dendritic cells, B-cells, NK cells and surface- cells) that were further stratified into 14 more specific subpopulations (CD4+ T-cells, CD8+ T-cells, CD14+ HLA-DR high monocytes, CD14+ HLA-DR med monocytes, CD14+ HLA-DR low monocytes, CD14- HLA-DR high monocytes, CD14- HLA-DR med monocytes, CD14- HLA-DR low monocytes, dendritic cells, IgM+ B-cells, IgM- B-cells, NK cells, surface- CD14+ cells and surface- CD14- cells).  In our analysis, we are interested in identifying the 6 main PBMC populations, including: CD4+ T-cells, CD8+ T-cells, monocytes, dendritic cells, NK cells and B-cells.  Following the concept of over-clustering we perform the metaclustering of the (by default) 100 SOM codes into more than expected number of groups. For example, stratification into 20 groups should give enough resolution.  We can explore the clustering in a wide variety of visualizations: t-SNE plots, heatmaps and a plot generated by `ConsensusClusterPlus` called "delta area".
+The SPADE analysis performed by Bodenmiller *et al.* [@Bodenmiller2012] identified 6 main cell types (T-cells, monocytes, dendritic cells, B-cells, NK cells and surface- cells) that were further stratified into 14 more specific subpopulations (CD4+ T-cells, CD8+ T-cells, CD14+ HLA-DR high monocytes, CD14+ HLA-DR med monocytes, CD14+ HLA-DR low monocytes, CD14- HLA-DR high monocytes, CD14- HLA-DR med monocytes, CD14- HLA-DR low monocytes, dendritic cells, IgM+ B-cells, IgM- B-cells, NK cells, surface- CD14+ cells and surface- CD14- cells).  In our analysis, we are interested in identifying the 6 main PBMC populations, including: CD4+ T-cells, CD8+ T-cells, monocytes, dendritic cells, NK cells and B-cells.  Following the concept of over-clustering we perform the metaclustering of the (by default) 100 SOM codes into more than expected number of groups. For example, stratification into 20 groups should give enough resolution to detect these main clusters. We can explore the clustering in a wide variety of visualizations: t-SNE plots, heatmaps and a plot generated by `ConsensusClusterPlus` called "delta area".
 
-We call `ConsensusClusterPlus` with maximum number of clusters `maxK = 20` and other clustering parameters set to the values as in the `metaClustering_consensus` function.  Again, to ensure that the analyses are reproducible, we define the random seed.
+[+ When the interst is in studying more specific subpopulations, one can follow a strategy of reclustering described in the Obtaining higher resolution section, where we propose to repeat the workflow (clustering and differential analyses) on data restricted only to a selected cell type for which more resolution is desired. ]
+
+We call `ConsensusClusterPlus` with maximum number of clusters `maxK = 20` and other clustering parameters set to the values as in the `metaClustering_consensus` function from the `r Biocpkg("FlowSOM")` package.  Again, to ensure that the analyses are reproducible, we define the random seed.
 
 
 ```{r flowsom-meta-clustering, message = FALSE}
@@ -504,11 +511,11 @@ mc <- ConsensusClusterPlus(t(codes), maxK = nmc, reps = 100,
 
 ## Get cluster ids for each cell
 code_clustering1 <- mc[[nmc]]$consensusClass
-cell_clustering1 <- code_clustering1[som$map$mapping[,1]]
+cell_clustering1 <- code_clustering1[cell_clustering_som]
 
 ```
 
-We can then investigate characteristics of identified clusters with heatmaps that illustrate median marker expression in each cluster (see Figure \@ref(fig:plot-clustering-heatmap1)). As the range of marker expression can vary substantially from marker to marker, we use the 0-1 transformed data for some visualizations.  However, to stay consistent with `r Biocpkg("FlowSOM")` and `r Biocpkg("ConsensusClusterPlus")`, we use the (arcsinh-transformed) unscaled data to generate the dendrogram of the hierarchical structure of metaclusters.
+We can then investigate characteristics of identified clusters with heatmaps that illustrate median marker expression in each cluster (see Figure \@ref(fig:plot-clustering-heatmap1)). As the range of marker expression can vary substantially from marker to marker, we use the 0-1 transformed data (`expr01`) for some visualizations.  However, to stay consistent with `r Biocpkg("FlowSOM")` and `r Biocpkg("ConsensusClusterPlus")`, we use the (arcsinh-transformed) unscaled data (`expr`) to generate the dendrogram of the hierarchical structure of metaclusters.
 
 Instead of using only medians, which do not give a full representation of cluster specifics, one can plot the entire marker expression distribution in each cluster (see Figure \@ref(fig:plot-clustering-distribution1)). Such a plot gives more detailed profile of each cluster, but represents an increase in the amount of information to interpret. Heatmaps give the overall overview of clusters, are quicker and easier to interpret, and together with the dendrogram can be a good basis for further cluster merging (see [Cluster merging and annotation](#cluster-merging-and-annotation) section).
 
@@ -516,6 +523,7 @@ Since we will use the heatmap and density plots again later on in this workflow,
 
 
 ```{r color-clusters}
+# Define cluster colors
 color_clusters <- c("#DC050C", "#FB8072", "#1965B0", "#7BAFDE", "#882E72", 
   "#B17BA6", "#FF7F00", "#FDB462", "#E7298A", "#E78AC3", 
   "#33A02C", "#B2DF8A", "#55A1B1", "#8DD3C7", "#A6761D", 
@@ -532,54 +540,49 @@ plot_clustering_heatmap_wrapper <- function(expr, expr01,
   
   # Calculate the median expression
   expr_median <- data.frame(expr, cell_clustering = cell_clustering) %>%
-    group_by(cell_clustering) %>% 
-    summarize_all(funs(median))
+    group_by(cell_clustering) %>% summarize_all(funs(median))
   expr01_median <- data.frame(expr01, cell_clustering = cell_clustering) %>%
-    group_by(cell_clustering) %>% 
-    summarize_all(funs(median))
+    group_by(cell_clustering) %>% summarize_all(funs(median))
   
   # Calculate cluster frequencies
   clustering_table <- as.numeric(table(cell_clustering))
+  clustering_prop <- round(clustering_table / sum(clustering_table) * 100, 2)
   
-  # This clustering is based on the markers that were used for the main clustering
+  # Sort the cell clusters with hierarchical clustering
   d <- dist(expr_median[, colnames(expr)], method = "euclidean")
   cluster_rows <- hclust(d, method = "average")
   
   expr_heat <- as.matrix(expr01_median[, colnames(expr01)])
   rownames(expr_heat) <- expr01_median$cell_clustering
   
-  labels_row <- paste0(rownames(expr_heat), " (", 
-    round(clustering_table / sum(clustering_table) * 100, 2), "%)")
-  labels_col <- colnames(expr_heat)
+  # Colors for the heatmap
+  color_heat <- colorRampPalette(rev(brewer.pal(n = 9, name = "RdYlBu")))(100)
+  legend_breaks = seq(from = 0, to = 1, by = 0.2)
   
-  # Row annotation for the heatmap
-  annotation_row <- data.frame(cluster = factor(expr01_median$cell_clustering))
+  labels_row <- paste0(expr01_median$cell_clustering, " (", clustering_prop , 
+    "%)")
+  
+  # Annotation of clusters
+  annotation_row <- data.frame(Cluster = factor(expr01_median$cell_clustering))
   rownames(annotation_row) <- rownames(expr_heat)
   
-  color_clusters <- color_clusters[1:nlevels(annotation_row$cluster)]
-  names(color_clusters) <- levels(annotation_row$cluster)
-  annotation_colors <- list(cluster = color_clusters)
-  annotation_legend <- FALSE
+  color_clusters1 <- color_clusters[1:nlevels(annotation_row$Cluster)]
+  names(color_clusters1) <- levels(annotation_row$Cluster)
+  annotation_colors <- list(Cluster = color_clusters1)
   
   if(!is.null(cluster_merging)){
     cluster_merging$new_cluster <- factor(cluster_merging$new_cluster)
-    annotation_row$cluster_merging <- cluster_merging$new_cluster 
-    color_clusters <- color_clusters[1:nlevels(cluster_merging$new_cluster)]
-    names(color_clusters) <- levels(cluster_merging$new_cluster)
-    annotation_colors$cluster_merging <- color_clusters
-    annotation_legend <- TRUE
+    annotation_row$Cluster_merging <- cluster_merging$new_cluster 
+    color_clusters2 <- color_clusters[1:nlevels(cluster_merging$new_cluster)]
+    names(color_clusters2) <- levels(cluster_merging$new_cluster)
+    annotation_colors$Cluster_merging <- color_clusters2
   }
   
-  # Colors for the heatmap
-  color <- colorRampPalette(rev(brewer.pal(n = 9, name = "RdYlBu")))(100)
-  
-  pheatmap(expr_heat, color = color, 
-    cluster_cols = FALSE, cluster_rows = cluster_rows, 
-    labels_col = labels_col, labels_row = labels_row, 
+  pheatmap(expr_heat, color = color_heat, cluster_cols = FALSE, 
+    cluster_rows = cluster_rows, labels_row = labels_row, 
     display_numbers = TRUE, number_color = "black", 
-    fontsize = 8, fontsize_number = 4,
-    annotation_row = annotation_row, annotation_colors = annotation_colors, 
-    annotation_legend = annotation_legend)
+    fontsize = 8, fontsize_number = 6, legend_breaks = legend_breaks,
+    annotation_row = annotation_row, annotation_colors = annotation_colors)
   
 }
 
@@ -598,8 +601,7 @@ plot_clustering_distr_wrapper <- function(expr, cell_clustering){
   
   cell_clustering <- factor(cell_clustering)
   expr_median <- data.frame(expr, cell_clustering = cell_clustering) %>%
-  group_by(cell_clustering) %>% 
-  summarize_all(funs(median))
+  group_by(cell_clustering) %>% summarize_all(funs(median))
   
   d <- dist(expr_median[, colnames(expr)], method = "euclidean")
   cluster_rows <- hclust(d, method = "average")
@@ -637,6 +639,139 @@ plot_clustering_distr_wrapper <- function(expr, cell_clustering){
 plot_clustering_distr_wrapper(expr = expr[, lineage_markers_ord], 
   cell_clustering = cell_clustering1)
 ```
+
+
+[+ In addition to investigating expression of the lineage markers, we can also have a look at expression of the functional markers. We propose a heatmap that depicts median expression of functional markers in each sample (see Figure \@ref(fig:plot-clustering-heatmap1-complex)) so the potential differnetial expression can be investigated already at this data exploration step before the formal testing is done. In order to plot all the heatmaps in one panel, we use the `r Biocpkg("ComplexHeatmap")` package. Again, we created a wrapper function that does all the plotting and can be reused through the workflow.]
+
+
+```{r plot-clustering-heatmap1-complex, fig.cap = "Heatmap of the median marker intensities of the 10 lineage markers across the 20 cell populations obtained with FlowSOM after the metaclustering step with ConsensusClusterPlus (PBMC data). The color in the heatmap represents the median of the arcsinh, 0-1 transformed marker expression. The dendrogram on the left represents the hierarchical similarity between the 20 metaclusters (metric: Euclidean distance; linkage: average). Values in the brackets indicate the relative size of a given cluster."}
+
+library(ComplexHeatmap)
+
+plot_clustering_heatmap_wrapper2 <- function(expr, expr01,
+  lineage_markers, functional_markers = NULL, sample_ids = NULL,
+  cell_clustering, color_clusters, cluster_merging = NULL, 
+  plot_cluster_annotation = TRUE){
+  
+  # Calculate the median expression of lineage markers
+  expr_median <- data.frame(expr[, lineage_markers], 
+    cell_clustering = cell_clustering) %>%
+    group_by(cell_clustering) %>%  summarize_all(funs(median))
+  expr01_median <- data.frame(expr01[, lineage_markers], 
+    cell_clustering = cell_clustering) %>% 
+    group_by(cell_clustering) %>%  summarize_all(funs(median))
+  
+  # Calculate cluster frequencies
+  clustering_table <- as.numeric(table(cell_clustering))
+  clustering_prop <- round(clustering_table / sum(clustering_table) * 100, 2)
+  
+  # Sort the cell clusters with hierarchical clustering
+  d <- dist(expr_median[, lineage_markers], method = "euclidean")
+  cluster_rows <- hclust(d, method = "average")
+  
+  expr_heat <- as.matrix(expr01_median[, lineage_markers])
+  
+  # Median expression of functional markers in each sample per cluster
+  expr_median_sample_cluster_tbl <- data.frame(expr01[, functional_markers, 
+    drop = FALSE], sample_id = sample_ids, cluster = cell_clustering) %>%
+    group_by(sample_id, cluster) %>% summarize_all(funs(median))
+  
+  # Colors for the heatmap
+  color_heat <- colorRampPalette(rev(brewer.pal(n = 9, name = "RdYlBu")))(100)
+  legend_breaks = seq(from = 0, to = 1, by = 0.2)
+  
+  labels_row <- paste0(expr01_median$cell_clustering, " (", clustering_prop , 
+    "%)")
+  
+  ### Annotation of the original clusters
+  annotation_row1 <- data.frame(Cluster = factor(expr01_median$cell_clustering))
+  color_clusters1 <- color_clusters[1:nlevels(annotation_row1$Cluster)]
+  names(color_clusters1) <- levels(annotation_row1$Cluster)
+  
+  ### Annotation of the merged clusters
+  if(!is.null(cluster_merging)){
+    mm <- match(annotation_row1$Cluster, cluster_merging$original_cluster)
+    annotation_row2 <- data.frame(Cluster_merging = 
+        factor(cluster_merging$new_cluster[mm]))
+    color_clusters2 <- color_clusters[1:nlevels(annotation_row2$Cluster_merging)]
+    names(color_clusters2) <- levels(annotation_row2$Cluster_merging)
+  }
+  
+  ### Genrate heatmap components
+  ha1 <- Heatmap(annotation_row1, name = "Cluster", 
+    col = color_clusters1, cluster_columns = FALSE, 
+    cluster_rows = cluster_rows, row_dend_reorder = FALSE, 
+    show_row_names = FALSE, width = unit(0.5, "cm"), 
+    rect_gp = gpar(col = "grey"))
+  
+  if(!is.null(cluster_merging)){
+    ha2 <- Heatmap(annotation_row2, name = "Cluster merging", 
+      col = color_clusters2, cluster_columns = FALSE, 
+      cluster_rows = cluster_rows, row_dend_reorder = FALSE, 
+      show_row_names = FALSE, width = unit(0.5, "cm"), 
+      rect_gp = gpar(col = "grey"))
+  }
+  
+  ha_text <- rowAnnotation(text = row_anno_text(labels_row, 
+    gp = gpar(fontsize = 8)), width = max_text_width(labels_row))
+  
+  ha_bar <- rowAnnotation("Frequency (%)" = row_anno_barplot(
+    x = clustering_prop, border = FALSE, axis = TRUE, 
+    axis_gp = gpar(fontsize = 5), gp = gpar(fill = "#696969", col = "#696969"), 
+    bar_width = 0.9), width = unit(0.7, "cm"), show_annotation_name = TRUE, 
+    annotation_name_rot = 0, annotation_name_offset = unit(5, "mm"), 
+    annotation_name_gp = gpar(fontsize = 7))
+  
+  ht1 <- Heatmap(expr_heat, name = "Normalized \nmedian expression", 
+    column_title = "Lineage markers", col = color_heat, 
+    cluster_columns = FALSE, cluster_rows = cluster_rows, 
+    row_dend_reorder = FALSE, heatmap_legend_param = list(at = legend_breaks, 
+      labels = legend_breaks, color_bar = "continuous"), 
+    show_row_names = FALSE, row_dend_width = unit(2, "cm"), 
+    rect_gp = gpar(col = "grey"))
+  
+  if(plot_cluster_annotation){
+    draw_out <- ha1
+  }else{
+    draw_out <- NULL  
+  }
+  
+  if(!is.null(cluster_merging)){
+    draw_out <- draw_out + ha2 + ht1 + ha_bar + ha_text
+  }else{
+    draw_out <- draw_out + ht1 + ha_bar + ha_text
+  }
+  
+  if(!is.null(functional_markers)){
+    for(i in 1:length(functional_markers)){
+      
+      functional_marker <- functional_markers[i]
+      
+      ## Rearange so the rows represent clusters and markers
+      expr_heat_fun <- as.matrix(dcast(expr_median_sample_cluster_tbl[, 
+        c("sample_id", "cluster", functional_marker)], 
+        cluster ~ sample_id, value.var = functional_marker)[, -1])
+      
+      draw_out <- draw_out + Heatmap(expr_heat_fun, 
+        column_title = functional_marker, col = color_heat, 
+        cluster_columns = FALSE, cluster_rows = cluster_rows, 
+        row_dend_reorder = FALSE, show_heatmap_legend = FALSE, 
+        show_row_names = FALSE, rect_gp = gpar(col = "grey"))
+      
+    }
+  }
+  
+  draw(draw_out, row_dend_side = "left")
+  
+}
+
+plot_clustering_heatmap_wrapper2(expr = expr, expr01 = expr01,
+  lineage_markers = lineage_markers, functional_markers = "pS6", 
+  sample_ids = sample_ids, cell_clustering = cell_clustering1, 
+  color_clusters = color_clusters, cluster_merging = NULL)
+
+```
+
 
 
 ## Visual representation with t-SNE
@@ -698,8 +833,7 @@ ggplot(dr,  aes(x = tSNE1, y = tSNE2, color = CD4)) +
 ```
 
 
-We can color the cells by cluster.  Ideally, cells of the same color should be close to each other (see Figure \@ref(fig:tsne-plot-one-clustering1)). 
-When the plots are further stratified by sample (see Figure \@ref(fig:tsne-plot-facet-sample)), we can verify whether similar cell populations are present in all replicates, which can help in identifying outlying samples. Optionally, stratification can be done by condition (see Figure \@ref(fig:tsne-plot-facet-condition)). 
+We can color the cells by cluster.  Ideally, cells of the same color should be close to each other (see Figure \@ref(fig:tsne-plot-one-clustering1)). When the plots are further stratified by sample (see Figure \@ref(fig:tsne-plot-facet-sample)), we can verify whether similar cell populations are present in all replicates, which can help in identifying outlying samples. Optionally, stratification can be done by condition (see Figure \@ref(fig:tsne-plot-facet-condition)). 
 
 [- With such a spot-check plot, we can inspect whether differences in cell abundance are strong between conditions, and we can identify distinguishing clusters.]
 
@@ -766,8 +900,10 @@ gg_tsne_codes <- ggplot(codes_dr,  aes(x = tSNE1, y = tSNE2,
   color = code_clustering1, size = size)) + 
   geom_point(alpha = 0.9) +
   theme_bw() +
-  scale_color_manual(values = color_clusters, guide = FALSE) +
-  theme(legend.position = "bottom")
+  scale_color_manual(values = color_clusters) +
+  guides(color = guide_legend(override.aes = list(size = 4), nrow = 2)) +
+  theme(legend.position = "bottom", legend.box = "vertical")
+
 ```
 
 
@@ -779,11 +915,30 @@ gg_pca_codes <- ggplot(codes_dr,  aes(x = PCA1, y = PCA2,
   theme_bw() +
   scale_color_manual(values = color_clusters) +
   guides(color = guide_legend(override.aes = list(size = 4), nrow = 2)) +
-  scale_size(guide = FALSE) +
-  theme(legend.position = "top")
+  theme(legend.position = "bottom", legend.box = "vertical")
 
 library(cowplot)
-plot_grid(gg_tsne_codes, gg_pca_codes, ncol = 1, labels = c("A", "B"))
+
+legend <- get_legend(gg_tsne_codes)
+
+plot_grid(gg_tsne_codes + theme(legend.position = "none"), 
+  gg_pca_codes + theme(legend.position = "none"), legend, 
+  ncol = 1, labels = c("A", "B"), rel_heights = c(4, 4, 1))
+
+```
+
+
+[+ Using heatmaps, we can also visualize median marker expression in the 100 SOM codes as in Figure \@ref(fig:plot-som-codes1-heatmap-complex). Of note, the clustering presented with the dendrogram does not completely agree with the clustering depicted by the 20 colors becasue the first one is based on the hierarchical clustering with average linkage and Euclidean distance, while the second one results from the consensus clustering.]
+
+
+```{r plot-som-codes1-heatmap-complex, fig.height = 12, fig.cap = "Median marker expression in the 100 SOM codes."}
+plot_clustering_heatmap_wrapper2(expr = expr, expr01 = expr01,
+  lineage_markers = lineage_markers, functional_markers = "pS6", 
+  sample_ids = sample_ids, cell_clustering = cell_clustering_som, 
+  color_clusters = rep(color_clusters, length.out = 100), 
+  cluster_merging = data.frame(original_cluster = 1:100, 
+    new_cluster = code_clustering1), plot_cluster_annotation = FALSE)
+
 ```
 
 
@@ -791,13 +946,13 @@ plot_grid(gg_tsne_codes, gg_pca_codes, ncol = 1, labels = c("A", "B"))
 
 In our experience, manual merging of clusters leads to slightly different results compared to an algorithm with a specified number of clusters.  In order to detect somewhat rare populations, some level of over-clustering is necessary so that the more subtle populations become separated from the main populations.  In addition, merging can always follow an over-clustering step, but splitting of existing clusters is not generally feasible. 
 
-In our setup, over-clustering is also useful when the interest is identifying the "natural" number of clusters present in the data. In addition to the t-SNE plots, one could investigate the delta area plot from the `r Biocpkg("ConsensusClusterPlus")` package and the hierarchical clustering dendrogram of the over-clustered subpopulations, as shown below.
+In our setup, over-clustering is also useful when the interest is identifying the "natural" number of clusters present in the data. In addition to the t-SNE plots, one could investigate the delta area plot from the `r Biocpkg("ConsensusClusterPlus")` package and the hierarchical clustering dendrogram of the over-clustered subpopulations, as shown in Figure \@ref(fig:consensus-plot) and \@ref(fig:plot-clustering-heatmap1m-merging), respectively.
 
-In our example, we expect around 6 specific cell types, and we have performed `r Biocpkg("FlowSOM")` clustering into 20 groups as a reasonable over-estimate.  After analyzing the heatmaps and t-SNE plots, we can clearly see that stratification of the data into 20 clusters may be too strong.  Many clusters are placed very close to each other, indicating that they could be merged together. The same can be deduced from the heatmaps, highlighting that marker expression patterns for some neighboring clusters are very similar.  Cluster merging and annotating is somewhat manual, based partially on visual inspection of t-SNE plots and heatmaps and thus, benefits from expert knowledge of the cell types.
+In our example, we expect around 6 specific cell types, and we have performed `r Biocpkg("FlowSOM")` clustering into 20 groups as a reasonable over-estimate.  After analyzing the heatmaps (Figure \@ref(fig:plot-clustering-heatmap1)) and t-SNE plots (Figure \@ref(fig:tsne-plot-one-clustering1)), we can clearly see that stratification of the data into 20 clusters may be too strong.  In the t-SNE map, many clusters are placed very close to each other, indicating that they could be merged together. The same can be deduced from the heatmaps, highlighting that marker expression patterns for some neighboring clusters are very similar.  Cluster merging and annotating is somewhat manual, based partially on visual inspection of t-SNE plots and heatmaps and thus, benefits from expert knowledge of the cell types.
 
 ### Manual cluster merging and annotating based on heatmaps
 
-In our experience, the main reference for manual merging of clusters is the heatmap of marker characteristics across metaclusters, with dendrograms showing the hierarchy of similarities. Such plots aggregate information over many cells and thus show average marker expression for each cluster.  Together with dimensionality reduction, these plots give good insight into the relationships between clusters and the marker levels within each cluster. Given expert knowledge of the cell types and markers, it is then left to the researcher to decide how exactly to merge clusters (e.g., with higher weight given to some markers).
+In our experience, the main reference for manual merging of clusters is the heatmap of marker characteristics across metaclusters (e.g. Figure \@ref(fig:plot-clustering-heatmap1)), with dendrograms showing the hierarchy of similarities. Such plots aggregate information over many cells and thus show average marker expression for each cluster.  Together with dimensionality reduction, these plots give good insight into the relationships between clusters and the marker levels within each cluster. Given expert knowledge of the cell types and markers, it is then left to the researcher to decide how exactly to merge clusters (e.g. with higher weight given to some markers).
 
 The dendrogram highlights the similarity between the metaclusters and can be used explicitly for the merging.  However, there are reasons why we would not always follow the dendrogram exactly.  In general, when it comes to clustering, blindly following the hierarchy of codes will lead to identification of populations of similar cells, but it does not necessarily mean that they are of biological interest.  The distances between metaclusters are calculated across all the markers, and it may be that some markers carry higher weight for certain cell types.  In addition, different linkage methods may lead to different hierarchy, especially when clusters are not fully distinct.  Another aspect to consider in cluster merging is the cluster size, represented in the parentheses next to the cluster label in our plots. If the cluster size is very small, but the cluster seems relevant and distinct, one can keep it as separate.  However, if it is small and different from the neighboring clustering only in a somewhat unimportant marker, it could be merged.  And, if some of the metaclusters do not represent any specific cell types, they could be dropped out of the downstream analysis instead of being merged.   However, in case an automated solution for cluster merging is truly needed, one could use the `cutree()` function applied to the dendrogram.
 
@@ -956,6 +1111,7 @@ gg_tsne_cl3 <- ggplot(dr,  aes(x = tSNE1, y = tSNE2, color = cell_clustering3)) 
   theme_bw() +
   scale_color_manual(values = color_clusters) +
   guides(color = guide_legend(override.aes = list(size = 4)))
+
 plot_grid(gg_tsne_cl2m, gg_tsne_cl3, ncol = 1, labels = c('A', 'B'))
 ```
 
@@ -978,7 +1134,6 @@ However, in our example, only the manual merging results in biologically meaning
 For the dataset used in this workflow [@Bodenmiller2012; @Bruggner2014], we perform three types of analyses that aim to identify subsets of PBMCs and signaling markers that respond to BCR/FcR-XL stimulation, by comparing stimulated samples to unstimulated samples. We first describe the differential abundance of the defined cell populations, followed by differential analysis of marker expression within each cluster. Finally, differential analysis of the overall aggregated marker expression could also be of interest.
 
 The PBMC subset analyzed in this workflow originates from a paired experiment, where samples from 8 patients were treated with 12 different stimulation conditions for 30 minutes, together with unstimulated reference samples [@Bodenmiller2012]. This is a natural example where one would choose a mixed model to model the response (abundance or marker signal), and patients would be treated as a random effect. In this way, one can formally account for within-patient variability, observed to be quite strong in the MDS plot (see [MDS plot](#mds-plot) section), and this should give a gain in power to detect differences between conditions. 
-
 
 We use the `r CRANpkg("stats")` and `r CRANpkg("lme4")` packages to fit the fixed and mixed models, respectively, and the `r CRANpkg("multcomp")` package for hypothesis testing.  In all differential analyses here, we want to test for differences between the reference (`Ref`) and BCR/FcR-XL treatment (`BCRXL`). The fixed model formula is straightforward: `~ condition`, where `condition` indicates the treatment group. The corresponding full model design matrix consists of the intercept and dummy variable indicating the treated samples.  In the presence of batches, one can include them in the model by using a formula `~ condition + batch`, or if they affect the treatment, a formula with interactions `~ condition * batch`.
 
@@ -1436,6 +1591,15 @@ plot_differential_heatmap_wrapper(expr_norm = expr_median_sample_norm,
 ```
 
 
+# Obtaining higher resolution
+
+In the proposed workflow, we concentrated on identification of the main cell types in PBMC. Our goal was to identify around 6 main cell types. Following the over-clustering strategy, we have chosen to performed the SOM clustering into 100 (the default) codes followed by the consensus clustering into 20 groups, from which we could annotate 8 cell types. These 8 cell types were then used in the differential analysis.
+
+If the number of expected cell types is higher, the user can increase the size of the SOM grid in the `BuildSOM` function using the `xdim` and `ydim` arguments and increase the maximum number of consensus clusters in the `ConsensusClusterPlus` function with the `maxK` argument. 
+
+One could also use another strategy to which we reffer as *reclustering* which is based on a hierarchy of clustering steps. In the first step, one uses the above clustering workflow to identify the main cell types. In the second step, the same clustering workflow is applied only to the subsets of cells for which more resolution is desired, ideally separately for each main cell type. Restricting to one subpopulation at a time results in easier cluster annotation. The differential analysis can be applied to the final clusters in the same way as described in the workflow assuming tables with cell counts and median marker expression are available. 
+
+The differential analysis could be also conducted on the unmerged 20 clusters and the manual annotation could be done at the end. 
 
 # Discussion
 
@@ -1447,17 +1611,28 @@ Clustering is one of the most challenging steps in the workflow, and its accurac
 
 While we have a good understanding of how computational algorithms recapitulate manual gating in high dimensions [@Weber2016], one of the open areas of research remains how to best cluster *across* samples.    
 
-[- A recent approach, called PAC-MAN [@Li116566], uses a combination of high dimensional density estimation, hierarchical clustering and network inference and comparison to extract clusters across samples, with a possibility to handle batch effects. In our approach, we aggregated all cells together before clustering.  An alternative would be to cluster within each sample and then aggregate a collection of metaclusters across samples [@Pyne2009]. Further research is required to better understand these effects, especially when batch effects are present.]
-
 The data analyzed here [@Bodenmiller2012; @Bruggner2014] was generated using sample barcoding; this strategy reduces intersample variability, since all samples are exposed to the same antibody cocktail and measured in a single acquisition [@Zunder2015].  Thus, the range of marker expression for each channel should, in principle, be within a similar range across samples.  
 
-[+ In our approach, we aggregated all cells together before clustering.  An alternative would be to cluster within each sample and then aggregate a collection of metaclusters across samples [@Pyne2009]. A recent approach, called PAC-MAN [@Li116566], uses a combination of high dimensional density estimation, hierarchical clustering and network inference and comparison to extract clusters across samples, with a possibility to handle batch effects.]
+In our approach, we aggregated all cells together before clustering.  
 
-Additional challenges may arise when combining data from different instrument acquisitions and additional preprocessing treatments may need to be applied.  Despite adjustments through bead-based normalization [@Finck2013], the observed marker expression may be affected by the varying efficiency of antibody binding in each batch and by the ion detection sensitivity after machine calibration.  Beyond normalization, other strategies have been proposed, such as equalizing the dynamic range between batches for each marker or the use of warping functions to eliminate non-linear distortions (see `r Biocpkg("cydar")` vignette). 
+[+ Another challenges, when clustering data from multiple samples, may arise when there are substantial differences in numbers of cells in samples. There is a risk that larger samples may drive the final clustering results. 
 
-[+ Alternatively, one could consider batch-wise clustering of samples. On the other hand, to be able to use those results, one still needs to match cell populations across batches. The matching could be done manually, or with the automated approaches developed for flow cytometry [@Pyne2009].]
+Such scenario would correspond to a case where cluster sizes are very different. Some clustering algotithms may be more prone to be affected by the varying cell numbers than others. 
 
-However, a comprehensive evaluation of these approaches and their effect on downstream analyses is still missing, especially when batch effects are present.  Overall, we expect that as a general rule, including batch parameters (or other covariates) in the linear modeling largely mitigates the problem.
+From our observation of FlowSOM performance we would say that it seems to perform very well in detecting both large and small clusters. It is because the SOM algorithm is not sensitive to the cluster size in contrast to, for example, k-means, and the consesnsus clustering of codes does not take into account the code sizes, meaning that only the quality of codes contributes to the final results and not their quantity. 
+
+FlowSOM algorithm should be robust to the differences in sample size. During the metaclustering, the method is blind to the size on the SOM codes and thus all clusters contribute equally to the final results.
+
+A simple solution to this problem could be ensuring that each sample contributes an equal amount of cells into the analysis. This could be done by sampling an equal number of cells from each sample. However, there are two main drawbacks of this strategy. First, a substantial amount of data (cells) may be removed from the analysis resulting in information loss. Second, during down-sampling, some of the smaller populations may be hugelly underrepresented or even skipped due to random sampling. ]
+
+An alternative would be to cluster within each sample and then aggregate a collection of metaclusters across samples [@Pyne2009]. A recent approach, called PAC-MAN [@Li116566], uses a combination of high dimensional density estimation, hierarchical clustering and network inference and comparison to extract clusters across samples, with a possibility to handle batch effects.
+
+Additional challenges may arise when combining data from different instrument acquisitions and additional preprocessing treatments may need to be applied.  Despite adjustments through bead-based normalization [@Finck2013], the observed marker expression may be affected by the varying efficiency of antibody binding in each batch and by the ion detection sensitivity after machine calibration.  Beyond normalization, other strategies have been proposed, such as equalizing the dynamic range between batches for each marker or the use of warping functions to eliminate non-linear distortions (see the `r Biocpkg("cydar")` vignette). 
+
+[+ ADD OTHER NORMALIZATION STRATEGIES: CellCnn ]
+
+Alternatively, one could consider batch-wise clustering of samples. On the other hand, to be able to use those results, one still needs to match cell populations across batches. The matching could be done manually, or with the automated approaches developed for flow cytometry [@Pyne2009]. However, a comprehensive evaluation of these approaches and their effect on downstream analyses is still missing, especially when batch effects are present.  Overall, we expect that as a general rule, including batch parameters (or other covariates) in the linear modeling largely mitigates the problem.
+
 
 <!-- Differential analysis -->
 
@@ -1470,6 +1645,8 @@ Neither of these approaches are directly able to account for batch effects or co
 One of the main goals of this workflow was to highlight how a model-based approach is able to handle complex experimental designs.  This becomes important in many experimental situations where covariates (e.g. age, gender, batch) may affect the observed HDCyto data.  Thus, the classical regression framework allows also to flexibly test situations well beyond two-group differences.  Of course, alternatives exist for two group comparisons, such as the nonparametric Mann-Whitney-Wilcoxon test [@Hartmann2016], which makes no assumptions about normality of the data, or the Student's t-test [@Pejoski4814] and its variations, such as the paired t-test.  
 
 We note that the LM, LMM and GLMM may perform poorly for extremely small samples.  Solutions similar to those widely accepted in transcriptomics that share information over variance parameters [@Robinson2007; @Love2014; @Ritchie2015] could be leveraged.  An example of such an approach is `r Biocpkg("cydar")` [@Lun2017], which performs the differential abundance analysis (on hypersphere counts) using the generalized linear modeling capabilities of `r Biocpkg("edgeR")` [@McCarthy2012].
+
+[+ MAYBE MENTION THE NEED FOR FUNCTIONAL ANALYSIS]
 
 <!-- Annotation -->
 
@@ -1484,10 +1661,13 @@ To keep the analysis of this workflow reproducible, one needs to define a random
 
 All software packages used in this workflow are publicly available from the Comprehensive R Archive Network (https://cran.r-project.org) or the Bioconductor project (http://bioconductor.org).
 The specific version numbers of the packages used are shown below, along with the version of the R installation.
-Version numbers of all Bioconductor packages correspond to release version 3.5 of the Bioconductor project.
+
 ```{r, results = 'asis', eval = !on.bioc, echo = FALSE}
-cat("Users can install all required packages and execute the workflow by following the instructions at https://github.com/gosianow/cytofWorkflow.\n")
-# https://www.bioconductor.org/help/workflows/cytofWorkflow
+cat("Version numbers of all the Bioconductor packages correspond to the release version 3.5 of the Bioconductor project. ")
+```
+
+```{r, results = 'asis', eval = !on.bioc, echo = FALSE}
+cat("Users can install all required packages and execute the workflow by following the instructions at https://www.bioconductor.org/help/workflows/cytofWorkflow.\n")
 ```
 
 

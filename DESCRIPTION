@@ -39,7 +39,7 @@ LazyData: true
 biocViews: WorkflowStep, SingleCell
 VignetteBuilder: knitr
 Imports: BiocStyle, knitr, readxl, matrixStats, flowCore, ggplot2, ggridges,
-        reshape2, dplyr, limma, ggrepel, RColorBrewer, pheatmap,
+        reshape2, dplyr, limma, ggrepel, RColorBrewer, pheatmap, ComplexHeatmap,
         FlowSOM, ConsensusClusterPlus, Rtsne, cowplot, lme4, multcomp
 Suggests: knitcitations
 NeedsCompilation: no
