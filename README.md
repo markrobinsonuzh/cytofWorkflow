@@ -12,30 +12,30 @@ The workflow is available on [Bioconductor](https://www.bioconductor.org/help/wo
 All the packages used in this workflow get installed by installing the workflow corresponding package:
 
 ```{r}
-source("https://bioconductor.org/biocLite.R")
-biocLite("cytofWorkflow")
+source("http://bioconductor.org/workflows.R")
+workflowInstall("cytofWorkflow")
 ```
 
 ## GitHub installation 
 
-First, you need to install `devtools` if you haven't already:
+First you need to install `BiocInstaller`:
 
 ```
-install.packages("devtools")
+source("http://bioconductor.org/biocLite.R")
 ```
 
-Bioconductor dependencies need to be installed manually (since `install_github` can only install CRAN dependencies automatically):
-
-```{r}
-source("https://bioconductor.org/biocLite.R")
-biocLite(c("BiocStyle", "flowCore", "FlowSOM", "ConsensusClusterPlus", "limma"))
-```
-
-After the Bioconductor dependencies are installed, the package and its CRAN dependencies can be installed from GitHub:
+You need to install the `devtools` package for the special use of `biocLite()` below:
 
 ```
-devtools::install_github("gosianow/cytofWorkflow")
+biocLite("devtools") 
 ```
+
+Install the workflow from this github repository:
+
+```
+biocLite("gosianow/cytofWorkflow", dependencies = TRUE)
+```
+
 
 The workflow can be executed by following the instructions in the cytofWorkflow.Rmd file available in the  [vignettes directory](https://github.com/gosianow/cytofWorkflow/blob/master/vignettes/cytofWorkflow.Rmd).
 

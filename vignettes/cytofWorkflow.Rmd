@@ -414,7 +414,7 @@ pheatmap(expr_median_sample, color = color, display_numbers = TRUE,
 
 In this step, we identify the ability of markers to explain the variance observed in each sample.  In particular, we calculate the PCA-based non-redundancy score (NRS) [@Levine2015].  Markers with higher score explain a larger portion of variability present in a given sample.
 
-The average NRS can be used to select a subset of markers that are non-redundant in each sample but at the same time capture the overall diversity between samples.  Such a subset of markers can be then used for cell population identification analysis (i.e. clustering). We note that there is no precise rule on how to choose the right cutoff for marker inclusion, but one of the approaches is to select a suitable number of the top-scoring markers.  The number can be chosen by analyzing the plot with the NR scores (see Figure \@ref(fig:nrs)), where the markers are sorted by the decreasing average NRS. Based on the prior biological knowledge, one can refine the marker selection and drop out markers that are not likely to distinguish cell populations of interest, even if they have high scores, and add in markers with low scores but known to be important in discerning cell subgroups [@Levine2015].
+The average NRS can be used to select a subset of markers that are non-redundant in each sample but at the same time capture the overall diversity between samples.  Such a subset of markers can be then used for cell population identification analysis (i.e. clustering). We note that there is no precise rule on how to choose the right cutoff for marker inclusion, but one of the approaches is to select a suitable number of the top-scoring markers.  The number can be chosen by analyzing the plot with the NR scores (see Figure \@ref(fig:nrs)), where the markers are sorted by the decreasing average NRS. Based on the prior biological knowledge, one can refine the marker selection and drop out markers that are not likely to distinguish cell populations of interest, even if they have high scores, and add in markers with low scores but known to be important in discerning cell subgroups [@Levine2015]. [+ Thus the NRS analysis serves more as a guide to marker selection and not a hardcoded rule.]
 
 In the dataset considered here [@Bodenmiller2012; @Bruggner2014] we want to use all the 10 lineage markers, so there is no explicit need to restrict the set of cell surface markers [+ , and the NRS serve as another quality control step. ] There may be other situations where this feature selection step would be of interest, [+ for example, in panel design [@Levine2015]. ]
 
@@ -883,7 +883,7 @@ code_sizes <- as.numeric(code_sizes)
 ```{r som-codes-dimension-reduction}
 ## Run t-SNE on codes
 set.seed(1234)
-tsne_out <- Rtsne(codes, pca = FALSE)
+tsne_out <- Rtsne(codes, perplexity = 5, pca = FALSE)
 ## Run PCA on codes
 pca_out <- prcomp(codes, center = TRUE, scale. = FALSE)
 ```
@@ -907,7 +907,7 @@ gg_tsne_codes <- ggplot(codes_dr,  aes(x = tSNE1, y = tSNE2,
 ```
 
 
-```{r plot-som-codes1-pca, fig.height = 8, fig.cap = "(A) t-SNE plot and (B) PCA plot representing the 100 SOM codes in the PBMC dataset colored according to the metaclustering with ConsensusClusterPlus into 20 cell populations. The SOM codes represent characteristics of the 100 (by default) clusters generated in the first step of the FlowSOM pipeline. The size of the points corresponds to the number of cells that were assigned to a given code."}
+```{r plot-som-codes1-pca, fig.height = 10, fig.cap = "(A) t-SNE plot and (B) PCA plot representing the 100 SOM codes in the PBMC dataset colored according to the metaclustering with ConsensusClusterPlus into 20 cell populations. The SOM codes represent characteristics of the 100 (by default) clusters generated in the first step of the FlowSOM pipeline. The size of the points corresponds to the number of cells that were assigned to a given code."}
 ## Plot PCA on codes
 gg_pca_codes <- ggplot(codes_dr,  aes(x = PCA1, y = PCA2, 
   color = code_clustering1, size = size)) +
@@ -923,7 +923,7 @@ legend <- get_legend(gg_tsne_codes)
 
 plot_grid(gg_tsne_codes + theme(legend.position = "none"), 
   gg_pca_codes + theme(legend.position = "none"), legend, 
-  ncol = 1, labels = c("A", "B"), rel_heights = c(4, 4, 1))
+  ncol = 1, labels = c("A", "B"), rel_heights = c(3, 3, 1))
 
 ```
 
@@ -1374,7 +1374,7 @@ where $\epsilon_{ij} \sim N(0, \sigma^2)$, and the mixed model includes a random
 $$Y_{ij} = \beta_0 + \beta_1 x_{ij} + \gamma_{i} + \epsilon_{ij},$$
 where $\gamma_{i} \sim N(0, \sigma^2_\gamma)$.  In the current experiment, we have an intercept (basal level) and a single covariate, $x_{ij}$, which is represented as a binary (stimulated/unstimulated) variable.  For more complicated designs or batch effects, additional columns of a design matrix can be used.
 
-One drawback of summarizing the protein marker intensity with a median over cells is that all the other characteristics of the distribution, such as bimodality, skewness and variance, are ignored. On the other hand, it results in a simple, easy to interpret approach, which in many cases will be able to detect interesting changes. Another issue that arises from using a summary statistic is the level of uncertainty, which increases as the number of cells used to calculate it decreases.  In the statistical modeling, this problem could be partially handled by assigning observation weights (number of cells) to each cluster and sample. However, since each cluster is tested separately, these weights do not account for the differences in size between clusters.
+One drawback of summarizing the protein marker intensity with a median over cells is that all the other characteristics of the distribution, such as bimodality, skewness and variance, are ignored. On the other hand, it results in a simple, easy to interpret approach, which in many cases will be able to detect interesting changes. Another issue that arises from using a summary statistic is the level of uncertainty, which increases as the number of cells used to calculate it decreases.  In the statistical modeling, this problem could be partially handled by assigning observation weights (number of cells) to each cluster and sample (parameter `weights` in the `lm` and `lmer` functions). However, since each cluster is tested separately, these weights do not account for the differences in size between clusters.
 
 There might be instances of small cell populations for which no cells are observed in some samples or where the number of cells is very low.  For clusters absent from a sample (e.g. due to biological variance or insufficient sampling), NAs are introduced because no median expression can be calculated; in the case of few cells, the median may be quite variable.  Thus, we apply a filter to remove samples that have fewer than 5 cells.  We also remove cases where marker expression is equal to zero in all the samples, as this leads to an error during model fitting. 
 
@@ -1593,13 +1593,13 @@ plot_differential_heatmap_wrapper(expr_norm = expr_median_sample_norm,
 
 # Obtaining higher resolution
 
-In the proposed workflow, we concentrated on identification of the main cell types in PBMC. Our goal was to identify around 6 main cell types. Following the over-clustering strategy, we have chosen to performed the SOM clustering into 100 (the default) codes followed by the consensus clustering into 20 groups, from which we could annotate 8 cell types. These 8 cell types were then used in the differential analysis.
+In the proposed workflow, we concentrated on identification of the main cell types in PBMC. Our goal was to identify around 6 main cell types. Following the over-clustering strategy, we have chosen to performed the SOM clustering into 100 (the default) groups followed by the consensus clustering into 20 groups, from which we could annotate 8 cell types. These 8 cell types were then used in the differential analysis.
 
 If the number of expected cell types is higher, the user can increase the size of the SOM grid in the `BuildSOM` function using the `xdim` and `ydim` arguments and increase the maximum number of consensus clusters in the `ConsensusClusterPlus` function with the `maxK` argument. 
 
-One could also use another strategy to which we reffer as *reclustering* which is based on a hierarchy of clustering steps. In the first step, one uses the above clustering workflow to identify the main cell types. In the second step, the same clustering workflow is applied only to the subsets of cells for which more resolution is desired, ideally separately for each main cell type. Restricting to one subpopulation at a time results in easier cluster annotation. The differential analysis can be applied to the final clusters in the same way as described in the workflow assuming tables with cell counts and median marker expression are available. 
+One could also use a strategy based on subsequent clustering of identified clusters, which we reffer to as *reclustering*. In the starting step, one uses the presented workflow to identify the main cell types. In the following steps, the same clustering workflow is applied individually to the cell populations for which more resolution is desired. Restricting to one subpopulation at a time results in easier cluster annotation. The differential analysis can be applied to the final clusters in the same way as described in the workflow assuming tables with cell counts and median marker expression are available. 
 
-The differential analysis could be also conducted on the unmerged 20 clusters and the manual annotation could be done at the end. 
+The differential analysis could be also conducted on the unmerged (20) consensus clusters and the manual annotation could be done at the end. 
 
 # Discussion
 
@@ -1615,23 +1615,15 @@ The data analyzed here [@Bodenmiller2012; @Bruggner2014] was generated using sam
 
 In our approach, we aggregated all cells together before clustering.  
 
-[+ Another challenges, when clustering data from multiple samples, may arise when there are substantial differences in numbers of cells in samples. There is a risk that larger samples may drive the final clustering results. 
-
-Such scenario would correspond to a case where cluster sizes are very different. Some clustering algotithms may be more prone to be affected by the varying cell numbers than others. 
-
-From our observation of FlowSOM performance we would say that it seems to perform very well in detecting both large and small clusters. It is because the SOM algorithm is not sensitive to the cluster size in contrast to, for example, k-means, and the consesnsus clustering of codes does not take into account the code sizes, meaning that only the quality of codes contributes to the final results and not their quantity. 
-
-FlowSOM algorithm should be robust to the differences in sample size. During the metaclustering, the method is blind to the size on the SOM codes and thus all clusters contribute equally to the final results.
-
-A simple solution to this problem could be ensuring that each sample contributes an equal amount of cells into the analysis. This could be done by sampling an equal number of cells from each sample. However, there are two main drawbacks of this strategy. First, a substantial amount of data (cells) may be removed from the analysis resulting in information loss. Second, during down-sampling, some of the smaller populations may be hugelly underrepresented or even skipped due to random sampling. ]
+[+ Thanks to that we make sure that clustering is blind to the sample labels, and thus does not bias the downstream statistical inferences. Moreover, we directly obtain consistent clustering between samples. However, some challenges may arise when there are substantial differences in numbers of cells in samples. There is a risk that larger samples may drive the final clustering results. 
+A simple solution to this problem could be ensuring that each sample contributes an equal amount of cells into the clustering analysis. This could be done by sampling an equal number of cells from each sample. However, there are two main drawbacks of this strategy. First, a substantial amount of data (cells) may be removed from the analysis resulting in information loss. Second, during down-sampling, some of the smaller populations may become underrepresented or even skipped due to randomness of sampling. ]
 
 An alternative would be to cluster within each sample and then aggregate a collection of metaclusters across samples [@Pyne2009]. A recent approach, called PAC-MAN [@Li116566], uses a combination of high dimensional density estimation, hierarchical clustering and network inference and comparison to extract clusters across samples, with a possibility to handle batch effects.
 
-Additional challenges may arise when combining data from different instrument acquisitions and additional preprocessing treatments may need to be applied.  Despite adjustments through bead-based normalization [@Finck2013], the observed marker expression may be affected by the varying efficiency of antibody binding in each batch and by the ion detection sensitivity after machine calibration.  Beyond normalization, other strategies have been proposed, such as equalizing the dynamic range between batches for each marker or the use of warping functions to eliminate non-linear distortions (see the `r Biocpkg("cydar")` vignette). 
+Additional challenges may arise when combining data from different instrument acquisitions and additional preprocessing treatments may need to be applied.  Despite adjustments through bead-based normalization [@Finck2013], the observed marker expression may be affected by the varying efficiency of antibody binding in each batch and by the ion detection sensitivity after machine calibration. Beyond normalization, other strategies have been proposed, such as equalizing the dynamic range between batches for each marker [+ (e.g. normalization to the 0-1 range, z-scores, quantile normalization)], the use of warping functions to eliminate non-linear distortions (see the `r Biocpkg("cydar")` vignette), [+ or learning marker distribution shifts between the batches based on a manually gated reference cell type and using it to correct marker expression for the whole dataset [@Arvaniti2016].]
 
-[+ ADD OTHER NORMALIZATION STRATEGIES: CellCnn ]
 
-Alternatively, one could consider batch-wise clustering of samples. On the other hand, to be able to use those results, one still needs to match cell populations across batches. The matching could be done manually, or with the automated approaches developed for flow cytometry [@Pyne2009]. However, a comprehensive evaluation of these approaches and their effect on downstream analyses is still missing, especially when batch effects are present.  Overall, we expect that as a general rule, including batch parameters (or other covariates) in the linear modeling largely mitigates the problem.
+Alternatively, one could consider batch-wise clustering of samples. On the other hand, to be able to use those results, one still needs to match cell populations across batches. The matching could be done manually, or with the automated approaches developed for flow cytometry [@Pyne2009]. However, a comprehensive evaluation of these approaches and their effect on downstream analyses is still missing, especially when batch effects are present.  Overall, we expect that as a general rule, including batch parameters (or other covariates) in the linear modeling [+ helps to mitigate] the problem.
 
 
 <!-- Differential analysis -->
@@ -1646,7 +1638,7 @@ One of the main goals of this workflow was to highlight how a model-based approa
 
 We note that the LM, LMM and GLMM may perform poorly for extremely small samples.  Solutions similar to those widely accepted in transcriptomics that share information over variance parameters [@Robinson2007; @Love2014; @Ritchie2015] could be leveraged.  An example of such an approach is `r Biocpkg("cydar")` [@Lun2017], which performs the differential abundance analysis (on hypersphere counts) using the generalized linear modeling capabilities of `r Biocpkg("edgeR")` [@McCarthy2012].
 
-[+ MAYBE MENTION THE NEED FOR FUNCTIONAL ANALYSIS]
+[+ In the differential marker expression analysis, we compare the median marker expression between samples, while in many cases  this approach is suffcient to detect interesting changes, by summarizing marker expression over cells to a single value we ignore all the other characteristics of the expression distribution, such as bimodality, skewness and variance, which may be relevant in some studies. Comparison of the whole marker distributions could be possible by employing so called functional analysis. However, such an analysis is much more complicated and the results harder to interpret.]
 
 <!-- Annotation -->
 
