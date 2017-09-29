@@ -321,7 +321,6 @@ ggplot(ggdf, aes(x = expression, color = condition,
   theme_bw() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1), 
     strip.text = element_text(size = 7), axis.text = element_text(size = 5)) +
-  guides(color = guide_legend(ncol = 1)) +
   scale_color_manual(values = color_conditions)
 
 ```
@@ -330,7 +329,7 @@ Another spot check is the number of cells per sample (see Figure \@ref(fig:plot-
 <!-- [CARSTEN] What is the minimum amount of cells recommended for analysis???? What is the maximum??? -->
 
 
-```{r plot-number-of-cells, fig.cap = "Barplot showing the number of cells measured for each sample in the PBMC dataset. Bars are colored by experimental condition: unstimulated (Ref) and stimulated with BCR/FcR-XL (BCRXL). Numbers in the names on the x-axis indicate patient IDs. Numbers on top of the bars indicate the cell counts."}
+```{r plot-number-of-cells, fig.height = 4, fig.cap = "Barplot showing the number of cells measured for each sample in the PBMC dataset. Bars are colored by experimental condition: unstimulated (Ref) and stimulated with BCR/FcR-XL (BCRXL). Numbers in the names on the x-axis indicate patient IDs. Numbers on top of the bars indicate the cell counts."}
 cell_table <- table(sample_ids)
 
 ggdf <- data.frame(sample_id = names(cell_table), 
@@ -418,7 +417,7 @@ The average NRS can be used to select a subset of markers that are non-redundant
 In the dataset considered here [@Bodenmiller2012; @Bruggner2014] we want to use all the 10 lineage markers, so there is no explicit need to restrict the set of cell surface markers [+ , and the NRS serve as another quality control step. ] There may be other situations where this feature selection step would be of interest, [+ for example, in panel design [@Levine2015]. ]
 
 
-```{r nrs, fig.cap = "Non-redundancy scores for each of the 10 lineage markers and all samples in the PBMC dataset. The full points represent the per-sample NR scores (colored by experimental conditions), while empty black circles indicate the mean NR scores from all the samples. Markers on the x-axis are sorted according to the decreasing average NRS."}
+```{r nrs, fig.height = 4, fig.cap = "Non-redundancy scores for each of the 10 lineage markers and all samples in the PBMC dataset. The full points represent the per-sample NR scores (colored by experimental conditions), while empty black circles indicate the mean NR scores from all the samples. Markers on the x-axis are sorted according to the decreasing average NRS."}
 ## Define a function that calculates the NRS per sample 
 NRS <- function(x, ncomp = 3){
   pr <- prcomp(x, center = TRUE, scale. = FALSE) 
@@ -557,18 +556,16 @@ plot_clustering_heatmap_wrapper <- function(expr, expr01,
   # Colors for the heatmap
   color_heat <- colorRampPalette(rev(brewer.pal(n = 9, name = "RdYlBu")))(100)
   legend_breaks = seq(from = 0, to = 1, by = 0.2)
-  
   labels_row <- paste0(expr01_median$cell_clustering, " (", clustering_prop , 
     "%)")
   
-  # Annotation of clusters
+  # Annotation for the original clusters
   annotation_row <- data.frame(Cluster = factor(expr01_median$cell_clustering))
   rownames(annotation_row) <- rownames(expr_heat)
-  
   color_clusters1 <- color_clusters[1:nlevels(annotation_row$Cluster)]
   names(color_clusters1) <- levels(annotation_row$Cluster)
   annotation_colors <- list(Cluster = color_clusters1)
-  
+  # Annotation for the merged clusters
   if(!is.null(cluster_merging)){
     cluster_merging$new_cluster <- factor(cluster_merging$new_cluster)
     annotation_row$Cluster_merging <- cluster_merging$new_cluster 
@@ -597,31 +594,30 @@ plot_clustering_heatmap_wrapper(expr = expr[, lineage_markers_ord],
 library(ggridges)
 
 plot_clustering_distr_wrapper <- function(expr, cell_clustering){
-  
+  # Calculate the median expression
   cell_clustering <- factor(cell_clustering)
   expr_median <- data.frame(expr, cell_clustering = cell_clustering) %>%
   group_by(cell_clustering) %>% summarize_all(funs(median))
-  
+  # Sort the cell clusters with hierarchical clustering
   d <- dist(expr_median[, colnames(expr)], method = "euclidean")
   cluster_rows <- hclust(d, method = "average")
-  
+  # Calculate cluster frequencies
   freq_clust <- table(cell_clustering)
   freq_clust <- round(as.numeric(freq_clust)/sum(freq_clust)*100, 2)
   cell_clustering <- factor(cell_clustering, 
     labels = paste0(levels(cell_clustering), " (", freq_clust, "%)"))
-
+  ### Data organized per cluster
   ggd <- melt(data.frame(cluster = cell_clustering, expr), 
     id.vars = "cluster", value.name = "expression", 
     variable.name = "antigen")
   ggd$antigen <- factor(ggd$antigen, levels = colnames(expr))
   ggd$reference <- "no"
-
+  ### The reference data
   ggd_bg <- ggd
   ggd_bg$cluster <- "reference"
   ggd_bg$reference <- "yes"
 
   ggd_plot <- rbind(ggd, ggd_bg)
-
   ggd_plot$cluster <- factor(ggd_plot$cluster, 
     levels = c(levels(cell_clustering)[rev(cluster_rows$order)], "reference"))
 
@@ -631,7 +627,7 @@ plot_clustering_distr_wrapper <- function(expr, cell_clustering){
     facet_wrap( ~ antigen, scales = "free_x", nrow = 2) +
     theme_ridges() +
     theme(axis.text = element_text(size = 7), 
-      strip.text = element_text(size = 7)) 
+      strip.text = element_text(size = 7), legend.position = "none") 
   
 }
 
@@ -703,7 +699,7 @@ plot_clustering_heatmap_wrapper2 <- function(expr, expr01,
     rect_gp = gpar(col = "grey"))
   ### Heatmap annotation for the merged clusters
   if(!is.null(cluster_merging)){
-    ha2 <- Heatmap(annotation_row2, name = "Cluster merging", 
+    ha2 <- Heatmap(annotation_row2, name = "Cluster \nmerging", 
       col = color_clusters2, cluster_columns = FALSE, 
       cluster_rows = cluster_rows, row_dend_reorder = FALSE, 
       show_row_names = FALSE, width = unit(0.5, "cm"), 
@@ -711,7 +707,7 @@ plot_clustering_heatmap_wrapper2 <- function(expr, expr01,
   }
   ### Cluster names and sizes - text
   ha_text <- rowAnnotation(text = row_anno_text(labels_row, 
-    gp = gpar(fontsize = 8)), width = max_text_width(labels_row))
+    gp = gpar(fontsize = 6)), width = max_text_width(labels_row))
   ### Cluster sizes - barplot
   ha_bar <- rowAnnotation("Frequency (%)" = row_anno_barplot(
     x = clustering_prop, border = FALSE, axis = TRUE, 
@@ -720,14 +716,12 @@ plot_clustering_heatmap_wrapper2 <- function(expr, expr01,
     annotation_name_rot = 0, annotation_name_offset = unit(5, "mm"), 
     annotation_name_gp = gpar(fontsize = 7))
   ### Heatmap for the lineage markers
-  ht1 <- Heatmap(expr_heat, 
-    name = "Median of the arcsinh,\n0-1 transformed\nmarker expression", 
-    column_title = "Lineage markers", col = color_heat, 
-    cluster_columns = FALSE, cluster_rows = cluster_rows, 
+  ht1 <- Heatmap(expr_heat, name = "Expr",  column_title = "Lineage markers", 
+    col = color_heat, cluster_columns = FALSE, cluster_rows = cluster_rows, 
     row_dend_reorder = FALSE, heatmap_legend_param = list(at = legend_breaks, 
       labels = legend_breaks, color_bar = "continuous"), 
     show_row_names = FALSE, row_dend_width = unit(2, "cm"), 
-    rect_gp = gpar(col = "grey"))
+    rect_gp = gpar(col = "grey"), column_names_gp = gpar(fontsize = 8))
   
   if(plot_cluster_annotation){
     draw_out <- ha1
@@ -752,7 +746,8 @@ plot_clustering_heatmap_wrapper2 <- function(expr, expr01,
         column_title = functional_markers[i], col = color_heat, 
         cluster_columns = FALSE, cluster_rows = cluster_rows, 
         row_dend_reorder = FALSE, show_heatmap_legend = FALSE, 
-        show_row_names = FALSE, rect_gp = gpar(col = "grey"))
+        show_row_names = FALSE, rect_gp = gpar(col = "grey"), 
+        column_names_gp = gpar(fontsize = 8))
     }
   }
   draw(draw_out, row_dend_side = "left")
@@ -894,29 +889,29 @@ gg_tsne_codes <- ggplot(codes_dr,  aes(x = tSNE1, y = tSNE2,
   geom_point(alpha = 0.9) +
   theme_bw() +
   scale_color_manual(values = color_clusters) +
-  guides(color = guide_legend(override.aes = list(size = 4), nrow = 2)) +
-  theme(legend.position = "bottom", legend.box = "vertical")
+  guides(color = guide_legend(override.aes = list(size = 4), ncol = 2))
 
 ```
 
 
-```{r plot-som-codes1-pca, fig.height = 10, fig.cap = "The 100 SOM codes in the PBMC dataset colored according to the metaclustering with ConsensusClusterPlus into 20 cell populations presented after the dimension reduction with (A) t-SNE and (B) PCA. The SOM codes represent characteristics of the 100 (by default) clusters generated in the first step of the FlowSOM pipeline. The size of the points corresponds to the number of cells that were assigned to a given code."}
+```{r plot-som-codes1-pca, fig.height = 6, fig.cap = "The 100 SOM codes in the PBMC dataset colored according to the metaclustering with ConsensusClusterPlus into 20 cell populations presented after the dimension reduction with (A) t-SNE and (B) PCA. The SOM codes represent characteristics of the 100 (by default) clusters generated in the first step of the FlowSOM pipeline. The size of the points corresponds to the number of cells that were assigned to a given code."}
 ## Plot PCA on codes
 gg_pca_codes <- ggplot(codes_dr,  aes(x = PCA1, y = PCA2, 
   color = code_clustering1, size = size)) +
   geom_point(alpha = 0.9) +
   theme_bw() +
   scale_color_manual(values = color_clusters) +
-  guides(color = guide_legend(override.aes = list(size = 4), nrow = 2)) +
-  theme(legend.position = "bottom", legend.box = "vertical")
+  guides(color = guide_legend(override.aes = list(size = 4), ncol = 2)) +
+  theme(legend.position = "right", legend.box = "vertical")
 
 library(cowplot)
 
 legend <- get_legend(gg_tsne_codes)
-
-plot_grid(gg_tsne_codes + theme(legend.position = "none"), 
-  gg_pca_codes + theme(legend.position = "none"), legend, 
-  ncol = 1, labels = c("A", "B"), rel_heights = c(3, 3, 1))
+ggdraw() +
+  draw_plot(gg_tsne_codes + theme(legend.position = "none"), 0, .5, .7, .5) +
+  draw_plot(gg_pca_codes + theme(legend.position = "none"), 0, 0, .7, .5) +
+  draw_plot(legend, .7, .0, .2, 1) +
+  draw_plot_label(c("A", "B", ""), c(0, 0, .7), c(1, .5, 1), size = 15)
 
 ```
 
@@ -924,14 +919,13 @@ plot_grid(gg_tsne_codes + theme(legend.position = "none"),
 [+ Using heatmaps, we can also visualize median marker expression in the 100 SOM codes as in Figure \@ref(fig:plot-som-codes1-heatmap-complex). Of note, the clustering presented with the dendrogram does not completely agree with the clustering depicted by the 20 colors becasue the first one is based on the hierarchical clustering with average linkage and Euclidean distance, while the second one results from the consensus clustering.]
 
 
-```{r plot-som-codes1-heatmap-complex, fig.height = 12, fig.cap = "Heatmap of the median marker intensities of the 10 lineage markers (left panel) and one signaling marker pS6 (right panel) across the 100 SOM codes in the PBMC dataset. The color in the heatmap represents the median of the arcsinh, 0-1 transformed marker expression calculated over cells from all the samples, for the lineage markers, and over cells in each sample individually, for the signaling marker. The heat varies from blue for lower expression to red for higher expression. The dendrogram on the left represents the hierarchical similarity between the 100 codes (metric: Euclidean distance; linkage: average). The annotation bar on the left is colored according to the code metaclustering with ConsensusClusterPlus into 20 cell populations. The relative size of the codes is presented with the barplot along the rows and in the brackets next to the cluster numbers."}
+```{r plot-som-codes1-heatmap-complex, fig.height = 9, fig.cap = "Heatmap of the median marker intensities of the 10 lineage markers (left panel) and one signaling marker pS6 (right panel) across the 100 SOM codes in the PBMC dataset. The color in the heatmap represents the median of the arcsinh, 0-1 transformed marker expression calculated over cells from all the samples, for the lineage markers, and over cells in each sample individually, for the signaling marker. The heat varies from blue for lower expression to red for higher expression. The dendrogram on the left represents the hierarchical similarity between the 100 codes (metric: Euclidean distance; linkage: average). The annotation bar on the left is colored according to the code metaclustering with ConsensusClusterPlus into 20 cell populations. The relative size of the codes is presented with the barplot along the rows and in the brackets next to the cluster numbers."}
 plot_clustering_heatmap_wrapper2(expr = expr, expr01 = expr01,
   lineage_markers = lineage_markers, functional_markers = "pS6", 
   sample_ids = sample_ids, cell_clustering = cell_clustering_som, 
   color_clusters = rep(color_clusters, length.out = 100), 
   cluster_merging = data.frame(original_cluster = 1:100, 
     new_cluster = code_clustering1), plot_cluster_annotation = FALSE)
-
 ```
 
 
@@ -1011,7 +1005,7 @@ The elbow criterion is quite subjective since the "appreciable" increase is not 
 Manual merging of up to 20 clusters can be laborious.  To simplify this task, one could reduce the strength of over-clustering and allow the metaclustering method to do a part of the merging, which then can be completed manually. Analyzing the delta plot from the right side, we can see how much we can reduce the strength of over-clustering while still obtaining stable clusters.  In parallel, one should check the heatmaps to see whether the less stringent stratification is able to capture cell populations of interest. 
 
 
-```{r consensus-plot, echo = FALSE, out.width = '80%', fig.align = 'center', fig.cap = "The delta area plot generated in the metaclustering step by the ConsensusClusterPlus function. The delta area score (y-axis) indicates the relative increase in cluster stability obtained when clustering the 100 SOM codes generated by FlowSOM into k groups (x-axis)."}
+```{r consensus-plot, echo = FALSE, out.width = '70%', fig.align = 'center', fig.cap = "The delta area plot generated in the metaclustering step by the ConsensusClusterPlus function. The delta area score (y-axis) indicates the relative increase in cluster stability obtained when clustering the 100 SOM codes generated by FlowSOM into k groups (x-axis)."}
 knitr::include_graphics("consensus_plots/consensus022.png")
 ```
 
@@ -1498,7 +1492,7 @@ print(head(de_output2), digits = 2)
 
 To report the significant results, we use a heatmap (see Figure \@ref(fig:diff-expr2-plot-heatmap-with-significant-markers)).  Instead of plotting the absolute expression, we display the normalized expression, which better highlights the direction of marker changes.  Additionally, we order the cluster-marker instances by their significance and group them by cell type (cluster).
 
-```{r diff-expr2-plot-heatmap-with-significant-markers, fig.height = 10, fig.cap = "Normalized expression of signaling markers in the 8 PBMC populations that are significantly differentially expressed between BCR/FcR-XL stimulated and unstimulated condition. The heat represents median (arcsinh-transformed) marker expression that was subsequently normalized per cluster-marker (rows) to mean of zero and standard deviation of one. The color of the heat varies from blue representing relative under-expression to orange representing relative over-expression. Bar at the top of the heatmap indicates the condition the samples (columns) belong to: violet for the unstimulated (Ref) and orange for the stimulated with BCR/FcR-XL (BCRXL) condition. Numbers in the brackets next to the cluster-marker names indicate adjusted p-values and cluster-marker are sorted so that they block per cluster and within each block, markers on the top show the most significant changes between the two conditions. Shown are only the significant cluster-markers for which adjusted p-values < 0.05."}
+```{r diff-expr2-plot-heatmap-with-significant-markers, fig.height = 8, fig.cap = "Normalized expression of signaling markers in the 8 PBMC populations that are significantly differentially expressed between BCR/FcR-XL stimulated and unstimulated condition. The heat represents median (arcsinh-transformed) marker expression that was subsequently normalized per cluster-marker (rows) to mean of zero and standard deviation of one. The color of the heat varies from blue representing relative under-expression to orange representing relative over-expression. Bar at the top of the heatmap indicates the condition the samples (columns) belong to: violet for the unstimulated (Ref) and orange for the stimulated with BCR/FcR-XL (BCRXL) condition. Numbers in the brackets next to the cluster-marker names indicate adjusted p-values and cluster-marker are sorted so that they block per cluster and within each block, markers on the top show the most significant changes between the two conditions. Shown are only the significant cluster-markers for which adjusted p-values < 0.05."}
 
 ## Keep the significant markers, sort them by significance and group by cluster
 sign_clusters_markers <- names(which(de_out2$adjp[, "adjp_BCRXLvsRef"] < FDR_cutoff))
@@ -1540,7 +1534,7 @@ ggplot(ggdf) +
     outlier.color = NA) +
   geom_point(aes(x = condition, y = median_expression, color = condition, 
     shape = patient_id), alpha = 0.8, position = position_jitterdodge()) +
-  facet_wrap(~ antigen, scales = "free", nrow = 4) +
+  facet_wrap(~ antigen, scales = "free", nrow = 5) +
   theme_bw() +
   theme(axis.text.x = element_blank(), axis.ticks.x = element_blank()) +
   scale_color_manual(values = color_conditions) +
