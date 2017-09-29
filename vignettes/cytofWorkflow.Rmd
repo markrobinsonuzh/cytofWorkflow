@@ -959,7 +959,11 @@ download.file(paste0(url, "/", cluster_merging1_filename),
   destfile = cluster_merging1_filename, mode = "wb")
 cluster_merging1 <- read_excel(cluster_merging1_filename)
 data.frame(cluster_merging1)
-
+## Convert to factor with merged clusters in desired order
+levels_clusters_merged <- c("B-cells IgM+", "B-cells IgM-", "CD4 T-cells", 
+  "CD8 T-cells", "DC", "NK cells", "monocytes", "surface-")
+cluster_merging1$new_cluster <- factor(cluster_merging1$new_cluster, 
+  levels = levels_clusters_merged)
 ## New clustering1m
 mm <- match(cell_clustering1, cluster_merging1$original_cluster)
 cell_clustering1m <- cluster_merging1$new_cluster[mm]
@@ -971,7 +975,7 @@ code_clustering1m <- cluster_merging1$new_cluster[mm]
 We update the t-SNE plot with the new annotated cell populations, Figure \@ref(fig:tsne-plot-one-clustering1m).
 
 ```{r tsne-plot-one-clustering1m, fig.cap = "t-SNE plot for the PBMC dataset, where cells are colored according to the manual merging of the 20 cell populations, obtained with FlowSOM, into 8 PBMC populations. As in Figure \\@ref(fig:tsne-plot-one-clustering1), t-SNE analysis uses the arcsinh-transformed expression of the 10 lineage markers in 2000 randomly selected cells from each of the 16 samples."}
-dr$cell_clustering1m <- factor(cell_clustering1m[tsne_inds])
+dr$cell_clustering1m <- cell_clustering1m[tsne_inds]
 ggplot(dr,  aes(x = tSNE1, y = tSNE2, color = cell_clustering1m)) +
   geom_point(size = 0.8) +
   theme_bw() +
@@ -1043,11 +1047,13 @@ Over-clustering into as few as 12 groups still allows us to identify the same 8 
 
 ```{r cluster-merging2}
 cluster_merging2_filename <- "PBMC8_cluster_merging2.xlsx"
-download.file(paste0(url, "/", cluster_merging2_filename), 
+download.file(paste0(url, "/", cluster_merging2_filename),
   destfile = cluster_merging2_filename, mode = "wb")
 cluster_merging2 <- read_excel(cluster_merging2_filename)
 data.frame(cluster_merging2)
-
+## Convert to factor with merged clusters in correct order
+cluster_merging2$new_cluster <- factor(cluster_merging2$new_cluster,
+  levels = levels_clusters_merged)
 ## New clustering2m
 mm <- match(cell_clustering2, cluster_merging2$original_cluster)
 cell_clustering2m <- cluster_merging2$new_cluster[mm]
@@ -1055,7 +1061,7 @@ cell_clustering2m <- cluster_merging2$new_cluster[mm]
 
 
 ```{r tsne-plot-one-clustering2m, fig.cap = "t-SNE plot for the PBMC dataset, where cells are colored according to the manual merging of the 12 metaclusters, obtained with FlowSOM, into 8 PBMC populations. As in Figure \\@ref(fig:tsne-plot-one-clustering1), t-SNE analysis uses the arcsinh-transformed expression of the 10 lineage markers in 2000 randomly selected cells from each of the 16 samples."}
-dr$cell_clustering2m <- factor(cell_clustering2m[tsne_inds])
+dr$cell_clustering2m <- cell_clustering2m[tsne_inds]
 gg_tsne_cl2m <- ggplot(dr,  aes(x = tSNE1, y = tSNE2, color = cell_clustering2m)) +
   geom_point(size = 0.8) +
   theme_bw() +
@@ -1130,7 +1136,7 @@ The PBMC subset analyzed in this workflow originates from a paired experiment, w
 
 We use the `r CRANpkg("stats")` and `r CRANpkg("lme4")` packages to fit the fixed and mixed models, respectively, and the `r CRANpkg("multcomp")` package for hypothesis testing.  In all differential analyses here, we want to test for differences between the reference (`Ref`) and BCR/FcR-XL treatment (`BCRXL`). The fixed model formula is straightforward: `~ condition`, where `condition` indicates the treatment group. The corresponding full model design matrix consists of the intercept and dummy variable indicating the treated samples.  In the presence of batches, one can include them in the model by using a formula `~ condition + batch`, or if they affect the treatment, a formula with interactions `~ condition * batch`.
 
-For testing, we use the general linear hypotheses function `glht`, which allows testing of arbitrary hypotheses.  The `linfct` parameter specifies the linear hypotheses to be tested.  It should be a matrix where each row corresponds to one comparison (contrast), and the number of columns must be the same as in the design matrix.  In our analysis, the contrast matrix indicates that the regression coefficient corresponding to `conditionBCRXL` is tested to be equal to zero; i.e. we test the null hypothesis that there is no effect of the BCR/FcR-XL treatment.  The result of the test is a p-value, which indicates the probability of observing an as strong (or stronger) difference between the two conditions assuming the null hypothesis is true.
+For testing, we use the general linear hypotheses function `glht`, which allows testing of arbitrary hypotheses [+ using t-tests].  The `linfct` parameter specifies the linear hypotheses to be tested.  It should be a matrix where each row corresponds to one comparison (contrast), and the number of columns must be the same as in the design matrix.  In our analysis, the contrast matrix indicates that the regression coefficient corresponding to `conditionBCRXL` is tested to be equal to zero; i.e. we test the null hypothesis that there is no effect of the BCR/FcR-XL treatment.  The result of the test is a p-value, which indicates the probability of observing an as strong (or stronger) difference between the two conditions assuming the null hypothesis is true.
 
 
 Testing is performed on each cluster and marker separately, resulting in 8 tests for differential abundance (one for each merged population), 14 tests for overall differential marker expression analysis and 8 x 14 tests for differential marker expression within-populations.  Thus, to account for the multiple testing correction, we apply the Benjamini & Hochberg adjustment to each of them using an FDR cutoff of 5\%.
@@ -1171,7 +1177,7 @@ For each sample, we plot its PBMC cell type composition represented with colored
 ```{r diff-freqs-plot-props-barplot, fig.cap = "Relative abundance of the 8 PBMC populations in each sample (x-axis), in the PBMC dataset, represented with a barplot. The 8 cell populations are a result of manual merging of the 20 FlowSOM metaclusters."}
 ggdf <- melt(data.frame(cluster = rownames(props), props), 
   id.vars = "cluster", value.name = "proportion", variable.name = "sample_id")
-
+ggdf$cluster <- factor(ggdf$cluster, levels = levels_clusters_merged)
 ## Add condition info
 mm <- match(ggdf$sample_id, md$sample_id)
 ggdf$condition <- factor(md$condition[mm])
