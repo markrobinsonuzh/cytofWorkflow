@@ -1429,7 +1429,8 @@ We created a wrapper function `differential_expression_wrapper` that performs th
 
 
 ```{r diff-differential-expression-wrapper}
-differential_expression_wrapper <- function(expr_median, md, model = "lmer", formula, K){
+differential_expression_wrapper <- function(expr_median, md, model = "lmer", 
+  formula, K){
   ## Fit LMM or LM for each marker separately
   fit_gaussian <- lapply(1:nrow(expr_median), function(i){
     data_tmp <- data.frame(y = as.numeric(expr_median[i, md$sample_id]), md)
