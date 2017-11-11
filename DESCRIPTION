@@ -1,10 +1,10 @@
 Package: cytofWorkflow
 Title: CyTOF workflow: differential discovery in high-throughput
         high-dimensional cytometry datasets
-Version: 1.0.2
-Date: 2017-08-22
+Version: 1.0.4
+Date: 2017-10-19
 Authors@R: c(person(role=c("aut", "cre"), "Malgorzata", "Nowicka",
-        email = "gosia.nowicka@uzh.ch"), person(role=c("aut"), "Mark
+        email = "gosia.nowicka.uzh@gmail.com"), person(role=c("aut"), "Mark
         D.", "Robinson", email = "mark.robinson@imls.uzh.ch"))
 Description: High dimensional mass and flow cytometry (HDCyto)
         experiments have become a method of choice for high throughput
@@ -38,10 +38,9 @@ Encoding: UTF-8
 LazyData: true
 biocViews: WorkflowStep, SingleCell
 VignetteBuilder: knitr
-Imports: BiocStyle, knitr, readxl, matrixStats, flowCore, ggplot2,
-        reshape2, dplyr, limma, ggrepel, RColorBrewer, pheatmap,
-        FlowSOM, ConsensusClusterPlus, Rtsne, cowplot, lme4, multcomp,
-        captioner, ggjoy
+Imports: BiocStyle, knitr, readxl, matrixStats, flowCore, ggplot2, ggridges,
+        reshape2, dplyr, limma, ggrepel, RColorBrewer, pheatmap, ComplexHeatmap,
+        FlowSOM, ConsensusClusterPlus, Rtsne, cowplot, lme4, multcomp
 Suggests: knitcitations
 NeedsCompilation: no
 Workflow: true
