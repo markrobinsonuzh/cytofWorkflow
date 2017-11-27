@@ -33,7 +33,7 @@ abstract: High dimensional mass and flow cytometry (HDCyto) experiments have bec
 bibliography: bibliography.bib
 # output: BiocWorkflowTools::f1000_article
 output:
- BiocStyle::html_document2:
+ BiocStyle::html_document:
    fig_caption: true
    self_contained: yes
 vignette: >
