@@ -87,6 +87,12 @@ suppressPackageStartupMessages({
 })
 ```
 
+**R version**: `r R.version.string`
+
+**Bioconductor version**: `r BiocInstaller::biocVersion()`
+
+**Package**: `r packageVersion("BiocMetaWorkflow")`
+
 
 # Introduction
 
