@@ -21,19 +21,20 @@ workflowInstall("cytofWorkflow")
 First you need to install `BiocInstaller`:
 
 ```
-source("http://bioconductor.org/biocLite.R")
+if (!requireNamespace("BiocManager", quietly=TRUE))
+    install.packages("BiocManager")
 ```
 
 You need to install the `devtools` package for the special use of `biocLite()` below:
 
 ```
-biocLite("devtools") 
+BiocManager::install("devtools") 
 ```
 
 Install the workflow from this github repository:
 
 ```
-biocLite("gosianow/cytofWorkflow", dependencies = TRUE)
+BiocManager::install("gosianow/cytofWorkflow", dependencies = TRUE)
 ```
 
 
