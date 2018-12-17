@@ -679,12 +679,12 @@ $$E(Y_{ij}|\beta_0, \beta_1, \gamma_i, \xi_{ij}) = logit^{-1}(\beta_0 + \beta_1 
 where $\gamma_{i} \sim N(0, \sigma^2_\gamma)$.
 
 ```{r da-formulas}
+ei <- metadata(daf)$experiment_info
 da_formula1 <- createFormula(ei, cols_fixed = 3, cols_random = 2)
 da_formula2 <- createFormula(ei, cols_fixed = 3, cols_random = c(2, 4))
 ```
 
 ```{r design-contrast}
-ei <- metadata(daf)$experiment_info
 design <- createDesignMatrix(ei, 
     cols_design = which(colnames(ei) == "condition"))
 contrast <- createContrast(c(0, 1))
