@@ -38,8 +38,10 @@ output:
    self_contained: yes
 vignette: >
   %\VignetteIndexEntry{A workflow for differential discovery in high-throughput high-dimensional cytometry datasets}
-  %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
+editor_options: 
+  chunk_output_type: console
 ---
 
 <!-- To render this document: -->
@@ -152,7 +154,7 @@ The data frame `md` contains the following columns:
 library(readxl)
 url <- "http://imlspenticton.uzh.ch/robinson_lab/cytofWorkflow"
 md <- "PBMC8_metadata.xlsx"
-download.file(sprintf("%s/%s", url, md), destfile = md, mode = "wb")
+download.file(file.path(url, md), destfile = md, mode = "wb")
 md <- read_excel(md)
 head(data.frame(md))
 ```
@@ -208,7 +210,7 @@ In the following analysis, we will often use marker IDs as column names in the t
 
 ```{r load-panel}
 panel <- "PBMC8_panel_v3.xlsx"
-download.file(sprintf("%s/%s", url, panel), destfile = panel, mode = "wb")
+download.file(file.path(url, panel), destfile = panel, mode = "wb")
 panel <- read_excel(panel)
 ```
 
@@ -217,7 +219,8 @@ panel <- read_excel(panel)
 <!-- [VITO] An important point I am missing here is that a key reason why the arcsinh transformation is used, is because this data is often log-normally distributed (likely because of the multiplicative noise and the central limit theorem), however log transformation is not possible because of the 0s. Arcsinh transformation is compatible with 0 and approximately equal to log transformation for large numbers. Thus it should make the data approximately normal distributed, at least for large numbers, which is of importance for downstream statistics (you even mention in the differential analysis part that you assume the data to be gaussian in arcsinh space). -->
 
 Usually, the raw marker intensities read by a cytometer have strongly skewed distributions with varying ranges of expression, thus making it difficult to  distinguish between the negative and positive cell populations.  It is common practice to transform CyTOF marker intensities using, for example, arcsinh (hyperbolic inverse sine) with cofactor 5 [@Bendall687 Figure S2; @Bruggner2014] to make the distributions more symmetric and to map them to a comparable range of expression, which is important for clustering. A cofactor of 150 has been promoted for flow cytometry, but users are free to implement alternative transformations, some of which are available from the `transform` function of the `r Biocpkg("flowCore")` package.  
-By default, the `daFrame` constructor will 
+By default, the `daFrame` constructor will [TODO: finish this?]
+
 <!-- [X]
 In the following step, we include only those channels that correspond to the lineage and functional markers.  We also rename the columns in the `flowSet` to the antigen names from `panel$desc`. -->
 
@@ -271,10 +274,10 @@ As a final note, the `daFrame` constructor requires the input `flowSet`'s or .fc
 ```{r}
 # specify levels for conditions & sample IDs to assure desired ordering
 md$condition <- factor(md$condition, levels = c("Ref", "BCRXL"))
-md$sample_id <- md$sample_id[with(md, order(condition))]
+#md$sample_id <- md$sample_id[with(md, order(condition))]
 
 # add filenames to description slot
-all(is.null(keyword(fs, "FILENAME")))
+all(is.null(unlist(keyword(fs, "FILENAME"))))
 for (i in seq_along(fs))
     description(fs[[i]])$FILENAME <- identifier(fs[[i]])
 
@@ -368,7 +371,7 @@ In our example, we have specified marker classes in the input `panel`, and `clus
 
 ```{r}
 daf <- cluster(daf, cols_to_use = type_markers(daf),
-    xdim = 10, ydim = 10, maxK = 20, seed = 1234)
+               xdim = 10, ydim = 10, maxK = 20, seed = 1234)
 ```
 
 Automatic approaches for selecting the number of clusters in HDCyto data do not always succeed [@Weber2016].  In general, we therefore recommend some level of over-clustering, and if desired, manual merging of clusters.  Such a hierarchical approach is especially suited when the goal is to detect smaller cell populations.
@@ -417,7 +420,7 @@ Instead of using only medians, which do not give a full representation of cluste
 
 ```{r plot-clustering-heatmap1, fig.cap = "Heatmap of the median marker intensities of the 10 lineage markers across the 20 cell populations obtained with FlowSOM after the metaclustering step with ConsensusClusterPlus (PBMC data). The color in the heatmap represents the median of the arcsinh, 0-1 transformed marker expression calculated over cells from all the samples, varying from blue for lower expression to red for higher expression. The numbers indicate the actual expression values. The dendrogram on the left represents the hierarchical similarity between the 20 metaclusters (metric: Euclidean distance; linkage: average). Each cluster has a unique color assigned (bar on the left) which is identical in other visualizations of these 20 clusters (e.g. Figure t-SNE map in \\@ref(fig:tsne-plot-one-clustering1)) facilitating the figure interpretation. Values in the brackets next to the cluster numbers indicate the relative size of clusters."}
 plotClusterHeatmap(daf, hm2 = NULL, k = "meta20", m = NULL,
-    fun = "median", cluster_anno = TRUE, draw_freqs = TRUE)
+                   fun = "median", cluster_anno = TRUE, draw_freqs = TRUE)
 ```
 
 ```{r plot-clustering-distribution1, fig.height = 8, fig.cap = "Distributions of marker intensities (arcsinh-transformed) of the 10 lineage markers in the 20 cell populations obtained with FlowSOM after the metaclustering step with ConsensusClusterPlus (PBMC data). Red densities represent marker expression for cells in a given cluster. Green densities are calculated over all the cells and serve as a reference."}
@@ -477,7 +480,8 @@ plotCodes(daf, k = "meta20")
 Using heatmaps, we can also visualize median marker expression in the 100 SOM codes as in Figure \@ref(fig:plot-som-codes1-heatmap-complex). Of note, the clustering presented with the dendrogram does not completely agree with the clustering depicted by the 20 colors because the first one is based on the hierarchical clustering with average linkage and Euclidean distance, while the second one results from the consensus clustering.
 
 ```{r plot-som-codes1-heatmap-complex, fig.height = 9, fig.cap = "Heatmap of the median marker intensities of the 10 lineage markers (left panel) and one signaling marker pS6 (right panel) across the 100 SOM codes in the PBMC dataset. The color in the heatmap represents the median of the arcsinh, 0-1 transformed marker expression calculated over cells from all the samples, for the lineage markers, and over cells in each sample individually, for the signaling marker. The heat varies from blue for lower expression to red for higher expression. The dendrogram on the left represents the hierarchical similarity between the 100 codes (metric: Euclidean distance; linkage: average). The annotation bar on the left is colored according to the code metaclustering with ConsensusClusterPlus into 20 cell populations. The relative size of the codes is presented with the barplot along the rows and in the brackets next to the cluster numbers."}
-plotClusterHeatmap(daf, hm2 = "pS6", k = "som100", m = "meta20", cluster_anno = FALSE, draw_freqs = TRUE)
+plotClusterHeatmap(daf, hm2 = "pS6", k = "som100", m = "meta20", 
+                   cluster_anno = FALSE, draw_freqs = TRUE)
 ```
 
 ## Cluster merging and annotation
@@ -504,14 +508,15 @@ In this example, our expert has annotated 8 cell populations: CD8 T-cells, CD4 T
 
 ```{r cluster-merging1}
 merging_table1 <- "PBMC8_cluster_merging1.xlsx"
-download.file(sprintf("%s/%s", url, merging_table1), destfile = merging_table1, mode = "wb")
+download.file(file.path(url, merging_table1), 
+              destfile = merging_table1, mode = "wb")
 merging_table1 <- read_excel(merging_table1)
 head(data.frame(merging_table1))
 
 # convert to factor with merged clusters in desired order
 merging_table1$new_cluster <- factor(merging_table1$new_cluster, 
-    levels = c("B-cells IgM+", "B-cells IgM-", "CD4 T-cells", 
-        "CD8 T-cells", "DC", "NK cells", "monocytes", "surface-"))
+    levels = c("B-cells IgM+", "B-cells IgM-", "CD4 T-cells", "CD8 T-cells",
+               "DC", "NK cells", "monocytes", "surface-"))
 
 daf <- mergeClusters(daf, k = "meta20", table = merging_table1, id = "merging1")
 ```
