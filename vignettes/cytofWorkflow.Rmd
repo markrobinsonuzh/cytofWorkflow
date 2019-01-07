@@ -174,40 +174,6 @@ all( rownames(phenoData(fs)) == md$file_name )
 
 Alternatively, the files can be downloaded manually from the [Citrus Cytobank repository](https://community.cytobank.org/cytobank/experiments/15713/download_files) and loaded into R as a `flowSet` using `read.flowSet` from the `r Biocpkg("flowCore")` package [@Hahne2009]. Importantly, `read.flowSet` and the underlying  `read.FCS` functions, by default, may transform the marker intensities and remove cells with extreme positive values. This behavior can be controlled with arguments `transformation` and `truncate_max_range`, respectively.
 
-<!--```{r eval = FALSE}
-library(flowCore)
-fs <- read.flowSet(files = fcs_file_names, path = path_to_fcs_files,
-    transformation = FALSE, truncate_max_range = FALSE)
-```
--->
-
-<!-- [X]
-The .fcs files listed in the metadata can be downloaded manually from the [Citrus Cytobank repository](https://community.cytobank.org/cytobank/experiments/15713/download_files) or automatically from the [Robinson Lab server](http://imlspenticton.uzh.ch/robinson_lab/cytofWorkflow) where they are saved in a compressed archive file, PBMC8_fcs_files.zip.
-
-```{r download-fcs}
-fcs_filename <- "PBMC8_fcs_files.zip"
-download.file(paste0(url, "/", fcs_filename), destfile = fcs_filename, 
-  mode = "wb")
-unzip(fcs_filename)
-```
-
-To load the content of the .fcs files into R, we use the `r Biocpkg("flowCore")` package [@Hahne2009]. Using `read.flowSet`, we read in all files into a `flowSet` object, which is a general container for HDCyto data.  Importantly, `read.flowSet` and the underlying  `read.FCS` functions, by default, may transform the marker intensities and remove cells with extreme positive values.  We keep these options off to be sure that we control the exact preprocessing steps.
-
-```{r load-fcs, include=FALSE}
-library(flowCore)
-fcs_raw <- read.flowSet(md$file_name, transformation = FALSE, 
-  truncate_max_range = FALSE)
-fcs_raw
-```
-
-```{r load-fcs2, eval=FALSE}
-library(flowCore)
-fcs_raw <- read.flowSet(md$file_name, transformation = FALSE, 
-  truncate_max_range = FALSE)
-fcs_raw
-```
--->
-
 In our example, information about the panel is also available in a file called PBMC8_panel.xlsx, and can be downloaded from the [Robinson Lab server](http://imlspenticton.uzh.ch/robinson_lab/cytofWorkflow) and loaded into a variable called `panel`.  It contains columns for `Isotope` and `Metal` that define the atomic mass number and the symbol of the chemical element conjugated to the antibody, respectively, and `Antigen`, which specifies the protein marker that was targeted; two additional columns specify whether a channel belongs to the lineage or surface type of marker.
 
 The isotope, metal and antigen information that the instrument receives is also stored in the `flowFrame` (container for one sample) or `flowSet` (container for multiple samples) objects.  You can type `fs[[1]]` to see the first `flowFrame`, which contains a table with columns `name` and `desc`.  Their content can be accessed with accessors `pData(parameters(fs[[1]]))`.  The variable `name` corresponds to the column names in the `flowSet` object, you can type in R `colnames(fs)`.
@@ -229,45 +195,9 @@ all( panel$fcs_colname %in% colnames(fs) )
 
 <!-- [VITO] An important point I am missing here is that a key reason why the arcsinh transformation is used, is because this data is often log-normally distributed (likely because of the multiplicative noise and the central limit theorem), however log transformation is not possible because of the 0s. Arcsinh transformation is compatible with 0 and approximately equal to log transformation for large numbers. Thus it should make the data approximately normal distributed, at least for large numbers, which is of importance for downstream statistics (you even mention in the differential analysis part that you assume the data to be gaussian in arcsinh space). -->
 
-Usually, the raw marker intensities read by a cytometer have strongly skewed distributions with varying ranges of expression, thus making it difficult to  distinguish between the negative and positive cell populations.  It is common practice to transform CyTOF marker intensities using, for example, arcsinh (hyperbolic inverse sine) with cofactor 5 [@Bendall687 Figure S2; @Bruggner2014] to make the distributions more symmetric and to map them to a comparable range of expression, which is important for clustering. A cofactor of 150 has been promoted for flow cytometry, but users are free to implement alternative transformations, some of which are available from the `transform` function of the `r Biocpkg("flowCore")` package. 
-
-By default, the `daFrame` constructor will [TODO: finish this]
-
-<!-- [X]
-In the following step, we include only those channels that correspond to the lineage and functional markers.  We also rename the columns in the `flowSet` to the antigen names from `panel$desc`. -->
-
-<!-- # ```{r arcsinh-transformation} -->
-<!-- # ## arcsinh transformation and column subsetting -->
-<!-- # fcs <- fsApply(fcs_raw, function(x, cofactor = 5){ -->
-<!-- #   colnames(x) <- panel_fcs$desc -->
-<!-- #   expr <- exprs(x) -->
-<!-- #   expr <- asinh(expr[, c(lineage_markers, functional_markers)] / cofactor) -->
-<!-- #   exprs(x) <- expr -->
-<!-- #   x -->
-<!-- # }) -->
-<!-- # fcs -->
-<!-- # ``` -->
-
-<!-- For some of the further analysis, it is more convenient for us to work using a matrix (called `expr`) that contains marker expression for cells from all samples.  We create such a matrix with the `fsApply` function that extracts the expression matrices (function `exprs`) from each element of the `flowSet` object, and by default, concatenates them into one matrix. -->
-
-<!-- ```{r extract-expression} -->
-<!-- ## Extract expression -->
-<!-- expr <- fsApply(fcs, exprs) -->
-<!-- dim(expr) -->
-<!-- ``` -->
+Usually, the raw marker intensities read by a cytometer have strongly skewed distributions with varying ranges of expression, thus making it difficult to  distinguish between the negative and positive cell populations.  It is common practice to transform CyTOF marker intensities using, for example, arcsinh (hyperbolic inverse sine) with cofactor 5 [@Bendall687 Figure S2; @Bruggner2014] to make the distributions more symmetric and to map them to a comparable range of expression, which is important for clustering. A cofactor of 150 has been promoted for flow cytometry, but users are free to implement alternative transformations, some of which are available from the `transform` function of the `r Biocpkg("flowCore")` package. By default, the `daFrame` constructor (see [next section](#data-organization)) arcsinh transform marker expressions with a cofactor of 5.
 
 As the ranges of marker intensities can vary substantially, for visualization, we apply another transformation that scales the expression of all markers to values between 0 and 1 using low (e.g. 1\%) and high (e.g. 99\%) percentiles as the boundary.  This additional transformation of the arcsinh-transformed data can sometimes give better visual representation of relative differences in marker expression between annotated cell populations.  However, all computations (differential testing, hierarchical clustering etc.) are still performed on arcsinh-transformed not scaled expressions.  Whether scaled expression values should be plotted is specified with argument `scale = TRUE` or `FALSE` in the respective visualizations (e.g. `plotExprHeatmap()` and `plotClusterHeatmap()`). 
-
-<!-- [X]
-As the ranges of marker intensities can vary substantially, we apply another transformation that scales expression of all markers to values between 0 and 1 using low (e.g. 1\%) and high (e.g. 99\%) percentiles as the boundary.  This additional transformation of the arcsinh-transformed data can sometimes give better representation of relative differences in marker expression between annotated cell populations, however, it is only used here for visualization. -->
-
-<!-- ```{r 01-transformation} -->
-<!-- library(matrixStats) -->
-<!-- rng <- colQuantiles(expr, probs = c(0.01, 0.99)) -->
-<!-- expr01 <- t((t(expr) - rng[, 1]) / (rng[, 2] - rng[, 1])) -->
-<!-- expr01[expr01 < 0] <- 0 -->
-<!-- expr01[expr01 > 1] <- 1 -->
-<!-- ``` -->
 
 # Data organization
 
@@ -289,15 +219,13 @@ md$condition <- factor(md$condition, levels = c("Ref", "BCRXL"))
 md$sample_id <- factor(md$sample_id, levels = md$sample_id[order(md$condition)])
 
 # add filenames to description slot [TODO: is this necessary?]
-# [Helena: Until HDCytoData has been updated, 
-#          this is necessary to match the files with the metadata.]
+# [Helena: Until HDCytoData has been updated, this is necessary to match the files with the metadata.]
 all(is.null(unlist(keyword(fs, "FILENAME"))))
 for (i in seq_along(fs))
     description(fs[[i]])$FILENAME <- identifier(fs[[i]])
 
 # construct daFrame
-daf <- daFrame(fs, panel, md, 
-               cols_to_use = panel$fcs_colname)
+daf <- daFrame(fs, panel, md, cols_to_use = panel$fcs_colname)
 ```
 
 # Diagnostic plots
@@ -305,12 +233,6 @@ daf <- daFrame(fs, panel, md,
 We propose some quick checks to verify whether the data we analyze globally represents what we expect; for example, whether samples that are replicates of one condition are more similar and are distinct from samples from another condition.  Another important check is to verify that marker expression distributions do not have any abnormalities such as having different ranges or distinct distributions for a subset of the samples.  This could highlight problems with the sample collection or data acquisition, or batch effects that were unexpected.  Depending on the situation, one can then consider removing problematic markers or samples from further analysis; in the case of batch effects, a covariate column could be added to the metadata table and used below in the statistical analyses.
 
 The step below generates a plot with per-sample marker expression distributions, colored by condition (see Figure \@ref(fig:plot-merker-expression-distribution)). Here, we can already see distinguishing markers, such as pNFkB and CD20, between stimulated and unstimulated conditions. 
-
-<!-- [X] -->
-<!-- ```{r sample-ids} -->
-<!-- ## Generate sample IDs corresponding to each cell in the `expr` matrix -->
-<!-- sample_ids <- rep(md$sample_id, fsApply(fcs_raw, nrow)) -->
-<!-- ``` -->
 
 ```{r plot-merker-expression-distribution, fig.cap = "Per-sample smoothed densities of marker expression (arcsinh-transformed) of 10 lineage markers and 14 functional markers in the PBMC dataset. Two conditions: unstimulated (Ref) and stimulated with BCR/FcR-XL (BCRXL) for each of the 8 healthy donors are presented and colored by experimental condition."}
 p <- plotExprs(daf, color_by = "condition")
@@ -329,9 +251,6 @@ plotCounts(daf, color_by = "condition")
 ## MDS plot
 
 In transcriptomics applications, one of the most utilized exploratory plots is the multi-dimensional scaling (MDS) plot or a principal component analysis (PCA) plot.  Such plots show similarities between samples measured in an unsupervised way and give a sense of how much differential expression can be detected before conducting any formal tests.  In transcriptomics, distances between samples are calculated based on the expression of the top varying genes.  We propose a similar plot for HDCyto data using median marker expression over all cells to calculate dissimilarities between samples (other aggregations are also possible, and one could reduce the number of top varying markers to include in the calculation).  Ideally, samples should cluster well within the same condition, although this depends on the magnitude of the difference between experimental conditions.  With this diagnostic, one can identify outlier samples and eliminate them if the circumstances warrant it.  An MDS plot on the median marker expressions can be generated with `plotMDS`, which internally calls the same-named `r Biocpkg("limma")` function.
-
-<!-- [X] -->
-<!-- In transcriptomics applications, one of the most utilized exploratory plots is the multi-dimensional scaling (MDS) plot or a principal component analysis (PCA) plot.  Such plots show similarities between samples measured in an unsupervised way and give a sense of how much differential expression can be detected before conducting any formal tests.  An MDS plot can be generated with the `plotMDS` function from the `r Biocpkg("limma")` package.  In transcriptomics, distances between samples are calculated based on the expression of the top varying genes.  We propose a similar plot for HDCyto data using median marker expression over all cells to calculate dissimilarities between samples (other aggregations are also possible, and one could reduce the number of top varying markers to include in the calculation).  Ideally, samples should cluster well within the same condition, although this depends on the magnitude of the difference between experimental conditions.  With this diagnostic, one can identify the outlier samples and eliminate them if the circumstances warrant it. -->
 
 In our MDS plot on median marker expression values (see Figure \@ref(fig:plot-mds)), we can also see that the first dimension (MDS1) separates the unstimulated and stimulated samples reasonably well.  The second dimension (MDS2) represents, to some degree, differences between patients. Most of the samples that originate from the same patient are placed at a similar point along the y-axis, for example, samples from patients 7, 5, and 8  are at the top of the plot, samples from patient 4 are located at the bottom of the plot.  This also indicates that the marker expression of individual patients is driving similarity and perhaps should be formally accounted for in the downstream statistical modeling.
 
@@ -369,9 +288,6 @@ Beside the mathematical and algorithmic challenges of clustering, cell populatio
 
 In this workflow, we conduct cell clustering with `r Biocpkg("FlowSOM")` [@VanGassen2015] and `r Biocpkg("ConsensusClusterPlus")` [@Wilkerson2010], which appeared amongst the fastest and best performing clustering approaches in a recent study of HDCyto datasets [@Weber2016]. This ensemble showed strong performance in detecting both high and low frequency cell populations and is one of the fastest methods to run, which enables its interactive usage.  We use a slight modification of the original workflow presented in the `r Biocpkg("FlowSOM")` vignette, which we find more flexible.  In particular, we directly call the `ConsensusClusterPlus` function that is embedded in `metaClustering_consensus`.  Thus, we are able to access all the functionality of the `r Biocpkg("ConsensusClusterPlus")` package to identify the number of clusters.
 
-<!--The `r Biocpkg("FlowSOM")` workflow consists of three main steps. First, a self-organizing map (SOM) is built using the `BuildSOM` function, where cells are assigned according to their similarities to 100 (by default) grid points (or, so-called codebook vectors or codes) of the SOM.  The building of a minimal spanning tree, which is mainly used for graphical representation of the clusters, is skipped in this pipeline.  And finally, *metaclustering* of the SOM codes, is performed directly with the `ConsensusClusterPlus` function.  Additionally, we add an optional round of manual expert-based merging of the metaclusters and allow this to be done in a reproducible fashion.
--->
-
 The `r Biocpkg("FlowSOM")` workflow consists of three steps: i) building a  self-organizing map (SOM), where cells are assigned according to their similarities to 100 (by default) grid points (or, so-called codebook vectors or codes) of the SOM; ii) building a minimal spanning tree, which is mainly used for graphical representation of the clusters, is skipped in this pipeline; and, *metaclustering* of the SOM codes, is performed with the `r Biocpkg("ConsensusClusterPlus")` package. These are wrapped in the `r Biocpkg("CATALYST")` function `cluster`.  Additionally, we add an optional round of manual expert-based merging of the metaclusters and allow this to be done in a reproducible fashion.
 
 It is important to point out that we cluster all cells from all samples together. This strategy is beneficial, since we directly obtain cluster assignment for each cell, we label cell populations only once and the mapping of cell types between samples is automatically consistent. For a list of alternative approaches and their advantages and disadvantages, please refer to the [Discussion](#discussion) section, where we consider: clustering per sample, clustering of data from different measurement batches and down-sampling in case of widely varying numbers of cells per sample.
@@ -396,43 +312,9 @@ The SPADE analysis performed by Bodenmiller *et al.* [@Bodenmiller2012] identifi
 
 When the interest is in studying more specific subpopulations at higher detail, one can follow a strategy of reclustering as described in the [Obtaining higher resolution](#obtaining-higher-resolution) section, where we propose to repeat the workflow (clustering and differential analyses) after gating out a selected subpopulation (e.g. one of the large populations).
 
-<!-- We call `ConsensusClusterPlus` with maximum number of clusters `maxK = 20` and other clustering parameters set to the values as in the `metaClustering_consensus` function from the `r Biocpkg("FlowSOM")` package.  Again, to ensure that the analyses are reproducible, we define the random seed. -->
-
-<!-- [X] -->
-<!-- ```{r flowsom-meta-clustering, message = FALSE} -->
-<!-- ## Metaclustering into 20 clusters with ConsensusClusterPlus -->
-<!-- library(ConsensusClusterPlus) -->
-
-<!-- codes <- som$map$codes -->
-<!-- plot_outdir <- "consensus_plots" -->
-<!-- nmc <- 20 -->
-
-<!-- mc <- ConsensusClusterPlus(t(codes), maxK = nmc, reps = 100,  -->
-<!--   pItem = 0.9, pFeature = 1, title = plot_outdir, plot = "png",  -->
-<!--   clusterAlg = "hc", innerLinkage = "average", finalLinkage = "average",  -->
-<!--   distance = "euclidean", seed = 1234) -->
-
-<!-- ## Get cluster ids for each cell -->
-<!-- code_clustering1 <- mc[[nmc]]$consensusClass -->
-<!-- cell_clustering1 <- code_clustering1[cell_clustering_som] -->
-<!-- ``` -->
-
 We can then investigate characteristics of identified clusters with heatmaps that illustrate median marker expression in each cluster (see Figure \@ref(fig:plot-clustering-heatmap1)). As the range of marker expression can vary substantially from marker to marker, we use the 0-1 transformed data (`expr01`) for some visualizations.  However, to stay consistent with `r Biocpkg("FlowSOM")` and `r Biocpkg("ConsensusClusterPlus")`, we use the (arcsinh-transformed) unscaled data (`expr`) to generate the dendrogram of the hierarchical structure of metaclusters.
 
 Instead of using only medians, which do not give a full representation of cluster specifics, one can plot the entire marker expression distribution in each cluster (see Figure \@ref(fig:plot-clustering-distribution1)). Such a plot gives more detailed profile of each cluster, but represents a larger amount of information to interpret. Heatmaps give the overall overview of clusters, are quicker and easier to interpret, and together with the dendrogram can be a good basis for further cluster merging (see [Cluster merging and annotation](#cluster-merging-and-annotation) section).
-
-<!-- [X] -->
-<!-- Since we will use the heatmap and density plots again later on in this workflow, in code chunks below, we create wrapper functions that generate these two types of plots. -->
-
-<!-- ```{r color-clusters} -->
-<!-- # Define cluster colors (here there are 30 colors) -->
-<!-- color_clusters <- c("#DC050C", "#FB8072", "#1965B0", "#7BAFDE", "#882E72",  -->
-<!--   "#B17BA6", "#FF7F00", "#FDB462", "#E7298A", "#E78AC3",  -->
-<!--   "#33A02C", "#B2DF8A", "#55A1B1", "#8DD3C7", "#A6761D",  -->
-<!--   "#E6AB02", "#7570B3", "#BEAED4", "#666666", "#999999",  -->
-<!--   "#aa8282", "#d4b7b7", "#8600bf", "#ba5ce3", "#808000",  -->
-<!--   "#aeae5c", "#1e90ff", "#00bfff", "#56ff0d", "#ffff00") -->
-<!-- ``` -->
 
 ```{r plot-clustering-heatmap1, fig.cap = "Heatmap of the median marker intensities of the 10 lineage markers across the 20 cell populations obtained with FlowSOM after the metaclustering step with ConsensusClusterPlus (PBMC data). The color in the heatmap represents the median of the arcsinh, 0-1 transformed marker expression calculated over cells from all the samples, varying from blue for lower expression to red for higher expression. The numbers indicate the actual expression values. The dendrogram on the left represents the hierarchical similarity between the 20 metaclusters (metric: Euclidean distance; linkage: average). Each cluster has a unique color assigned (bar on the left) which is identical in other visualizations of these 20 clusters (e.g. Figure t-SNE map in \\@ref(fig:tsne-plot-one-clustering1)) facilitating the figure interpretation. Values in the brackets next to the cluster numbers indicate the relative size of clusters."}
 plotClusterHeatmap(daf, hm2 = NULL, k = "meta20", m = NULL,
@@ -518,10 +400,6 @@ Based on the set random seed, a manual merging of the 20 metaclusters is defined
 
 In this example, our expert has annotated 8 cell populations: CD8 T-cells, CD4 T-cells, B-cells IgM-, B-cells IgM+, NK cells, dendritic cells (DCs), monocytes and surface negative cells; monocytes could be further subdivided based on HLA-DR into high, medium and low subtypes.
 
-<!-- [X] -->
-<!-- Based on the seed that was set, cluster merging of the 20 metaclusters is defined in the PBMC8_cluster_merging1.xlsx file on the [Robinson Lab server](http://imlspenticton.uzh.ch/robinson_lab/cytofWorkflow) with the IDs of the original clusters and new cluster names, and we save it as a `cluster_merging1` data frame.  -->
-<!-- The expert has annotated 8 cell populations: CD8 T-cells, CD4 T-cells, B-cells IgM-, B-cells IgM+, NK cells, dendritic cells (DCs), monocytes and surface negative cells; monocytes could be further subdivided based on HLA-DR into high, medium and low subtypes. -->
-
 ```{r cluster-merging1}
 merging_table1 <- "PBMC8_cluster_merging1.xlsx"
 download.file(file.path(url, merging_table1), 
@@ -570,18 +448,6 @@ metadata(daf)$delta_area
 ```
 
 As an example, we can view the metaclustering to 12 groups. In the t-SNE plot (see Figure \@ref(fig:tsne-plot-one-clustering2)), we can see that many small clusters obtained when stratifying data into 20 groups are now merged together, which should simplify the new cluster annotation.
-
-<!-- [X] -->
-<!-- As an example, we chose to reduce the strength of metaclustering to 12 groups. -->
-
-<!-- ```{r flowsom-meta-clustering2} -->
-<!-- ## Get cluster ids for each cell -->
-<!-- nmc2 <- 12 -->
-<!-- code_clustering2 <- mc[[nmc2]]$consensusClass -->
-<!-- cell_clustering2 <- code_clustering2[som$map$mapping[, 1]] -->
-<!-- ``` -->
-
-<!-- In the t-SNE plot (see Figure \@ref(fig:tsne-plot-one-clustering2)), we can see that many small clusters obtained when stratifying data into 20 groups are now merged together, which should simplify the new cluster annotation.   -->
 
 ```{r tsne-plot-one-clustering2, fig.cap = "t-SNE plot for the PBMC dataset, where cells are colored according to the 12 cell populations obtained with FlowSOM after the metaclustering step with ConsensusClusterPlus. As in Figure \\@ref(fig:tsne-plot-one-clustering1), t-SNE analysis uses the arcsinh-transformed expression of the 10 lineage markers in 2000 randomly selected cells from each of the 16 samples."}
 plotSNE(daf, color_by = "meta12")
@@ -643,9 +509,6 @@ plotClusterHeatmap(daf, k = "meta8", draw_freqs = TRUE)
 ```
 
 The example above highlights the difference between automatic clustering and manual merging of algorithm-generated clusters in the search for biologically meaningful cell populations.  Automated and manual merging may give different weight to marker importance and thus result in different populations being detected.  However, in our view, the manual merging done here in a reproducible fashion results in a more biologically meaningful cell stratification.
-
-<!-- When comparing only the t-SNE plots corresponding to the 8 metaclusters and merging of the 20 metaclusters into 8 groups, it is hard to say that any of the proposed clustering is correct or incorrect, as cells from within the clusters are located relatively close to each other in both cases. 
-However, in our example, only the manual merging results in biologically meaningful cell stratification.-->
 
 # Differential analysis 
 
@@ -726,8 +589,7 @@ da_res2 <- diffcyt(daf,
     clustering_to_use = "merging1", verbose = FALSE)
 ```
 
-`diffcyt` will return a list of 3 `r Biocpkg("SummarizedExperiment")` (SE) objects.
-Differential testing results are stored in the `rowData` slot of the first SE, `res`.  Results include non-adjusted (`"p_val"`) and adjusted (`"p_adj"`) p-values, which can be used to rank clusters by evidence of differential abundance/expression.  The second SE, `d_counts`, contains a single sheet (`assay`) with the number of cells in each cluster-sample combination.  Finally, `d_medians` contains median marker expressions for each cluster and sample.  For both `d_counts` and `d_median`, rows = clusters and columns = samples; for the latter, sheets = markers.
+`diffcyt` will return a list of 3 `r Biocpkg("SummarizedExperiment")` (SE) objects. Differential testing results are stored in the `rowData` slot of the first SE, `res`.  Results include non-adjusted (`"p_val"`) and adjusted (`"p_adj"`) p-values, which can be used to rank clusters by evidence of differential abundance/expression.  The second SE, `d_counts`, contains a single sheet (`assay`) with the number of cells in each cluster-sample combination.  Finally, `d_medians` contains median marker expressions for each cluster and sample.  For both `d_counts` and `d_median`, rows = clusters and columns = samples; for the latter, sheets = markers.
 
 ```{r}
 names(da_res1)
@@ -760,67 +622,6 @@ print(head(da_output2), digits = 2)
 
 We use a heatmap to report the differential cell populations (see Figure \@ref(fig:diff-freqs-plot-heatmap-with-significant-clusters)).  Proportions are first scaled with the arcsine-square-root transformation (as an alternative to logit that cannot be calculated on ratios of zero or one). Then, Z-score normalization is applied to each population to better highlight the relative differences between compared conditions.  
 
-<!-- We created two wrapper functions: `normalization_wrapper` performs the normalization of submitted expression `expr` to mean 0 and standard deviation 1, and `plot_differential_heatmap_wrapper` generates a heatmap of submitted expression `expr_norm`, where samples are grouped by `condition`, indicated with a color bar on top of the plot. Additionally, labels of clusters contain the adjusted p-values in parenthesis. -->
-
-<!-- [X] -->
-<!-- ```{r normalization-wrapper} -->
-<!-- normalization_wrapper <- function(expr, th = 2.5){ -->
-<!--   expr_norm <- apply(expr, 1, function(x){  -->
-<!--     sdx <- sd(x, na.rm = TRUE) -->
-<!--     if(sdx == 0){ -->
-<!--       x <- (x - mean(x, na.rm = TRUE)) -->
-<!--     }else{  -->
-<!--       x <- (x - mean(x, na.rm = TRUE)) / sdx -->
-<!--     } -->
-<!--     x[x > th] <- th -->
-<!--     x[x < -th] <- -th -->
-<!--     return(x) -->
-<!--   }) -->
-<!--   expr_norm <- t(expr_norm) -->
-<!-- } -->
-<!-- ``` -->
-
-<!-- ```{r diff-plot-differential-heatmap-wrapper} -->
-<!-- plot_differential_heatmap_wrapper <- function(expr_norm, sign_adjp,  -->
-<!--   condition, color_conditions, th = 2.5){ -->
-<!--   ## Order samples by condition -->
-<!--   oo <- order(condition) -->
-<!--   condition <- condition[oo] -->
-<!--   expr_norm <- expr_norm[, oo, drop = FALSE] -->
-
-<!--   ## Create the row labels with adj p-values and other objects for pheatmap -->
-<!--   labels_row <- paste0(rownames(expr_norm), " (",  -->
-<!--     sprintf( "%.02e", sign_adjp), ")") -->
-<!--   labels_col <- colnames(expr_norm) -->
-<!--   annotation_col <- data.frame(condition = factor(condition)) -->
-<!--   rownames(annotation_col) <- colnames(expr_norm) -->
-<!--   annotation_colors <- list(condition = color_conditions) -->
-<!--   color <- colorRampPalette(c("#87CEFA", "#56B4E9", "#56B4E9", "#0072B2",  -->
-<!--     "#000000", "#D55E00", "#E69F00", "#E69F00", "#FFD700"))(100) -->
-<!--   breaks = seq(from = -th, to = th, length.out = 101) -->
-<!--   legend_breaks = seq(from = -round(th), to = round(th), by = 1) -->
-<!--   gaps_col <- as.numeric(table(annotation_col$condition)) -->
-
-<!--   pheatmap(expr_norm, color = color, breaks = breaks,  -->
-<!--     legend_breaks = legend_breaks, cluster_cols = FALSE, cluster_rows = FALSE,  -->
-<!--     labels_col = labels_col, labels_row = labels_row, gaps_col = gaps_col,  -->
-<!--     annotation_col = annotation_col, annotation_colors = annotation_colors,  -->
-<!--     fontsize = 8) -->
-<!-- } -->
-<!-- ``` -->
-
-<!-- ```{r diff-freqs-asin-sqrt-transformation} -->
-<!-- ## Apply the arcsine-square-root transformation to the proportions -->
-<!-- asin_table <- asin(sqrt((t(t(counts_table) / colSums(counts_table))))) -->
-<!-- asin <- as.data.frame.matrix(asin_table) -->
-<!-- ## Get significant clusters and sort them by significance -->
-<!-- sign_clusters <- names(which(sort(da_out2$adjp[, "adjp_BCRXLvsRef"]) < FDR_cutoff)) -->
-<!-- ## Get the adjusted p-values for the significant clusters -->
-<!-- sign_adjp <- da_out2$adjp[sign_clusters , "adjp_BCRXLvsRef", drop=FALSE] -->
-<!-- ## Normalize the transformed proportions to mean = 0 and sd = 1 -->
-<!-- asin_norm <- normalization_wrapper(asin[sign_clusters, ]) -->
-<!-- ``` -->
-
 ```{r diff-freqs-plot-heatmap-with-significant-clusters, fig.height = 3, fig.cap = "Normalized proportions of PBMC cell populations that are significantly differentially abundant between BCR/FcR-XL stimulated and unstimulated condition. The heat represents arcsine-square-root transformed cell frequencies that were subsequently normalized per cluster (rows) to mean of zero and standard deviation of one. The color of the heat varies from blue indicating relative under-representation to orange indicating relative over-representation. Bar at the top of the heatmap indicates the condition the samples (columns) belong to: violet for the unstimulated (Ref) and orange for the stimulated with BCR/FcR-XL (BCRXL) condition. Numbers in the brackets next to the cluster names indicate adjusted p-values. Shown are only the significant clusters for which adjusted p-values < 0.05. Clusters are sorted according to the significance so that a cluster on the top shows the most significant abundance changes between the two conditions."}
 plotDiffHeatmap(daf, da_res2, hm1 = FALSE, normalize = TRUE)
 ```
@@ -840,33 +641,6 @@ One drawback of summarizing the protein marker intensity with a median over cell
 
 There might be instances of small cell populations for which no cells are observed in some samples or where the number of cells is very low.  For clusters absent from a sample (e.g. due to biological variance or insufficient sampling), NAs are introduced because no median expression can be calculated; in the case of few cells, the median may be quite variable.  Thus, we apply a filter to remove samples that have fewer than 5 cells.  We also remove cases where marker expression is equal to zero in all the samples, as this leads to an error during model fitting. 
 
-<!-- [ One could eliminate samples with low counts, given there are enough replicates left where the cell counts are satisfactory, or clusters with such low abundant samples could be entirely skipped in the differential analysis. In our example, we follow the latter approach and remove from the analysis clusters that have less than 5 cells in any of the samples.] -->
-
-<!-- [X] -->
-<!-- ```{r diff-expr2-median-expression} -->
-<!-- ## Get median marker expression per sample and cluster -->
-<!-- expr_median_sample_cluster_tbl <- data.frame(expr[, functional_markers],  -->
-<!--   sample_id = sample_ids, cluster = cell_clustering1m) %>% -->
-<!--   group_by(sample_id, cluster) %>%  -->
-<!--   summarize_all(funs(median)) -->
-<!-- ## Melt -->
-<!-- expr_median_sample_cluster_melt <- melt(expr_median_sample_cluster_tbl,  -->
-<!--   id.vars = c("sample_id", "cluster"), value.name = "median_expression",  -->
-<!--   variable.name = "antigen") -->
-<!-- ## Rearange so the rows represent clusters and markers -->
-<!-- expr_median_sample_cluster <- dcast(expr_median_sample_cluster_melt,  -->
-<!--   cluster + antigen ~ sample_id,  value.var = "median_expression") -->
-<!-- rownames(expr_median_sample_cluster) <- paste0(expr_median_sample_cluster$cluster,  -->
-<!--   "_", expr_median_sample_cluster$antigen) -->
-<!-- ## Eliminate clusters with low frequency -->
-<!-- clusters_keep <- names(which((rowSums(counts < 5) == 0))) -->
-<!-- keepLF <- expr_median_sample_cluster$cluster %in% clusters_keep -->
-<!-- expr_median_sample_cluster <- expr_median_sample_cluster[keepLF, ] -->
-<!-- ## Eliminate cases with zero expression in all samples -->
-<!-- keep0 <- rowSums(expr_median_sample_cluster[, md$sample_id]) > 0 -->
-<!-- expr_median_sample_cluster <- expr_median_sample_cluster[keep0, ] -->
-<!-- ``` -->
-
 It is helpful to plot the median expression of all markers in each cluster for each sample colored by condition, to get a rough image of how strong the differences might be (see Figure \@ref(fig:diff-expr2-plot-median-expr)).  We do this by combining boxplots and jitter.
 
 ```{r diff-expr2-plot-median-expr, fig.height = 8, fig.cap = "Median (arcsinh-transformed) expression of 14 signaling markers (x-axis) across the 8 identified PBMC cell populations (individual panels). Values for the two conditions are indicated with different colors: violet for the unstimulated (Ref) and orange for the stimulated with BCR/FcR-XL (BCRXL) samples. Values for each patient are indicated with different shape. The 8 cell populations are a result of manual merging of the 20 FlowSOM metaclusters."}
@@ -874,41 +648,6 @@ p <- plotMedExprs(daf, k = "merging1", facet = "cluster_id")
 p$facet$params$ncol <- 2
 p
 ```
-
-<!-- [X] -->
-<!-- We created a wrapper function `differential_expression_wrapper` that performs the differential analysis of marker expression. The user needs to specify a data frame `expr_median` with marker expression, where each column corresponds to a sample and each row to a cluster/marker combination. One can choose between fitting a regular linear model `model = "lm"` or a linear mixed model `model = "lmer"`.  The `formula` parameter must be adjusted adequately to the model choice.  The wrapper function returns the non-adjusted and adjusted p-values for each of the specified contrasts `K` for each cluster/marker combination.  -->
-
-<!-- ```{r diff-differential-expression-wrapper} -->
-<!-- differential_expression_wrapper <- function(expr_median, md, model = "lmer",  -->
-<!--   formula, K){ -->
-<!--   ## Fit LMM or LM for each marker separately -->
-<!--   fit_gaussian <- lapply(1:nrow(expr_median), function(i){ -->
-<!--     data_tmp <- data.frame(y = as.numeric(expr_median[i, md$sample_id]), md) -->
-<!--     switch(model,  -->
-<!--       lmer = { -->
-<!--         fit_tmp <- lmer(formula, data = data_tmp) -->
-<!--       }, -->
-<!--       lm = { -->
-<!--         fit_tmp <- lm(formula, data = data_tmp) -->
-<!--       }) -->
-<!--     ## Fit contrasts one by one -->
-<!--     out <- apply(K, 1, function(k){ -->
-<!--       contr_tmp <- glht(fit_tmp, linfct = matrix(k, 1)) -->
-<!--       summ_tmp <- summary(contr_tmp) -->
-<!--       pval <- summ_tmp$test$pvalues -->
-<!--       return(pval) -->
-<!--     }) -->
-<!--     return(out) -->
-<!--   }) -->
-<!--   pvals <- do.call(rbind, fit_gaussian) -->
-<!--   colnames(pvals) <- paste0("pval_", contrast_names) -->
-<!--   rownames(pvals) <- rownames(expr_median) -->
-<!--   ## Adjust the p-values -->
-<!--   adjp <- apply(pvals, 2, p.adjust, method = "BH") -->
-<!--   colnames(adjp) <- paste0("adjp_", contrast_names) -->
-<!--   return(list(pvals = pvals, adjp = adjp)) -->
-<!-- } -->
-<!-- ``` -->
 
 To present how accounting for the within patient variability with the mixed model increases sensitivity, we also fit a regular linear model.  The linear mixed model has a random intercept for each patient.
 
@@ -935,9 +674,9 @@ table(rowData(ds_res2$res)$p_adj < FDR_cutoff)
 One can assemble together an output table with the information about median marker expression in each cluster and sample, and the obtained p-values.
 
 ```{r ds-output}
-meds <- assays(ds_res2$d_medians)   # get median marker expressions
-meds <- meds[state_markers(daf)]    # subset state markers
-meds <- do.call(rbind, meds)        # concatenate all markers
+meds <- assays(ds_res2$d_medians) # get median marker expressions
+meds <- meds[state_markers(daf)]  # subset state markers
+meds <- do.call(rbind, meds)      # concatenate all markers
 
 ds_output2 <- data.frame(
     rowData(ds_res2$res), 
@@ -992,9 +731,9 @@ table(rowData(ds_res4$res)$p_adj < FDR_cutoff)
 As before, we create an output table with the median marker expression calculated in each sample and the p-values, and we plot a heatmap with the significant markers sorted by their statistical significance (Figure \@ref(fig:diff-expr1-plot-heatmap-with-significant-markers)).
 
 ```{r ds-output-overall}
-meds <- assays(ds_res4$d_medians)   # get median marker expressions
-meds <- meds[state_markers(daf)]    # subset state markers
-meds <- do.call(rbind, meds)        # concatenate all markers
+meds <- assays(ds_res4$d_medians) # get median marker expressions
+meds <- meds[state_markers(daf)]  # subset state markers
+meds <- do.call(rbind, meds)      # concatenate all markers
 
 ds_output4 <- data.frame(
     rowData(ds_res4$res)[, -1], 
