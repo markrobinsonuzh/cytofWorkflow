@@ -1,12 +1,206 @@
 %% This BibTeX bibliography file was created using BibDesk.
 %% https://bibdesk.sourceforge.io/
 
-%% Created for Helena Crowell at 2018-11-22 12:07:54 +0100 
+%% Created for Helena Crowell at 2019-01-07 11:46:01 +0100 
 
 
 %% Saved with string encoding Unicode (UTF-8) 
 
 
+
+@article{Crow2018,
+	Abstract = {Single-cell RNA-sequencing (scRNA-seq) technology provides a new avenue to discover and characterize cell types; however, the experiment-specific technical biases and analytic variability inherent to current pipelines may undermine its replicability. Meta-analysis is further hampered by the use of ad hoc naming conventions. Here we demonstrate our replication framework, MetaNeighbor, that quantifies the degree to which cell types replicate across datasets, and enables rapid identification of clusters with high similarity. We first measure the replicability of neuronal identity, comparing results across eight technically and biologically diverse datasets to define best practices for more complex assessments. We then apply this to novel interneuron subtypes, finding that 24/45 subtypes have evidence of replication, which enables the identification of robust candidate marker genes. Across tasks we find that large sets of variably expressed genes can identify replicable cell types with high accuracy, suggesting a general route forward for large-scale evaluation of scRNA-seq data.},
+	Author = {Crow, Megan and Paul, Anirban and Ballouz, Sara and Huang, Z. Josh and Gillis, Jesse},
+	Da = {2018/02/28},
+	Date-Added = {2019-01-07 11:45:49 +0100},
+	Date-Modified = {2019-01-07 11:46:01 +0100},
+	Doi = {10.1038/s41467-018-03282-0},
+	Id = {Crow2018},
+	Isbn = {2041-1723},
+	Journal = {Nature Communications},
+	Keywords = {MetaNeighbor},
+	Number = {1},
+	Pages = {884},
+	Title = {Characterizing the replicability of cell types defined by single cell RNA-sequencing data using MetaNeighbor},
+	Ty = {JOUR},
+	Url = {https://doi.org/10.1038/s41467-018-03282-0},
+	Volume = {9},
+	Year = {2018},
+	Bdsk-Url-1 = {https://doi.org/10.1038/s41467-018-03282-0}}
+
+@article{Haghverdi2018,
+	Author = {Haghverdi, Laleh and Lun, Aaron T L and Morgan, Michael D and Marioni, John C},
+	Date = {2018/04/02/online},
+	Date-Added = {2019-01-07 11:44:56 +0100},
+	Date-Modified = {2019-01-07 11:45:07 +0100},
+	Day = {02},
+	Journal = {Nature Biotechnology},
+	Keywords = {MNN},
+	L3 = {10.1038/nbt.4091; https://www.nature.com/articles/nbt.4091#supplementary-information},
+	Month = {04},
+	Pages = {421 EP  -},
+	Publisher = {Nature Publishing Group, a division of Macmillan Publishers Limited. All Rights Reserved. SN  -},
+	Title = {Batch effects in single-cell RNA-sequencing data are corrected by matching mutual nearest neighbors},
+	Ty = {JOUR},
+	Url = {https://doi.org/10.1038/nbt.4091},
+	Volume = {36},
+	Year = {2018},
+	Bdsk-Url-1 = {https://doi.org/10.1038/nbt.4091}}
+
+@article{Korsunsky2018,
+	Abstract = {The rapidly emerging diversity of single cell RNAseq datasets allows us to characterize the transcriptional behavior of cell types across a wide variety of biological and clinical conditions. With this comprehensive breadth comes a major analytical challenge. The same cell type across tissues, from different donors, or in different disease states, may appear to express different genes. A joint analysis of multiple datasets requires the integration of cells across diverse conditions. This is particularly challenging when datasets are assayed with different technologies in which real biological differences are interspersed with technical differences. We present Harmony, an algorithm that projects cells into a shared embedding in which cells group by cell type rather than dataset-specific conditions. Unlike available single-cell integration methods, Harmony can simultaneously account for multiple experimental and biological factors. We develop objective metrics to evaluate the quality of data integration. In four separate analyses, we demonstrate the superior performance of Harmony to four single-cell-specific integration algorithms. Moreover, we show that Harmony requires dramatically fewer computational resources. It is the only available algorithm that makes the integration of ~106 cells feasible on a personal computer. We demonstrate that Harmony identifies both broad populations and fine-grained subpopulations of PBMCs from datasets with large experimental differences. In a meta-analysis of 14,746 cells from 5 studies of human pancreatic islet cells, Harmony accounts for variation among technologies and donors to successfully align several rare subpopulations. In the resulting integrated embedding, we identify a previously unidentified population of potentially dysfunctional alpha islet cells, enriched for genes active in the Endoplasmic Reticulum (ER) stress response. The abundance of these alpha cells correlates across donors with the proportion of dysfunctional beta cells also enriched in ER stress response genes. Harmony is a fast and flexible general purpose integration algorithm that enables the identification of shared fine-grained subpopulations across a variety of experimental and biological conditions.},
+	Author = {Korsunsky, Ilya and Fan, Jean and Slowikowski, Kamil and Zhang, Fan and Wei, Kevin and Baglaenko, Yuriy and Brenner, Michael and Loh, Po-Ru and Raychaudhuri, Soumya},
+	Date-Added = {2019-01-07 11:44:19 +0100},
+	Date-Modified = {2019-01-07 11:44:33 +0100},
+	Doi = {10.1101/461954},
+	Elocation-Id = {461954},
+	Eprint = {https://www.biorxiv.org/content/early/2018/11/04/461954.full.pdf},
+	Journal = {bioRxiv},
+	Keywords = {Harmony},
+	Publisher = {Cold Spring Harbor Laboratory},
+	Title = {Fast, sensitive, and flexible integration of single cell data with Harmony},
+	Url = {https://www.biorxiv.org/content/early/2018/11/04/461954},
+	Year = {2018},
+	Bdsk-Url-1 = {https://www.biorxiv.org/content/early/2018/11/04/461954},
+	Bdsk-Url-2 = {https://doi.org/10.1101/461954}}
+
+@article{Stuart2018,
+	Abstract = {Single cell transcriptomics (scRNA-seq) has transformed our ability to discover and annotate cell types and states, but deep biological understanding requires more than a taxonomic listing of clusters. As new methods arise to measure distinct cellular modalities, including high-dimensional immunophenotypes, chromatin accessibility, and spatial positioning, a key analytical challenge is to integrate these datasets into a harmonized atlas that can be used to better understand cellular identity and function. Here, we develop a computational strategy to "anchor" diverse datasets together, enabling us to integrate and compare single cell measurements not only across scRNA-seq technologies, but different modalities as well. After demonstrating substantial improvement over existing methods for data integration, we anchor scRNA-seq experiments with scATAC-seq datasets to explore chromatin differences in closely related interneuron subsets, and project single cell protein measurements onto a human bone marrow atlas to annotate and characterize lymphocyte populations. Lastly, we demonstrate how anchoring can harmonize in-situ gene expression and scRNA-seq datasets, allowing for the transcriptome-wide imputation of spatial gene expression patterns, and the identification of spatial relationships between mapped cell types in the visual cortex. Our work presents a strategy for comprehensive integration of single cell data, including the assembly of harmonized references, and the transfer of information across datasets. Availability: Installation instructions, documentation, and tutorials are available at: https://www.satijalab.org/seurat},
+	Author = {Stuart, Tim and Butler, Andrew and Hoffman, Paul and Hafemeister, Christoph and Papalexi, Efthymia and Mauck, William M and Stoeckius, Marlon and Smibert, Peter and Satija, Rahul},
+	Date-Added = {2019-01-07 11:43:26 +0100},
+	Date-Modified = {2019-01-07 11:44:49 +0100},
+	Doi = {10.1101/460147},
+	Elocation-Id = {460147},
+	Eprint = {https://www.biorxiv.org/content/early/2018/11/02/460147.full.pdf},
+	Journal = {bioRxiv},
+	Keywords = {Seurat v3},
+	Publisher = {Cold Spring Harbor Laboratory},
+	Title = {Comprehensive integration of single cell data},
+	Url = {https://www.biorxiv.org/content/early/2018/11/02/460147},
+	Year = {2018},
+	Bdsk-Url-1 = {https://www.biorxiv.org/content/early/2018/11/02/460147},
+	Bdsk-Url-2 = {https://doi.org/10.1101/460147}}
+
+@article{Fonseka2018,
+	Abstract = {New techniques analyzing single cells are being applied to clinical samples. These techniques generate large datasets, and it can be challenging to identify rare cell types associated with disease. Fonseka et al. developed a simple statistical method to do just that while simultaneously controlling for confounding biological and technical variation. Using their method on single-cell mass and flow cytometry data revealed an expanded CD4+ T cell subset in the blood of rheumatoid arthritis patients that was later seen to contract upon treatment. The authors{\textquoteright} method performed better than the current gold standard and could be a potentially widely applied tool for the analysis of high-dimensional single-cell data.High-dimensional single-cell analyses have improved the ability to resolve complex mixtures of cells from human disease samples; however, identifying disease-associated cell types or cell states in patient samples remains challenging because of technical and interindividual variation. Here, we present mixed-effects modeling of associations of single cells (MASC), a reverse single-cell association strategy for testing whether case-control status influences the membership of single cells in any of multiple cellular subsets while accounting for technical confounders and biological variation. Applying MASC to mass cytometry analyses of CD4+ T cells from the blood of rheumatoid arthritis (RA) patients and controls revealed a significantly expanded population of CD4+ T cells, identified as CD27- HLA-DR+ effector memory cells, in RA patients (odds ratio, 1.7; P = 1.1 {\texttimes} 10-3). The frequency of CD27- HLA-DR+ cells was similarly elevated in blood samples from a second RA patient cohort, and CD27- HLA-DR+ cell frequency decreased in RA patients who responded to immunosuppressive therapy. Mass cytometry and flow cytometry analyses indicated that CD27- HLA-DR+ cells were associated with RA (meta-analysis P = 2.3 {\texttimes} 10-4). Compared to peripheral blood, synovial fluid and synovial tissue samples from RA patients contained about fivefold higher frequencies of CD27- HLA-DR+ cells, which comprised ~10\% of synovial CD4+ T cells. CD27- HLA-DR+ cells expressed a distinctive effector memory transcriptomic program with T helper 1 (TH1){\textendash} and cytotoxicity-associated features and produced abundant interferon-γ (IFN-γ) and granzyme A protein upon stimulation. We propose that MASC is a broadly applicable method to identify disease-associated cell populations in high-dimensional single-cell data.},
+	Author = {Fonseka, Chamith Y. and Rao, Deepak A. and Teslovich, Nikola C. and Korsunsky, Ilya and Hannes, Susan K. and Slowikowski, Kamil and Gurish, Michael F. and Donlin, Laura T. and Lederer, James A. and Weinblatt, Michael E. and Massarotti, Elena M. and Coblyn, Jonathan S. and Helfgott, Simon M. and Todd, Derrick J. and Bykerk, Vivian P. and Karlson, Elizabeth W. and Ermann, Joerg and Lee, Yvonne C. and Brenner, Michael B. and Raychaudhuri, Soumya},
+	Date-Added = {2019-01-07 11:42:20 +0100},
+	Date-Modified = {2019-01-07 11:42:27 +0100},
+	Doi = {10.1126/scitranslmed.aaq0305},
+	Elocation-Id = {eaaq0305},
+	Eprint = {http://stm.sciencemag.org/content/10/463/eaaq0305.full.pdf},
+	Issn = {1946-6234},
+	Journal = {Science Translational Medicine},
+	Number = {463},
+	Publisher = {American Association for the Advancement of Science},
+	Title = {Mixed-effects association of single cells identifies an expanded effector CD4+ T cell subset in rheumatoid arthritis},
+	Url = {http://stm.sciencemag.org/content/10/463/eaaq0305},
+	Volume = {10},
+	Year = {2018},
+	Bdsk-Url-1 = {http://stm.sciencemag.org/content/10/463/eaaq0305},
+	Bdsk-Url-2 = {https://doi.org/10.1126/scitranslmed.aaq0305}}
+
+@article{Hahne2010,
+	Abstract = {Between-sample variation in high-throughput flow cytometry data poses a significant challenge for analysis of large-scale data sets, such as those derived from multicenter clinical trials. It is often hard to match biologically relevant cell populations across samples because of technical variation in sample acquisition and instrumentation differences. Thus, normalization of data is a critical step before analysis, particularly in large-scale data sets from clinical trials, where group-specific differences may be subtle and patient-to-patient variation common. We have developed two normalization methods that remove technical between-sample variation by aligning prominent features (landmarks) in the raw data on a per-channel basis. These algorithms were tested on two independent flow cytometry data sets by comparing manually gated data, either individually for each sample or using static gating templates, before and after normalization. Our results show a marked improvement in the overlap between manual and static gating when the data are normalized, thereby facilitating the use of automated analyses on large flow cytometry data sets. Such automated analyses are essential for high-throughput flow cytometry.},
+	An = {19899135},
+	Author = {Hahne, Florian and Khodabakhshi, Alireza Hadj and Bashashati, Ali and Wong, Chao-Jen and Gascoyne, Randy D and Weng, Andrew P and Seyfert-Margolis, Vicky and Bourcier, Katarzyna and Asare, Adam and Lumley, Thomas and Gentleman, Robert and Brinkman, Ryan R},
+	Date = {2010/02/},
+	Date-Added = {2019-01-07 11:34:43 +0100},
+	Date-Modified = {2019-01-07 11:34:50 +0100},
+	Db = {PubMed},
+	Doi = {10.1002/cyto.a.20823},
+	Isbn = {1552-4930; 1552-4922},
+	J1 = {Cytometry A},
+	Journal = {Cytometry. Part A : the journal of the International Society for Analytical Cytology},
+	L2 = {https://www.ncbi.nlm.nih.gov/pmc/PMC3648208/},
+	Month = {02},
+	Number = {2},
+	Pages = {121--131},
+	Title = {Per-channel basis normalization methods for flow cytometry data},
+	Ty = {JOUR},
+	U1 = {19899135{$[$}pmid{$]$}},
+	U2 = {PMC3648208{$[$}pmcid{$]$}},
+	Url = {https://www.ncbi.nlm.nih.gov/pubmed/19899135},
+	Volume = {77},
+	Year = {2010},
+	Bdsk-Url-1 = {https://www.ncbi.nlm.nih.gov/pubmed/19899135},
+	Bdsk-Url-2 = {https://doi.org/10.1002/cyto.a.20823}}
+
+@article{Unen2017,
+	Abstract = {Mass cytometry allows high-resolution dissection of the cellular composition of the immune system. However, the high-dimensionality, large size, and non-linear structure of the data poses considerable challenges for the data analysis. In particular, dimensionality reduction-based techniques like t-SNE offer single-cell resolution but are limited in the number of cells that can be analyzed. Here we introduce Hierarchical Stochastic Neighbor Embedding (HSNE) for the analysis of mass cytometry data sets. HSNE constructs a hierarchy of non-linear similarities that can be interactively explored with a stepwise increase in detail up to the single-cell level. We apply HSNE to a study on gastrointestinal disorders and three other available mass cytometry data sets. We find that HSNE efficiently replicates previous observations and identifies rare cell populations that were previously missed due to downsampling. Thus, HSNE removes the scalability limit of conventional t-SNE analysis, a feature that makes it highly suitable for the analysis of massive high-dimensional data sets.},
+	Author = {van Unen, Vincent and H{\"o}llt, Thomas and Pezzotti, Nicola and Li, Na and Reinders, Marcel J. T. and Eisemann, Elmar and Koning, Frits and Vilanova, Anna and Lelieveldt, Boudewijn P. F.},
+	Da = {2017/11/23},
+	Date-Added = {2019-01-07 11:33:01 +0100},
+	Date-Modified = {2019-01-07 11:33:08 +0100},
+	Doi = {10.1038/s41467-017-01689-9},
+	Id = {van Unen2017},
+	Isbn = {2041-1723},
+	Journal = {Nature Communications},
+	Number = {1},
+	Pages = {1740},
+	Title = {Visual analysis of mass cytometry data by hierarchical stochastic neighbour embedding reveals rare cell types},
+	Ty = {JOUR},
+	Url = {https://doi.org/10.1038/s41467-017-01689-9},
+	Volume = {8},
+	Year = {2017},
+	Bdsk-Url-1 = {https://doi.org/10.1038/s41467-017-01689-9}}
+
+@article{Chevrier2018,
+	Annote = {doi: 10.1016/j.cels.2018.02.010},
+	Author = {Chevrier, St{\'e}phane and Crowell, Helena L. and Zanotelli, Vito R. T. and Engler, Stefanie and Robinson, Mark D. and Bodenmiller, Bernd},
+	Booktitle = {Cell Systems},
+	Date = {2018/05/23},
+	Date-Added = {2019-01-07 11:28:34 +0100},
+	Date-Modified = {2019-01-07 11:28:52 +0100},
+	Doi = {10.1016/j.cels.2018.02.010},
+	Isbn = {2405-4712},
+	Journal = {Cell Systems},
+	Keywords = {CATALYST},
+	M3 = {doi: 10.1016/j.cels.2018.02.010},
+	Month = {2019/01/07},
+	Number = {5},
+	Pages = {612--620.e5},
+	Publisher = {Elsevier},
+	Title = {Compensation of Signal Spillover in Suspension and Imaging Mass Cytometry},
+	Ty = {JOUR},
+	Url = {https://doi.org/10.1016/j.cels.2018.02.010},
+	Volume = {6},
+	Year = {2018},
+	Year1 = {2018},
+	Bdsk-Url-1 = {https://doi.org/10.1016/j.cels.2018.02.010}}
+
+@article{McInnes2018,
+	Adsnote = {Provided by the SAO/NASA Astrophysics Data System},
+	Adsurl = {https://ui.adsabs.harvard.edu/\#abs/2018arXiv180203426M},
+	Archiveprefix = {arXiv},
+	Author = {{McInnes}, Leland and {Healy}, John and {Melville}, James},
+	Date-Added = {2019-01-07 11:27:07 +0100},
+	Date-Modified = {2019-01-07 11:29:12 +0100},
+	Eid = {arXiv:1802.03426},
+	Eprint = {1802.03426},
+	Journal = {arXiv e-prints},
+	Keywords = {UMAP},
+	Month = Feb,
+	Pages = {arXiv:1802.03426},
+	Primaryclass = {stat.ML},
+	Title = {{UMAP: Uniform Manifold Approximation and Projection for Dimension Reduction}},
+	Year = 2018}
+
+@article{Zhang2018,
+	Abstract = {Single-cell technologies have seen widespread adoption in recent years. The datasets generated by these technologies provide information on up to millions or more individual cells; however, the identities of the cells are often only determined computationally. Single-cell computational pipelines involve two critical steps: organizing the cells in a biologically meaningful way (clustering) and identifying the markers driving this organization (differential expression analysis). Because clustering algorithms force separation, performing differential expression analysis after clustering on the same dataset will generate artificially low p-values, potentially resulting in false discoveries. In this work, we introduce the truncated normal (TN) test, a test based on the truncated normal distribution that significantly corrects for this problem. We present a data-splitting-based framework that leverages the TN test to return reasonable p-values for arbitrary clustering schemes. We demonstrate the efficacy of our solution on simulated and real datasets, and we provide our code at https://github.com/jessemzhang/tn_test.},
+	Author = {Zhang, Jesse Min and Kamath, Govinda M and Tse, David N},
+	Date-Added = {2019-01-07 11:20:49 +0100},
+	Date-Modified = {2019-01-07 11:20:59 +0100},
+	Doi = {10.1101/463265},
+	Elocation-Id = {463265},
+	Eprint = {https://www.biorxiv.org/content/early/2018/11/05/463265.full.pdf},
+	Journal = {bioRxiv},
+	Publisher = {Cold Spring Harbor Laboratory},
+	Title = {Towards a post-clustering test for differential expression},
+	Url = {https://www.biorxiv.org/content/early/2018/11/05/463265},
+	Year = {2018},
+	Bdsk-Url-1 = {https://www.biorxiv.org/content/early/2018/11/05/463265},
+	Bdsk-Url-2 = {https://doi.org/10.1101/463265}}
 
 @manual{Weber2018b,
 	Author = {Lukas M. Weber and Charlotte Soneson},
@@ -32,22 +226,6 @@
 	Year = {2018},
 	Bdsk-Url-1 = {https://www.biorxiv.org/content/early/2018/06/18/349738},
 	Bdsk-Url-2 = {https://doi.org/10.1101/349738}}
-
-@article{Chevrier2017,
-	Abstract = {Mass cytometry enables simultaneous analysis of over 40 proteins and their modifications in single cells through use of metal-tagged antibodies. Compared to fluorescent dyes, the use of pure metal isotopes strongly reduces spectral overlap among measurement channels. Crosstalk still exists, however, caused by isotopic impurity, oxide formation, and mass cytometer properties. Spillover effects can be minimized, but not avoided, by following a set of constraining rules when designing an antibody panel. Generation of such low crosstalk panels requires considerable expert knowledge, knowledge of the abundance of each marker and substantial experimental effort. Here we describe a novel bead-based compensation workflow that includes R-based software and a web tool, which enables correction for interference between channels. We demonstrate utility in suspension mass cytometry and show how this approach can be applied to imaging mass cytometry. Our approach greatly simplifies the development of new antibody panels, increases flexibility for antibody-metal pairing, improves overall data quality, thereby reducing the risk of reporting cell phenotype and function artifacts, and greatly facilitates analysis of complex samples for which antigen abundances are unknown.},
-	Author = {Chevrier, Stephane and Crowell, Helena and Zanotelli, Vito Riccardo Tomaso and Engler, Stefanie and Robinson, Mark D and Bodenmiller, Bernd},
-	Doi = {10.1101/185744},
-	File = {:Users/gosia/Documents/Mendeley Desktop/Chevrier et al/Chevrier et al. - 2017 - Channel crosstalk correction in suspension and imaging mass cytometry.pdf:pdf},
-	Journal = {bioRxiv},
-	Keywords = {CATALYST},
-	Mendeley-Groups = {Single cell/Compensation,.cytofWorkflow},
-	Mendeley-Tags = {CATALYST},
-	Publisher = {Cold Spring Harbor Laboratory},
-	Title = {{Channel crosstalk correction in suspension and imaging mass cytometry}},
-	Url = {http://www.biorxiv.org/content/early/2017/09/07/185744},
-	Year = {2017},
-	Bdsk-Url-1 = {http://www.biorxiv.org/content/early/2017/09/07/185744},
-	Bdsk-Url-2 = {https://doi.org/10.1101/185744}}
 
 @manual{Finak2011,
 	Author = {Greg Finak and Mike Jiang},
@@ -85,7 +263,8 @@
 	Url = {http://dx.doi.org/10.1038/nbt.3187 http://10.0.4.14/nbt.3187 http://www.nature.com/nbt/journal/v33/n6/abs/nbt.3187.html{\#}supplementary-information},
 	Volume = {33},
 	Year = {2015},
-	Bdsk-Url-1 = {http://dx.doi.org/10.1038/nbt.3187%20http://10.0.4.14/nbt.3187%20http://www.nature.com/nbt/journal/v33/n6/abs/nbt.3187.html%7B%5C#%7Dsupplementary-information}}
+	Bdsk-Url-1 = {http://dx.doi.org/10.1038/nbt.3187%20http://10.0.4.14/nbt.3187%20http://www.nature.com/nbt/journal/v33/n6/abs/nbt.3187.html%7B%5C#%7Dsupplementary-information},
+	Bdsk-File-1 = {YnBsaXN0MDDSAQIDBFxyZWxhdGl2ZVBhdGhZYWxpYXNEYXRhXxAkLi4vLi4vLi4vRG93bmxvYWRzL2V4cG9ydC1iaWJ0ZXguYmJsTxEBVAAAAAABVAACAAAMTWFjaW50b3NoIEhEAAAAAAAAAAAAAAAAAAAAAAAAAEJEAAH/////EWV4cG9ydC1iaWJ0ZXguYmJsAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP////8AAAAAAAAAAAAAAAAAAwACAAAKIGN1AAAAAAAAAAAAAAAAAAlEb3dubG9hZHMAAAIAKi86VXNlcnM6aGVsZW5hOkRvd25sb2FkczpleHBvcnQtYmlidGV4LmJibAAOACQAEQBlAHgAcABvAHIAdAAtAGIAaQBiAHQAZQB4AC4AYgBiAGwADwAaAAwATQBhAGMAaQBuAHQAbwBzAGgAIABIAEQAEgAoVXNlcnMvaGVsZW5hL0Rvd25sb2Fkcy9leHBvcnQtYmlidGV4LmJibAATAAEvAAAVAAIADf//AAAACAANABoAJABLAAAAAAAAAgEAAAAAAAAABQAAAAAAAAAAAAAAAAAAAaM=}}
 
 @article{Finak2014,
 	Author = {Finak, Greg and McDavid, Andrew and Chattopadhyay, Pratip and Dominguez, Maria and {De Rosa}, Steve and Roederer, Mario and Gottardo, Raphael},
@@ -364,7 +543,8 @@
 	Url = {http://dx.doi.org/10.1038/nmeth.4149 http://10.0.4.14/nmeth.4149 http://www.nature.com/nmeth/journal/v14/n3/abs/nmeth.4149.html{\#}supplementary-information},
 	Volume = {14},
 	Year = {2017},
-	Bdsk-Url-1 = {http://dx.doi.org/10.1038/nmeth.4149%20http://10.0.4.14/nmeth.4149%20http://www.nature.com/nmeth/journal/v14/n3/abs/nmeth.4149.html%7B%5C#%7Dsupplementary-information}}
+	Bdsk-Url-1 = {http://dx.doi.org/10.1038/nmeth.4149%20http://10.0.4.14/nmeth.4149%20http://www.nature.com/nmeth/journal/v14/n3/abs/nmeth.4149.html%7B%5C#%7Dsupplementary-information},
+	Bdsk-File-1 = {YnBsaXN0MDDSAQIDBFxyZWxhdGl2ZVBhdGhZYWxpYXNEYXRhXxAfLi4vLi4vLi4vRG93bmxvYWRzL25idC40MzE0LnJpc08RAUIAAAAAAUIAAgAADE1hY2ludG9zaCBIRAAAAAAAAAAAAAAAAAAAAAAAAABCRAAB/////wxuYnQuNDMxNC5yaXMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/////AAAAAAAAAAAAAAAAAAMAAgAACiBjdQAAAAAAAAAAAAAAAAAJRG93bmxvYWRzAAACACUvOlVzZXJzOmhlbGVuYTpEb3dubG9hZHM6bmJ0LjQzMTQucmlzAAAOABoADABuAGIAdAAuADQAMwAxADQALgByAGkAcwAPABoADABNAGEAYwBpAG4AdABvAHMAaAAgAEgARAASACNVc2Vycy9oZWxlbmEvRG93bmxvYWRzL25idC40MzE0LnJpcwAAEwABLwAAFQACAA3//wAAAAgADQAaACQARgAAAAAAAAIBAAAAAAAAAAUAAAAAAAAAAAAAAAAAAAGM}}
 
 @article{Finck2013,
 	Abstract = {Mass cytometry uses atomic mass spectrometry combined with isotopically pure reporter elements to currently measure as many as 40 parameters per single cell. As with any quantitative technology, there is a fundamental need for quality assurance and normalization protocols. In the case of mass cytometry, the signal variation over time due to changes in instrument performance combined with intervals between scheduled maintenance must be accounted for and then normalized. Here, samples were mixed with polystyrene beads embedded with metal lanthanides, allowing monitoring of mass cytometry instrument performance over multiple days of data acquisition. The protocol described here includes simultaneous measurements of beads and cells on the mass cytometer, subsequent extraction of the bead-based signature, and the application of an algorithm enabling correction of both short- and long-term signal fluctuations. The variation in the intensity of the beads that remains after normalization may also be used to determine data quality. Application of the algorithm to a one-month longitudinal analysis of a human peripheral blood sample reduced the range of median signal fluctuation from 4.9-fold to 1.3-fold.},
@@ -398,7 +578,8 @@
 	Url = {https://doi.org/10.7717/peerj.1114},
 	Volume = {3},
 	Year = {2015},
-	Bdsk-Url-1 = {https://doi.org/10.7717/peerj.1114}}
+	Bdsk-Url-1 = {https://doi.org/10.7717/peerj.1114},
+	Bdsk-File-1 = {YnBsaXN0MDDSAQIDBFxyZWxhdGl2ZVBhdGhZYWxpYXNEYXRhXxAzLi4vLi4vLi4vRG93bmxvYWRzLzEwLjEwMzglMkZzNDE0NjctMDE3LTAxNjg5LTkucmlzTxEBkgAAAAABkgACAAAMTWFjaW50b3NoIEhEAAAAAAAAAAAAAAAAAAAAAAAAAEJEAAH/////HzEwLjEwMzglMkZzNDE0NjctMCNGRkZGRkZGRi5yaXMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP////8AAAAAAAAAAAAAAAAAAwACAAAKIGN1AAAAAAAAAAAAAAAAAAlEb3dubG9hZHMAAAIAOS86VXNlcnM6aGVsZW5hOkRvd25sb2FkczoxMC4xMDM4JTJGczQxNDY3LTAxNy0wMTY4OS05LnJpcwAADgBCACAAMQAwAC4AMQAwADMAOAAlADIARgBzADQAMQA0ADYANwAtADAAMQA3AC0AMAAxADYAOAA5AC0AOQAuAHIAaQBzAA8AGgAMAE0AYQBjAGkAbgB0AG8AcwBoACAASABEABIAN1VzZXJzL2hlbGVuYS9Eb3dubG9hZHMvMTAuMTAzOCUyRnM0MTQ2Ny0wMTctMDE2ODktOS5yaXMAABMAAS8AABUAAgAN//8AAAAIAA0AGgAkAFoAAAAAAAACAQAAAAAAAAAFAAAAAAAAAAAAAAAAAAAB8A==}}
 
 @article{Harrison2014,
 	Abstract = {Overdispersion is common in models of count data in ecology and evolutionary biology, and can occur due to missing covariates, non-independent (aggregated) data, or an excess frequency of zeroes (zero-inflation). Accounting for overdispersion in such models is vital, as failing to do so can lead to biased parameter estimates, and false conclusions regarding hypotheses of interest. Observation-level random effects (OLRE), where each data point receives a unique level of a random effect that models the extra-Poisson variation present in the data, are commonly employed to cope with overdispersion in count data. However studies investigating the efficacy of observation-level random effects as a means to deal with overdispersion are scarce. Here I use simulations to show that in cases where overdispersion is caused by random extra-Poisson noise, or aggregation in the count data, observation-level random effects yield more accurate parameter estimates compared to when overdispersion is simply ignored. Conversely, OLRE fail to reduce bias in zero-inflated data, and in some cases increase bias at high levels of overdispersion. There was a positive relationship between the magnitude of overdispersion and the degree of bias in parameter estimates. Critically, the simulations reveal that failing to account for overdispersion in mixed models can erroneously inflate measures of explained variance ($\backslash$textit{\{}r{\}}$\backslash$textsuperscript{\{}2{\}}), which may lead to researchers overestimating the predictive power of variables of interest. This work suggests use of observation-level random effects provides a simple and robust means to account for overdispersion in count data, but also that their ability to minimise bias is not uniform across all types of overdispersion and must be applied judiciously.},
@@ -532,7 +713,8 @@
 	Volume = {27},
 	Year = {2007},
 	Bdsk-Url-1 = {http://www.sciencedirect.com/science/article/pii/S0272271207000479},
-	Bdsk-Url-2 = {http://doi.org/10.1016/j.cll.2007.05.002}}
+	Bdsk-Url-2 = {http://doi.org/10.1016/j.cll.2007.05.002},
+	Bdsk-File-1 = {YnBsaXN0MDDSAQIDBFxyZWxhdGl2ZVBhdGhZYWxpYXNEYXRhXxCLLi4vLi4vLi4vRG93bmxvYWRzL21peGVkLWVmZmVjdHMtYXNzb2NpYXRpb24tb2Ytc2luZ2xlLWNlbGxzLWlkZW50aWZpZXMtYW4tZXhwYW5kZWQtZWZmZWN0b3ItY2Q0Ky10LWNlbGwtc3Vic2V0LWluLXJoZXVtYXRvaWQtYXJ0aHJpdGlzLmJpYk8RAvIAAAAAAvIAAgAADE1hY2ludG9zaCBIRAAAAAAAAAAAAAAAAAAAAAAAAABCRAAB/////x9taXhlZC1lZmZlY3RzLWFzc28jRkZGRkZGRkYuYmliAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/////AAAAAAAAAAAAAAAAAAMAAgAACiBjdQAAAAAAAAAAAAAAAAAJRG93bmxvYWRzAAACAJEvOlVzZXJzOmhlbGVuYTpEb3dubG9hZHM6bWl4ZWQtZWZmZWN0cy1hc3NvY2lhdGlvbi1vZi1zaW5nbGUtY2VsbHMtaWRlbnRpZmllcy1hbi1leHBhbmRlZC1lZmZlY3Rvci1jZDQrLXQtY2VsbC1zdWJzZXQtaW4tcmhldW1hdG9pZC1hcnRocml0aXMuYmliAAAOAPIAeABtAGkAeABlAGQALQBlAGYAZgBlAGMAdABzAC0AYQBzAHMAbwBjAGkAYQB0AGkAbwBuAC0AbwBmAC0AcwBpAG4AZwBsAGUALQBjAGUAbABsAHMALQBpAGQAZQBuAHQAaQBmAGkAZQBzAC0AYQBuAC0AZQB4AHAAYQBuAGQAZQBkAC0AZQBmAGYAZQBjAHQAbwByAC0AYwBkADQAKwAtAHQALQBjAGUAbABsAC0AcwB1AGIAcwBlAHQALQBpAG4ALQByAGgAZQB1AG0AYQB0AG8AaQBkAC0AYQByAHQAaAByAGkAdABpAHMALgBiAGkAYgAPABoADABNAGEAYwBpAG4AdABvAHMAaAAgAEgARAASAI9Vc2Vycy9oZWxlbmEvRG93bmxvYWRzL21peGVkLWVmZmVjdHMtYXNzb2NpYXRpb24tb2Ytc2luZ2xlLWNlbGxzLWlkZW50aWZpZXMtYW4tZXhwYW5kZWQtZWZmZWN0b3ItY2Q0Ky10LWNlbGwtc3Vic2V0LWluLXJoZXVtYXRvaWQtYXJ0aHJpdGlzLmJpYgAAEwABLwAAFQACAA3//wAAAAgADQAaACQAsgAAAAAAAAIBAAAAAAAAAAUAAAAAAAAAAAAAAAAAAAOo}}
 
 @article{McCarthy2012,
 	Abstract = {A flexible statistical framework is developed for the analysis of read counts from RNA-Seq gene expression studies. It provides the ability to analyse complex experiments involving multiple treatment conditions and blocking variables while still taking full account of biological variation. Biological variation between RNA samples is estimated separately from the technical variation associated with sequencing technologies. Novel empirical Bayes methods allow each gene to have its own specific variability, even when there are relatively few biological replicates from which to estimate such variability. The pipeline is implemented in the edgeR package of the Bioconductor project. A case study analysis of carcinoma data demonstrates the ability of generalized linear model methods (GLMs) to detect differential expression in a paired design, and even to detect tumour-specific expression changes. The case study demonstrates the need to allow for gene-specific variability, rather than assuming a common dispersion across genes or a fixed relationship between abundance and variability. Genewise dispersions de-prioritize genes with inconsistent results and allow the main analysis to focus on changes that are consistent between biological replicates. Parallel computational approaches are developed to make non-linear model fitting faster and more reliable, making the application of GLMs to genomic data more convenient and practical. Simulations demonstrate the ability of adjusted profile likelihood estimators to return accurate estimators of biological variability in complex situations. When variation is gene-specific, empirical Bayes estimators provide an advantageous compromise between the extremes of assuming common dispersion or separate genewise dispersion. The methods developed here can also be applied to count data arising from DNA-Seq applications, including ChIP-Seq for epigenetic marks and DNA methylation analyses.},
@@ -596,7 +778,8 @@
 	Volume = {106},
 	Year = {2009},
 	Bdsk-Url-1 = {http://www.pnas.org/content/106/21/8519.abstract},
-	Bdsk-Url-2 = {https://doi.org/10.1073/pnas.0903028106}}
+	Bdsk-Url-2 = {https://doi.org/10.1073/pnas.0903028106},
+	Bdsk-File-1 = {YnBsaXN0MDDSAQIDBFxyZWxhdGl2ZVBhdGhZYWxpYXNEYXRhXxAmLi4vLi4vLi4vRG93bmxvYWRzLzE3NDQxNDNjaXRhdGlvbi5yaXNPEQFcAAAAAAFcAAIAAAxNYWNpbnRvc2ggSEQAAAAAAAAAAAAAAAAAAAAAAAAAQkQAAf////8TMTc0NDE0M2NpdGF0aW9uLnJpcwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/////wAAAAAAAAAAAAAAAAADAAIAAAogY3UAAAAAAAAAAAAAAAAACURvd25sb2FkcwAAAgAsLzpVc2VyczpoZWxlbmE6RG93bmxvYWRzOjE3NDQxNDNjaXRhdGlvbi5yaXMADgAoABMAMQA3ADQANAAxADQAMwBjAGkAdABhAHQAaQBvAG4ALgByAGkAcwAPABoADABNAGEAYwBpAG4AdABvAHMAaAAgAEgARAASACpVc2Vycy9oZWxlbmEvRG93bmxvYWRzLzE3NDQxNDNjaXRhdGlvbi5yaXMAEwABLwAAFQACAA3//wAAAAgADQAaACQATQAAAAAAAAIBAAAAAAAAAAUAAAAAAAAAAAAAAAAAAAGt}}
 
 @article{Ritchie2015,
 	Abstract = {limma is an R/Bioconductor software package that provides an integrated solution for analysing data from gene expression experiments. It contains rich features for handling complex experimental designs and for information borrowing to overcome the problem of small sample sizes. Over the past decade, limma has been a popular choice for gene discovery through differential expression analyses of microarray and high-throughput PCR data. The package contains particularly strong facilities for reading, normalizing and exploring such data. Recently, the capabilities of limma have been significantly expanded in two important directions. First, the package can now perform both differential expression and differential splicing analyses of RNA sequencing (RNA-seq) data. All the downstream analysis tools previously restricted to microarray data are now available for RNA-seq as well. These capabilities allow users to analyse both RNA-seq and microarray data with very similar pipelines. Second, the package is now able to go past the traditional gene-wise expression analyses in a variety of ways, analysing expression profiles in terms of co-regulated sets of genes or in terms of higher-order expression signatures. This provides enhanced possibilities for biological interpretation of gene expression differences. This article reviews the philosophy and design of the limma package, summarizing both new and historical features, with an emphasis on recent enhancements and features that have not been previously described.},
@@ -642,7 +825,8 @@
 	Url = {http://dx.doi.org/10.1002/1097-0320(20011101)45:3{\%}3C194::AID-CYTO1163{\%}3E3.0.CO;2-C},
 	Volume = {45},
 	Year = {2001},
-	Bdsk-Url-1 = {http://dx.doi.org/10.1002/1097-0320(20011101)45:3%3C194::AID-CYTO1163%3E3.0.CO;2-C}}
+	Bdsk-Url-1 = {http://dx.doi.org/10.1002/1097-0320(20011101)45:3%3C194::AID-CYTO1163%3E3.0.CO;2-C},
+	Bdsk-File-1 = {YnBsaXN0MDDSAQIDBFxyZWxhdGl2ZVBhdGhZYWxpYXNEYXRhXxAhLi4vLi4vLi4vRG93bmxvYWRzL1BNQzM2NDgyMDgucmlzTxEBSgAAAAABSgACAAAMTWFjaW50b3NoIEhEAAAAAAAAAAAAAAAAAAAAAAAAAEJEAAH/////DlBNQzM2NDgyMDgucmlzAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP////8AAAAAAAAAAAAAAAAAAwACAAAKIGN1AAAAAAAAAAAAAAAAAAlEb3dubG9hZHMAAAIAJy86VXNlcnM6aGVsZW5hOkRvd25sb2FkczpQTUMzNjQ4MjA4LnJpcwAADgAeAA4AUABNAEMAMwA2ADQAOAAyADAAOAAuAHIAaQBzAA8AGgAMAE0AYQBjAGkAbgB0AG8AcwBoACAASABEABIAJVVzZXJzL2hlbGVuYS9Eb3dubG9hZHMvUE1DMzY0ODIwOC5yaXMAABMAAS8AABUAAgAN//8AAAAIAA0AGgAkAEgAAAAAAAACAQAAAAAAAAAFAAAAAAAAAAAAAAAAAAABlg==}}
 
 @article{Saeys2016,
 	Abstract = {Recent advances in flow cytometry allow scientists to measure an increasing number of parameters per cell, generating huge and high-dimensional datasets. To analyse, visualize and interpret these data, newly available computational techniques should be adopted, evaluated and improved upon by the immunological community. Computational flow cytometry is emerging as an important new field at the intersection of immunology and computational biology; it allows new biological knowledge to be extracted from high-throughput single-cell data. This Review provides non-experts with a broad and practical overview of the many recent developments in computational flow cytometry.},
@@ -767,7 +951,7 @@
 	Url = {+ http://dx.doi.org/10.1093/bioinformatics/btq170},
 	Volume = {26},
 	Year = {2010},
-	Bdsk-File-1 = {YnBsaXN0MDDUAQIDBAUGJCVYJHZlcnNpb25YJG9iamVjdHNZJGFyY2hpdmVyVCR0b3ASAAGGoKgHCBMUFRYaIVUkbnVsbNMJCgsMDxJXTlMua2V5c1pOUy5vYmplY3RzViRjbGFzc6INDoACgAOiEBGABIAFgAdccmVsYXRpdmVQYXRoWWFsaWFzRGF0YV8Qcy4uLy4uLy4uL0Rvd25sb2Fkcy9kaWZmY3l0Xy1kaWZmZXJlbnRpYWwtZGlzY292ZXJ5LWluLWhpZ2gtZGltZW5zaW9uYWwtY3l0b21ldHJ5LXZpYS1oaWdoLXJlc29sdXRpb24tY2x1c3RlcmluZy5iaWLSFwsYGVdOUy5kYXRhTxECigAAAAACigACAAAMTWFjaW50b3NoIEhEAAAAAAAAAAAAAAAAAAAAAAAAAEJEAAH/////H2RpZmZjeXRfLWRpZmZlcmVudCNGRkZGRkZGRi5iaWIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP////8AAAAAAAAAAAAAAAAAAwACAAAKIGN1AAAAAAAAAAAAAAAAAAlEb3dubG9hZHMAAAIAdi86VXNlcnM6aGxjOkRvd25sb2FkczpkaWZmY3l0Xy1kaWZmZXJlbnRpYWwtZGlzY292ZXJ5LWluLWhpZ2gtZGltZW5zaW9uYWwtY3l0b21ldHJ5LXZpYS1oaWdoLXJlc29sdXRpb24tY2x1c3RlcmluZy5iaWIADgDCAGAAZABpAGYAZgBjAHkAdABfAC0AZABpAGYAZgBlAHIAZQBuAHQAaQBhAGwALQBkAGkAcwBjAG8AdgBlAHIAeQAtAGkAbgAtAGgAaQBnAGgALQBkAGkAbQBlAG4AcwBpAG8AbgBhAGwALQBjAHkAdABvAG0AZQB0AHIAeQAtAHYAaQBhAC0AaABpAGcAaAAtAHIAZQBzAG8AbAB1AHQAaQBvAG4ALQBjAGwAdQBzAHQAZQByAGkAbgBnAC4AYgBpAGIADwAaAAwATQBhAGMAaQBuAHQAbwBzAGgAIABIAEQAEgB0VXNlcnMvaGxjL0Rvd25sb2Fkcy9kaWZmY3l0Xy1kaWZmZXJlbnRpYWwtZGlzY292ZXJ5LWluLWhpZ2gtZGltZW5zaW9uYWwtY3l0b21ldHJ5LXZpYS1oaWdoLXJlc29sdXRpb24tY2x1c3RlcmluZy5iaWIAEwABLwAAFQACAAr//wAAgAbSGxwdHlokY2xhc3NuYW1lWCRjbGFzc2VzXU5TTXV0YWJsZURhdGGjHR8gVk5TRGF0YVhOU09iamVjdNIbHCIjXE5TRGljdGlvbmFyeaIiIF8QD05TS2V5ZWRBcmNoaXZlctEmJ1Ryb290gAEACAARABoAIwAtADIANwBAAEYATQBVAGAAZwBqAGwAbgBxAHMAdQB3AIQAjgEEAQkBEQOfA6EDpgOxA7oDyAPMA9MD3APhA+4D8QQDBAYECwAAAAAAAAIBAAAAAAAAACgAAAAAAAAAAAAAAAAAAAQN},
+	Bdsk-File-1 = {YnBsaXN0MDDSAQIDBFxyZWxhdGl2ZVBhdGhZYWxpYXNEYXRhXxBzLi4vLi4vLi4vRG93bmxvYWRzL2RpZmZjeXRfLWRpZmZlcmVudGlhbC1kaXNjb3ZlcnktaW4taGlnaC1kaW1lbnNpb25hbC1jeXRvbWV0cnktdmlhLWhpZ2gtcmVzb2x1dGlvbi1jbHVzdGVyaW5nLmJpYk8RAooAAAAAAooAAgAADE1hY2ludG9zaCBIRAAAAAAAAAAAAAAAAAAAAAAAAABCRAAB/////x9kaWZmY3l0Xy1kaWZmZXJlbnQjRkZGRkZGRkYuYmliAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/////AAAAAAAAAAAAAAAAAAMAAgAACiBjdQAAAAAAAAAAAAAAAAAJRG93bmxvYWRzAAACAHYvOlVzZXJzOmhsYzpEb3dubG9hZHM6ZGlmZmN5dF8tZGlmZmVyZW50aWFsLWRpc2NvdmVyeS1pbi1oaWdoLWRpbWVuc2lvbmFsLWN5dG9tZXRyeS12aWEtaGlnaC1yZXNvbHV0aW9uLWNsdXN0ZXJpbmcuYmliAA4AwgBgAGQAaQBmAGYAYwB5AHQAXwAtAGQAaQBmAGYAZQByAGUAbgB0AGkAYQBsAC0AZABpAHMAYwBvAHYAZQByAHkALQBpAG4ALQBoAGkAZwBoAC0AZABpAG0AZQBuAHMAaQBvAG4AYQBsAC0AYwB5AHQAbwBtAGUAdAByAHkALQB2AGkAYQAtAGgAaQBnAGgALQByAGUAcwBvAGwAdQB0AGkAbwBuAC0AYwBsAHUAcwB0AGUAcgBpAG4AZwAuAGIAaQBiAA8AGgAMAE0AYQBjAGkAbgB0AG8AcwBoACAASABEABIAdFVzZXJzL2hsYy9Eb3dubG9hZHMvZGlmZmN5dF8tZGlmZmVyZW50aWFsLWRpc2NvdmVyeS1pbi1oaWdoLWRpbWVuc2lvbmFsLWN5dG9tZXRyeS12aWEtaGlnaC1yZXNvbHV0aW9uLWNsdXN0ZXJpbmcuYmliABMAAS8AABUAAgAK//8AAAAIAA0AGgAkAJoAAAAAAAACAQAAAAAAAAAFAAAAAAAAAAAAAAAAAAADKA==},
 	Bdsk-Url-1 = {+%20http://dx.doi.org/10.1093/bioinformatics/btq170},
 	Bdsk-Url-2 = {https://doi.org/10.1093/bioinformatics/btq170}}
 
