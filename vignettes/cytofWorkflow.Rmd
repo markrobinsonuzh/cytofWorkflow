@@ -167,9 +167,6 @@ In our example, the .fcs files listed in the metadata can be loaded from the `r 
 ```{r load-flowSet}
 library(HDCytoData)
 fs <- Bodenmiller_BCR_XL_flowSet()
-
-# spot check that metadata and flowSet are in same order
-all( rownames(phenoData(fs)) == md$file_name )
 ```
 
 Alternatively, the files can be downloaded manually from the [Citrus Cytobank repository](https://community.cytobank.org/cytobank/experiments/15713/download_files) and loaded into R as a `flowSet` using `read.flowSet` from the `r Biocpkg("flowCore")` package [@Hahne2009]. Importantly, `read.flowSet` and the underlying  `read.FCS` functions, by default, may transform the marker intensities and remove cells with extreme positive values. This behavior can be controlled with arguments `transformation` and `truncate_max_range`, respectively.
@@ -188,7 +185,7 @@ panel <- read_excel(panel)
 head(data.frame(panel))
 
 # spot check that all panel columns are in the flowSet object
-all( panel$fcs_colname %in% colnames(fs) )
+all(panel$fcs_colname %in% colnames(fs))
 ```
 
 # Data transformation
@@ -217,12 +214,6 @@ As a final note, the `daFrame` constructor requires the input `flowSet`'s or .fc
 # specify levels for conditions & sample IDs to assure desired ordering
 md$condition <- factor(md$condition, levels = c("Ref", "BCRXL"))
 md$sample_id <- factor(md$sample_id, levels = md$sample_id[order(md$condition)])
-
-# add filenames to description slot [TODO: is this necessary?]
-# [Helena: Until HDCytoData has been updated, this is necessary to match the files with the metadata.]
-all(is.null(unlist(keyword(fs, "FILENAME"))))
-for (i in seq_along(fs))
-    description(fs[[i]])$FILENAME <- identifier(fs[[i]])
 
 # construct daFrame
 daf <- daFrame(fs, panel, md, cols_to_use = panel$fcs_colname)
@@ -447,55 +438,36 @@ Manual merging of up to 20 clusters can be laborious.  To simplify this task, on
 metadata(daf)$delta_area
 ```
 
-As an example, we can view the metaclustering to 12 groups. In the t-SNE plot (see Figure \@ref(fig:tsne-plot-one-clustering2)), we can see that many small clusters obtained when stratifying data into 20 groups are now merged together, which should simplify the new cluster annotation.
-
-```{r tsne-plot-one-clustering2, fig.cap = "t-SNE plot for the PBMC dataset, where cells are colored according to the 12 cell populations obtained with FlowSOM after the metaclustering step with ConsensusClusterPlus. As in Figure \\@ref(fig:tsne-plot-one-clustering1), t-SNE analysis uses the arcsinh-transformed expression of the 10 lineage markers in 2000 randomly selected cells from each of the 16 samples."}
-plotSNE(daf, color_by = "meta12")
-```
-
-```{r plot-clustering-heatmap2, fig.height = 3, fig.cap = "Heatmap of the median marker intensities of the 10 lineage markers in the 12 metaclusters obtained with FlowSOM after the metaclustering step with ConsensusClusterPlus (PBMC data). As in Figure \\@ref(fig:plot-clustering-heatmap1), the heat represents the median of arcsinh and 0-1 transformed marker expression calculated over cells from all the samples. The dendrogram on the left represents the hierarchical similarity between the 12 clusters calculated using Euclidean distance and average linkage. Values in the brackets indicate the relative size of each cluster across all the samples."}
-plotClusterHeatmap(daf, k = "meta12", draw_freqs = TRUE)
-```
-
-Over-clustering into as few as 12 groups still allows us to identify the same 8 cell populations as when merging 20 clusters (see Figures \@ref(fig:plot-clustering-heatmap2), \@ref(fig:tsne-plot-one-clustering2m), \@ref(fig:plot-clustering-heatmap2-merging), \@ref(fig:plot-clustering-heatmap2m)), but it is simpler to define since fewer profiles need to be manually scanned.  The expert-based merging is saved in the PBMC8_cluster_merging2.xlsx file on the [Robinson Lab server](http://imlspenticton.uzh.ch/robinson_lab/cytofWorkflow).
+As an example, we consider the metaclustering to 12 groups. Clustering into as few as 12 groups still allows us to identify the same 8 cell populations as when merging 20 clusters, but these are simpler to define since fewer profiles need to be manually scanned. The expert-based merging of the 12 metaclusters into 8 PBMC cell populations is saved in the PBMC8_cluster_merging2_v3.xlsx file on the [Robinson Lab server](http://imlspenticton.uzh.ch/robinson_lab/cytofWorkflow).
 
 ```{r cluster-merging2}
-merging_table2 <- "PBMC8_cluster_merging2.xlsx"
-download.file(sprintf("%s/%s", url, merging_table2), 
-              destfile = merging_table2, mode = "wb")
+merging_table2 <- "PBMC8_cluster_merging2_v3.xlsx"
+download.file(file.path(url, merging_table2), destfile = merging_table2, mode = "wb")
 merging_table2 <- read_excel(merging_table2)
 data.frame(merging_table2)
+
 # convert to factor with merged clusters in desired order
-merging_table2$new_cluster <- factor(merging_table2$new_cluster, 
-                                     levels = levels(merging_table1$new_cluster))
+merging_table2$new_cluster <- factor(
+    merging_table2$new_cluster, 
+    levels = levels(merging_table1$new_cluster))
+
+# apply 2nd manual merging
 daf <- mergeClusters(daf, k = "meta12", table = merging_table2, id = "merging2")
-```
-
-
-```{r tsne-plot-one-clustering2m, fig.cap = "t-SNE plot for the PBMC dataset, where cells are colored according to the manual merging of the 12 metaclusters, obtained with FlowSOM, into 8 PBMC populations. As in Figure \\@ref(fig:tsne-plot-one-clustering1), t-SNE analysis uses the arcsinh-transformed expression of the 10 lineage markers in 2000 randomly selected cells from each of the 16 samples."}
-plotSNE(daf, color_by = "merging2")
-```
-
-```{r plot-clustering-heatmap2-merging, fig.cap = "Heatmap as in Figure \\@ref(fig:plot-clustering-heatmap2), where the additional color bar on the left indicates how the 12 metaclusters, obtained with FlowSOM, are merged into the 8 PBMC populations."}
-plotClusterHeatmap(daf, k = "meta12", m = "merging2")
-```
-
-```{r plot-clustering-heatmap2m, fig.height = 3, fig.cap = "Heatmap of the median marker intensities of the 10 lineage markers in the 8 PBMC cell populations obtained by manual merging of the 12 metaclusters generated by FlowSOM. The heat represents the median of arcsinh and 0-1 transformed marker expression calculated over cells from all the samples. The dendrogram on the left represents the hierarchical similarity between the 8 populations calculated using Euclidean distance and average linkage. Values in the brackets indicate the relative size of each of the cell populations across all the samples."}
-plotClusterHeatmap(daf, k = "merging2", draw_freqs = TRUE)
 ```
 
 ### Comparison of automated and manual merging
 
-The manual merging of 20 (or 12) clusters by an expert resulted in identification of 8 cell populations. To highlight the impact of manual merging versus algorithm-defined subpopulations, we compare to the results of an automated cluster merging that is set to stratify the data also into 8 clusters.  We extract the result from the `ConsensusClusterPlus` output.  Out of interest, we can see which clusters are split by tabulating the cell labels.
+The manual merging of 20 (or 12) clusters by an expert resulted in identification of 8 cell populations. To highlight the impact of manual merging versus algorithm-defined subpopulations, we compare to the results of an automated cluster merging that is set to stratify the data also into 8 clusters. Out of interest, we can see which clusters are split by tabulating the cell labels.
 
 ```{r flowsom-meta-clustering3}
-## Get cluster ids for each cell
+# tabular comparison of algorithmic & manual merging
 table(
-    algorithm = cluster_codes(daf)[cluster_ids(daf), "meta12"],
+    algorithm = cluster_codes(daf)[cluster_ids(daf), "meta8"],
     manual = cluster_codes(daf)[cluster_ids(daf), "merging2"])
 ```
 
-In the t-SNE map (see Figure \@ref(fig:tsne-plot-one-clustering3)), we can see that part of the new cell populations (cluster 7, 1 and 4, 2, 5 and 8) overlap substantially with populations obtained by the means of manual merging (CD4 T-cells, B-cells, surface-, monocytes and DC).  However, cells that belong to clusters 3 and 6 are subdivided in a different manner according to the manual merging.  Cluster 3 consists of CD8 T-cells and NK cells, and the latter cannot be identified anymore based on the heatmap corresponding to clustering into 8 groups (see Figure \@ref(fig:plot-clustering-heatmap3)). 
+<!-- [HELENA] I think we can leave this in to have one visual comparison. -->
+In the t-SNE map (see Figure \@ref(fig:tsne-plot-one-clustering3)), we can see that part of the new cell populations (cluster 6, 1, 2, 4 and 7) overlap substantially with populations obtained by the means of manual merging (CD4 T-cells, B-cells, surface-, monocytes and DC).  However, cells that belong to clusters 3 and 5 are subdivided in a different manner according to the manual merging.  Cluster 1 consists of both B-cells IgM+ and IgM- and is not further subdivided, whereas cluster 8 is altogether unidentifiable.
 
 ```{r tsne-plot-one-clustering3, fig.height = 8, fig.cap = "t-SNE plots with cells colored according to (A) the expert merging of 12 metaclusters obtained with FlowSOM into 8 PBMC populations; and (B) the 8 automatically detected with FlowSOM metaclusters."}
 p1 <- plotSNE(daf, color_by = "merging2")
@@ -503,12 +475,7 @@ p2 <- plotSNE(daf, color_by = "meta8")
 plot_grid(p1, p2, ncol = 1, align = "v", labels = c("A", "B"))
 ```
 
-
-```{r plot-clustering-heatmap3, fig.height = 3, fig.cap = "Heatmap of the median marker intensities of the 10 lineage markers in the 8 metaclusters obtained with FlowSOM after the metaclustering step with ConsensusClusterPlus (PBMC data). The heat represents the median of arcsinh and 0-1 transformed marker expression calculated over cells from all the samples. The dendrogram on the left represents the hierarchical similarity between the 8 clusters calculated using Euclidean distance and average linkage. Values in the brackets indicate the relative size of each cluster across all the samples."}
-plotClusterHeatmap(daf, k = "meta8", draw_freqs = TRUE)
-```
-
-The example above highlights the difference between automatic clustering and manual merging of algorithm-generated clusters in the search for biologically meaningful cell populations.  Automated and manual merging may give different weight to marker importance and thus result in different populations being detected.  However, in our view, the manual merging done here in a reproducible fashion results in a more biologically meaningful cell stratification.
+The brief example above highlights the difference between automatic clustering and manual merging of algorithm-generated clusters in the search for biologically meaningful cell populations.  Automated and manual merging may give different weight to marker importance and thus result in different populations being detected.  However, in our view, the manual merging done here in a reproducible fashion results in a more biologically meaningful cell stratification.
 
 # Differential analysis 
 
@@ -564,8 +531,6 @@ where $\gamma_{i} \sim N(0, \sigma^2_\gamma)$.
 
 ```{r da-formulas}
 ei <- metadata(daf)$experiment_info
-head(ei, 3)
-
 da_formula1 <- createFormula(ei, cols_fixed = 3, cols_random = 2)
 da_formula2 <- createFormula(ei, cols_fixed = 3, cols_random = c(2, 4))
 ```
@@ -608,22 +573,16 @@ table(rowData(da_res1$res)$p_adj < FDR_cutoff)
 table(rowData(da_res2$res)$p_adj < FDR_cutoff)
 ```
 
-An output table containing the observed cell population proportions in each sample and p-values can be assembled (and optionally written to a file) as follows. 
+An output table containing the observed cell population proportions in each sample and p-values can be viewed via `diffcyt`'s `topTable` function, and optionally written to a file.
 
 ```{r diff-freqs-fit-model-output}
-counts <- assay(da_res2$d_counts)
-props <- t(t(counts) / colSums(counts)) * 100
-props <- props[, order(ei$condition)] # reorder samples
-da_output2 <- data.frame(row.names = NULL,
-    cluster_id = rownames(props), props,
-    rowData(da_res2$res)[, c("p_val", "p_adj")])
-print(head(da_output2), digits = 2)
+topTable(da_res2, show_props = TRUE, format_vals = TRUE, digits = 2)
 ```
 
 We use a heatmap to report the differential cell populations (see Figure \@ref(fig:diff-freqs-plot-heatmap-with-significant-clusters)).  Proportions are first scaled with the arcsine-square-root transformation (as an alternative to logit that cannot be calculated on ratios of zero or one). Then, Z-score normalization is applied to each population to better highlight the relative differences between compared conditions.  
 
 ```{r diff-freqs-plot-heatmap-with-significant-clusters, fig.height = 3, fig.cap = "Normalized proportions of PBMC cell populations that are significantly differentially abundant between BCR/FcR-XL stimulated and unstimulated condition. The heat represents arcsine-square-root transformed cell frequencies that were subsequently normalized per cluster (rows) to mean of zero and standard deviation of one. The color of the heat varies from blue indicating relative under-representation to orange indicating relative over-representation. Bar at the top of the heatmap indicates the condition the samples (columns) belong to: violet for the unstimulated (Ref) and orange for the stimulated with BCR/FcR-XL (BCRXL) condition. Numbers in the brackets next to the cluster names indicate adjusted p-values. Shown are only the significant clusters for which adjusted p-values < 0.05. Clusters are sorted according to the significance so that a cluster on the top shows the most significant abundance changes between the two conditions."}
-plotDiffHeatmap(daf, da_res2, hm1 = FALSE, normalize = TRUE)
+plotDiffHeatmap(daf, da_res2, normalize = TRUE)
 ```
 
 ## Differential analysis of marker expression stratified by cell population
@@ -674,6 +633,11 @@ table(rowData(ds_res2$res)$p_adj < FDR_cutoff)
 One can assemble together an output table with the information about median marker expression in each cluster and sample, and the obtained p-values.
 
 ```{r ds-output}
+#topTable(ds_res2, ...)
+
+# [diffcyt::topTable displaying medians is in progress; 
+# Lukas says he should finish it today (02.11).]
+
 meds <- assays(ds_res2$d_medians) # get median marker expressions
 meds <- meds[state_markers(daf)]  # subset state markers
 meds <- do.call(rbind, meds)      # concatenate all markers
@@ -687,9 +651,7 @@ print(head(ds_output2), digits = 2)
 To report the significant results, we use a heatmap (see Figure \@ref(fig:diff-expr2-plot-heatmap-with-significant-markers)).  Instead of plotting the absolute expression, we display the normalized expression (`normalize = TRUE`), which better highlights the direction of marker changes.  Additionally, we order cluster-marker instances by their significance (`order = TRUE`).
 
 ```{r diff-expr2-plot-heatmap-with-significant-markers, fig.height = 8, fig.cap = "Normalized expression of signaling markers in the 8 PBMC populations that are significantly differentially expressed between BCR/FcR-XL stimulated and unstimulated condition. The heat represents median (arcsinh-transformed) marker expression that was subsequently normalized per cluster-marker (rows) to mean of zero and standard deviation of one. The color of the heat varies from blue representing relative under-expression to orange representing relative over-expression. Shown are only the top 50 cluster-marker combinations."}
-plotDiffHeatmap(daf, ds_res2, 
-    top_n = 50, order = TRUE, th = FDR_cutoff, 
-    hm1 = FALSE, normalize = TRUE)
+plotDiffHeatmap(daf, ds_res2, top_n = 50, order = TRUE, th = FDR_cutoff, hm1 = FALSE)
 ```
 
 ## DA of the overall marker expression
@@ -742,7 +704,7 @@ print(head(ds_output4), digits = 2)
 ```
 
 ```{r diff-expr1-plot-heatmap-with-significant-markers, fig.height = 3, fig.cap = "Normalized expression of signaling markers calculated over all the cells in the PBMC dataset that are significantly differentially expressed between BCR/FcR-XL stimulated and unstimulated condition. The heat represents median (arcsinh-transformed) marker expression that was subsequently normalized per marker (rows) to mean of zero and standard deviation of one. The color of the heat varies from blue representing relative under-expression to orange representing relative over-expression. Bar at the top of the heatmap indicates the condition the samples (columns) belong to: violet for the unstimulated (Ref) and orange for the stimulated with BCR/FcR-XL (BCRXL) condition. Numbers in the brackets next to the marker names indicate adjusted p-values and markers are sorted so that markers on the top exhibit the most significant changes between the two conditions. Shown are only the significant markers for which adjusted p-values < 0.05."}
-plotDiffHeatmap(daf, ds_res4, all = TRUE, normalize = TRUE, hm1 = FALSE)
+plotDiffHeatmap(daf, ds_res4, all = TRUE, hm1 = FALSE)
 ```
 
 # Obtaining higher resolution
