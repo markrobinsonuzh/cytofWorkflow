@@ -55,7 +55,6 @@ editor_options:
 
 <!-- knitr::purl('cytofWorkflow.Rmd') -->
 
-
 ```{r setup_knitr, include = FALSE, cache = FALSE}
 library(BiocStyle)
 # Decide whether to display parts for BioC (TRUE) or F1000 (FALSE)
@@ -111,11 +110,16 @@ Step by step, this workflow presents differential discovery analyses assembled f
 
 To be able to analyze arbitrary experimental designs (e.g., batch effects, paired experiments, etc.), we show how to conduct the differential analysis of cell population abundances using the generalized linear mixed models (GLMM) and of marker intensities using linear models (LM) and linear mixed models (LMM).  For both differential abundance and expression analysis, we use the `r Biocpkg("diffcyt")` package [@Weber2018b].  Internally, model fitting is performed with packages `r CRANpkg("lme4")` and `r CRANpkg("stats")`, and hypothesis testing with the `r CRANpkg("multcomp")` package.
 
-For visualization, we use new plotting functions from the `r Biocpkg("CATALYST")` package that employ `r CRANpkg("ggplot2")` as their graphical engine.  Notably, `r Biocpkg("CATALYST")` delivers a suite of useful visual representations of HDCyto data characteristics, such as an MDS (multidimensional scaling) plot of aggregated signal for exploring sample similarities.  The obtained cell populations are visualized using dimension reduction techniques (e.g., t-SNE via the `r CRANpkg("Rtsne")` package) and heatmaps (via the `r Biocpkg("ComplexHeatmap")` package) to represent characteristics of the annotated cell populations and identified biomarkers. 
+For visualization, we use new plotting functions from the `r Biocpkg("CATALYST")` package that employ `r CRANpkg("ggplot2")` as their graphical engine.  Notably, `r Biocpkg("CATALYST")` delivers a suite of useful visual representations of HDCyto data characteristics, such as an MDS (multidimensional scaling) plot of aggregated signal for exploring sample similarities.  The obtained cell populations are visualized using dimension reduction techniques (e.g., UMAP via the `r CRANpkg("umap")`) and heatmaps (via the `r Biocpkg("ComplexHeatmap")` package) to represent characteristics of the annotated cell populations and identified biomarkers. 
+
+<!-- [HELENA:] 
+currently, CATALYST uses scater which uses umap; 
+`r Githubpkg("jlmelville/uwot")` [@McInnes2018; @Diggins2017]
+-->
 
 The workflow is intentionally not fully automatic.  First, we strongly advocate for exploratory data analysis to get an understanding of data characteristics before formal statistical modeling.  Second, the workflow involves an optional step where the user can manually merge and annotate clusters (see [Cluster merging and annotation](#cluster-merging-and-annotation) section) but in a way that is easily reproducible.  The CyTOF data used here (see [Data description](#data-description) section) is already preprocessed; i.e., the normalization and de-barcoding, as well as removal of doublets, debris and dead cells, were already performed; further details are available in the [Data preprocessing](#data-preprocessing) section.
 
-Notably, this workflow is equally applicable to flow or mass cytometry datasets, for which the preprocessing steps have already been performed.  In addition, the workflow is modular and can be adapted as new algorithms or new knowledge about how to best use existing tools comes to light. Alternative clustering algorithms such as the popular PhenoGraph algorithm [@Levine2015] (e.g., via the `r Githubpkg("JinmiaoChenLab/Rphenograph")` package), dimensionality reduction techniques, such as diffusion maps [@Haghverdi2015] via the `r Biocpkg("destiny")` package [@Angerer2016], UMAP via the `r Githubpkg("jlmelville/uwot")` [@McInnes2018; @Diggins2017] and SIMLR [@Wang2017] via the `r Biocpkg("SIMLR")` package could be inserted to the workflow.
+Notably, this workflow is equally applicable to flow or mass cytometry datasets, for which the preprocessing steps have already been performed.  In addition, the workflow is modular and can be adapted as new algorithms or new knowledge about how to best use existing tools comes to light. Alternative clustering algorithms such as the popular PhenoGraph algorithm [@Levine2015] (e.g., via the `r Githubpkg("JinmiaoChenLab/Rphenograph")` package), dimensionality reduction techniques, such as diffusion maps [@Haghverdi2015] via the `r Biocpkg("destiny")` package [@Angerer2016], TSNE via the `r CRANpkg("Rtsne")` and SIMLR [@Wang2017] via the `r Biocpkg("SIMLR")` package could be inserted to the workflow.
 
 
 ```{r, results = 'asis', eval = on.bioc, echo = FALSE}
@@ -300,7 +304,7 @@ daf <- cluster(daf, cols_to_use = type_markers(daf),
 
 Automatic approaches for selecting the number of clusters in HDCyto data do not always succeed [@Weber2016].  In general, we therefore recommend some level of over-clustering, and if desired, manual merging of clusters.  Such a hierarchical approach is especially suited when the goal is to detect smaller cell populations.
 
-The SPADE analysis performed by Bodenmiller *et al.* [@Bodenmiller2012] identified 6 main cell types (T-cells, monocytes, dendritic cells, B-cells, NK cells and surface- cells) that were further stratified into 14 more specific subpopulations (CD4+ T-cells, CD8+ T-cells, CD14+ HLA-DR high monocytes, CD14+ HLA-DR med monocytes, CD14+ HLA-DR low monocytes, CD14- HLA-DR high monocytes, CD14- HLA-DR med monocytes, CD14- HLA-DR low monocytes, dendritic cells, IgM+ B-cells, IgM- B-cells, NK cells, surface- CD14+ cells and surface- CD14- cells).  In our analysis, we are interested in identifying the 6 main PBMC populations, including: CD4+ T-cells, CD8+ T-cells, monocytes, dendritic cells, NK cells and B-cells.  Following the concept of over-clustering, we perform the metaclustering of the (by default) 100 SOM codes into more than expected number of groups. For example, stratification into 20 groups should give enough resolution to detect these main clusters. We can explore the clustering in a wide variety of visualizations: t-SNE plots, heatmaps and the "delta area" from `ConsensusClusterPlus`.
+The SPADE analysis performed by Bodenmiller *et al.* [@Bodenmiller2012] identified 6 main cell types (T-cells, monocytes, dendritic cells, B-cells, NK cells and surface- cells) that were further stratified into 14 more specific subpopulations (CD4+ T-cells, CD8+ T-cells, CD14+ HLA-DR high monocytes, CD14+ HLA-DR med monocytes, CD14+ HLA-DR low monocytes, CD14- HLA-DR high monocytes, CD14- HLA-DR med monocytes, CD14- HLA-DR low monocytes, dendritic cells, IgM+ B-cells, IgM- B-cells, NK cells, surface- CD14+ cells and surface- CD14- cells).  In our analysis, we are interested in identifying the 6 main PBMC populations, including: CD4+ T-cells, CD8+ T-cells, monocytes, dendritic cells, NK cells and B-cells.  Following the concept of over-clustering, we perform the metaclustering of the (by default) 100 SOM codes into more than expected number of groups. For example, stratification into 20 groups should give enough resolution to detect these main clusters. We can explore the clustering in a wide variety of visualizations: UMAP plots, heatmaps and the "delta area" from `ConsensusClusterPlus`.
 
 When the interest is in studying more specific subpopulations at higher detail, one can follow a strategy of reclustering as described in the [Obtaining higher resolution](#obtaining-higher-resolution) section, where we propose to repeat the workflow (clustering and differential analyses) after gating out a selected subpopulation (e.g., one of the large populations).
 
@@ -308,7 +312,7 @@ We can then investigate characteristics of identified clusters with heatmaps tha
 
 Instead of using only medians, which do not give a full representation of cluster specifics, one can plot the entire marker expression distribution in each cluster (Figure \@ref(fig:plot-clustering-distribution1)). Such a plot gives more detailed profile of each cluster, but represents a larger amount of information to interpret. Heatmaps give the overall overview of clusters, are quicker and easier to interpret, and together with the dendrogram can be a good basis for further cluster merging (see [Cluster merging and annotation](#cluster-merging-and-annotation) section).
 
-```{r plot-clustering-heatmap1, fig.cap = "Heatmap of the median marker intensities of the 10 lineage markers across the 20 cell populations obtained with FlowSOM after the metaclustering step with ConsensusClusterPlus (PBMC data). The color in the heatmap represents the median of the arcsinh, 0-1 transformed marker expression calculated over cells from all the samples, varying from blue for lower expression to red for higher expression. The numbers indicate the actual expression values. The dendrogram on the left represents the hierarchical similarity between the 20 metaclusters (metric: Euclidean distance; linkage: average). Each cluster has a unique color assigned (bar on the left) which is identical in other visualizations of these 20 clusters (e.g., Figure t-SNE map in \\@ref(fig:tsne-plot-one-clustering1)) facilitating the figure interpretation. Values in the brackets next to the cluster numbers indicate the relative size of clusters."}
+```{r plot-clustering-heatmap1, fig.cap = "Heatmap of the median marker intensities of the 10 lineage markers across the 20 cell populations obtained with FlowSOM after the metaclustering step with ConsensusClusterPlus (PBMC data). The color in the heatmap represents the median of the arcsinh, 0-1 transformed marker expression calculated over cells from all the samples, varying from blue for lower expression to red for higher expression. The numbers indicate the actual expression values. The dendrogram on the left represents the hierarchical similarity between the 20 metaclusters (metric: Euclidean distance; linkage: average). Each cluster has a unique color assigned (bar on the left) which is identical in other visualizations of these 20 clusters (e.g., the UMAP shown in Figure \\@ref(fig:umap-one-clustering1)) facilitating the figure interpretation. Values in the brackets next to the cluster numbers indicate the relative size of clusters."}
 plotClusterHeatmap(daf, hm2 = NULL, k = "meta20", m = NULL,
                    fun = "median", cluster_anno = TRUE, draw_freqs = TRUE)
 ```
@@ -323,40 +327,56 @@ In addition to investigating expression of the lineage markers, we can also have
 plotClusterHeatmap(daf, hm2 = "pS6", k = "meta20", draw_freqs = TRUE)
 ```
 
-## Visual representation with t-SNE
+## Visual representation with UMAP
 
 One of the most popular plots for representing single cell data are t-SNE plots, where each cell is represented in a lower, usually two-dimensional, space computed using t-stochastic neighbor embedding (t-SNE) [@VanDerMaaten2008].  More generally, dimensionality reduction techniques represent the similarity of points in 2 or 3 dimensions, such that similar objects in high dimensional space are also similar in lower dimensional space.  Mathematically, there are a myriad of ways to define this similarity.  For example, principal components analysis (PCA) uses linear combinations of the original features to find orthogonal dimensions that show the highest levels of variability; the top 2 or 3 principal components can then be visualized.
 
-Nevertheless, there are few notes of caution when using t-SNE or any other dimensionality reduction technique. Since they are based on preserving similarities between cells, those that are similar in the original space will be close in the 2D/3D representation, but the opposite does not always hold.  In our experience, t-SNE with default parameters for HDCyto data is often suitable; for more guidance on the specifics of t-SNE, see [How to Use t-SNE Effectively](http://distill.pub/2016/misread-tsne/) [@Wattenberg2016].  Due to the stochastic nature of t-SNE optimization, rerunning the method will result in different lower dimensional projections, thus it is advisable to run it a few times to identify the common trends and get a feeling about the variability of the results.  As with other methods, to be sure that the analysis is reproducible, the user can define the random seed.
+Nevertheless, there are few notes of caution when using t-SNE or any other dimensionality reduction technique. Since they are based on preserving similarities between cells, those that are similar in the original space will be close in the 2D/3D representation, but the opposite does not always hold.  In our experience, t-SNE with default parameters for HDCyto data is often suitable (for more guidance on the specifics of t-SNE, see [How to Use t-SNE Effectively](http://distill.pub/2016/misread-tsne/) [@Wattenberg2016]). 
+
+Another nonlinear dimensionality-reduction technique, uniform manifold approximation and projection (UMAP), has recently been directly compared to t-SNE, and shown to outperform t-SNE in runtime, reproducibility, and its ability to organize cells into meaningful clusters [Becht2018]. Throughout this workflow, we resolve to using UMAP as our DR method of choice, but other DR techniques, such as PCA, diffusion maps [@Angerer2016], SIMLR [@Wang2017], isomaps or t-SNE could be applied.  
+
+To speed up the t-SNE analysis, one could use a multicore version that is available via the `r Githubpkg("RGLab/Rtsne.multicore")` or `r Githubpkg("DmitryUlyanov/Multicore-TSNE")` packages.  Alternative algorithms, such as `largeVis` [@Tang2016] (available via the `r Githubpkg("elbamos/largeVis")` package) or Hierarchical Stochastic Neighbor Embedding (HSNE) [@Unen2017], can be used for dimensionality reduction of very large datasets without downsampling.  Alternatively, the dimensionality reduction can be performed on the *codes* of the SOM, at a resolution (size of the SOM) specified by the user (Figure \@ref(fig:plot-som-codes1-pca)).
+
+<!-- Due to the stochastic nature of t-SNE optimization, rerunning the method will result in different lower dimensional projections, thus it is advisable to run it a few times to identify the common trends and get a feeling about the variability of the results.  As with other methods, to be sure that the analysis is reproducible, the user can define the random seed. -->
 
 <!-- [This is super important! Also: mention the relation to the amount of neighboring cells. Biologists tend to put too many neighbors!!!] -->
 
-t-SNE requires significant computational time to process the data even for tens of thousands of cells. CyTOF datasets are usually much larger and thus to keep running times reasonable, one may use a subset of cells; for example, here we use 2000 cells from each sample.  The t-SNE map below is colored according to the expression level of the CD4 marker, highlighting that the CD4+ T-cells are placed at the top of the plot (Figure \@ref(fig:tsne-plot-one-expr-CD4)). In this way, one can use a collection of markers to highlight where cell types of interest are located on the *map*. If one is loosely interpreting *density* of points in the map, it is recommended to select a fixed number of cells per sample.
+`r Biocpkg("CATALYST")` provides a flexible wrapper, `runDR`, to perform the set of dimensionality reduction (DR) methods availible in the `r Biocpkg("scater")` package. To make results reproducible, the random seed should be set via `set.seed` *prior* to calling `runDR`. The subset of markers to use for computing reduced dimensions is specified via `cols_to_use`, but will default to the set of type-markers defined in input `daFrame` if unspecified (`type_markers(daf)`); the cells to use are specified with `rows_to_use`. When a single numeric value N is provided, `runDR` will draw a random subset of N cells per sample.
 
-Instead of t-SNE, one could also use other dimension reduction techniques, such as PCA, diffusion maps [@Angerer2016], SIMLR [@Wang2017], isomaps or UMAP [@McInnes2018].  To speed up the t-SNE analysis, one could use a multicore version that is available via the `r Githubpkg("RGLab/Rtsne.multicore")` or `r Githubpkg("DmitryUlyanov/Multicore-TSNE")` packages.  Alternative algorithms, such as `largeVis` [@Tang2016] (available via the `r Githubpkg("elbamos/largeVis")` package) or Hierarchical Stochastic Neighbor Embedding (HSNE) [@Unen2017], can be used for dimensionality reduction of very large datasets without downsampling.  Alternatively, the dimensionality reduction can be performed on the *codes* of the SOM, at a resolution (size of the SOM) specified by the user (Figure \@ref(fig:plot-som-codes1-pca)).
+While UMAP scales signitifcantly better than, for example, t-SNE, with both the number of cells and features, most DR techniques generally require significant computational time to process the data. To keep running times reasonable for larger CyTOF datasets, one may use a subset of cells. DR with `r Biocpkg("CATALYST")` has been implemented in a way that allows using different sets of cells for different DRs. For example, here we use 500 and 2000 cells from each sample to run t-SNE and UMAP, respectively (`rows_to_use = 500/2000`).
 
-```{r run-tsne}
-daf <- tSNE(daf, n = 2000, seed = 1234)
+```{r run-umap}
+# run t-SNE & UMAP
+set.seed(1234)
+daf <- runDR(daf, "TSNE", rows_to_use = 500)
+daf <- runDR(daf, "UMAP", rows_to_use = 2000)
 ```
 
-```{r tsne-plot-one-expr-CD4, fig.cap = "t-SNE plot based on the arcsinh-transformed expression of the 10 lineage markers in the cells from the PBMC dataset. t-SNE was run with no PCA step, perplexity equal to 30 and 1000 iterations. From each of the 16 samples, 2000 cells were randomly selected. Cells are colored according to the expression level of the CD4 marker."}
-plotSNE(daf, color_by = "CD4")
+The UMAP map below is colored according to the expression level of the CD4 marker, highlighting that the CD4+ T-cells are placed at the top-left of the plot (Figure \@ref(fig:umap-one-expr-CD4)). In this way, one can use a collection of markers to highlight where cell types of interest are located on the *map*. If one is loosely interpreting *density* of points in the map, it is recommended to select a fixed number of cells per sample.
+
+```{r umap-one-expr-CD4, fig.cap = "UMAP based on the arcsinh-transformed expression of the 10 lineage markers in the cells from the PBMC dataset. UMAP was run with no PCA step. From each of the 16 samples, 2000 cells were randomly selected. Cells are colored according to the expression level of the CD4 marker."}
+plotDR(daf, "UMAP", color_by = "CD4")
 ```
 
-Alternatively, we can color the cells by any resolution of clustering available in the codes.  Ideally, cells of the same color should be close to each other (Figure \@ref(fig:tsne-plot-one-clustering1)). When the plots are further stratified by sample (Figure \@ref(fig:tsne-plot-facet-sample)), we can verify whether similar cell populations are present in all replicates, which can help in identifying outlying samples. Optionally, stratification can be done by condition (Figure \@ref(fig:tsne-plot-facet-condition)). With such a spot-check plot, we can inspect whether differences in cell abundance are strong between conditions, and we can visualize and identify distinguishing clusters before applying formal statistical testing. A similar approach of data exploration was proposed in studies of treatment-specific differences of polyfunctional antigen-specific T-cells [@Lin2015a].
+Alternatively, we can color the cells by any resolution of clustering available in the codes. Here, we compare the t-SNE and UMAP projections of cells colored by the 20 metaclusters.  Ideally, cells of the same color should be close to each other (Figure \@ref(fig:umap-one-clustering1)). When the plots are further stratified by sample (Figure \@ref(fig:umap-facet-sample)), we can verify whether similar cell populations are present in all replicates, which can help in identifying outlying samples. Optionally, stratification can be done by condition (Figure \@ref(fig:umap-facet-condition)). With such a spot-check plot, we can inspect whether differences in cell abundance are strong between conditions, and we can visualize and identify distinguishing clusters before applying formal statistical testing. A similar approach of data exploration was proposed in studies of treatment-specific differences of polyfunctional antigen-specific T-cells [@Lin2015a].
 
-```{r tsne-plot-one-clustering1, fig.cap = "t-SNE plot based on the arcsinh-transformed expression of the 10 lineage markers in the cells from the PBMC dataset. From each of the 16 samples, 2000 cells were randomly selected. Cells are colored according to the 20 cell populations obtained with FlowSOM after the metaclustering step with ConsensusClusterPlus."}
-plotSNE(daf, color_by = "meta20")
+```{r umap-one-clustering1, fig.cap = "t-SNE and UMAP based on the arcsinh-transformed expression of the 10 lineage markers in the cells from the PBMC dataset. From each of the 16 samples, 500 and 2000 cells were randomly selected. Cells are colored according to the 20 cell populations obtained with FlowSOM after the metaclustering step with ConsensusClusterPlus."}
+p1 <- plotDR(daf, "TSNE", color_by = "meta20") + 
+        theme(legend.position = "none")
+p2 <- plotDR(daf, "UMAP", color_by = "meta20")
+lgd <- get_legend(p2)
+p2 <- p2 + theme(legend.position = "none")
+plot_grid(p1, p2, lgd, nrow = 1, rel_widths = c(5, 5, 2))
 ```
 
-```{r tsne-plot-facet-sample, fig.cap = "t-SNE plot as in the Figure \\@ref(fig:tsne-plot-one-clustering1), but stratified by sample."}
+```{r umap-facet-sample, fig.cap = "UMAP as in the Figure \\@ref(fig:umap-one-clustering1), but stratified by sample."}
 ## Facet per sample
-plotSNE(daf, color_by = "meta20", facet = "sample_id") 
+plotDR(daf, "UMAP", color_by = "meta20", facet = "sample_id") 
 ```
 
-```{r tsne-plot-facet-condition, fig.height = 3, fig.cap = "t-SNE plot as in the Figure \\@ref(fig:tsne-plot-one-clustering1), but stratified by condition."}
+```{r umap-facet-condition, fig.height = 3, fig.cap = "UMAP as in the Figure \\@ref(fig:umap-one-clustering1), but stratified by condition."}
 ## Facet per condition
-plotSNE(daf, color_by = "meta20", facet = "condition")
+plotDR(daf, "UMAP", color_by = "meta20", facet = "condition")
 ```
 
 The SOM codes represent characteristics of the 100 (by default) clusters generated in the first step of the `r Biocpkg("FlowSOM")` pipeline.  Their visualization can also be helpful in understanding the cell population structure and determining the number of clusters.  Ultimately, the metaclustering step uses the codes and not the original cells.  We treat the codes as new representative cells and apply the t-SNE dimension reduction to visualize them in 2D (Figure \@ref(fig:plot-som-codes1-pca)).  The size of the points corresponds to the number of cells that were assigned to a given code.  The points are colored according to the results of metaclustering.  Since we have only 100 data points, the t-SNE analysis is fast.
@@ -378,9 +398,9 @@ plotClusterHeatmap(daf, hm2 = "pS6", k = "som100", m = "meta20",
 
 In our experience, manual merging of clusters leads to slightly different results compared to an algorithm with a specified number of clusters.  In order to detect somewhat rare populations, some level of over-clustering is necessary so that the more subtle populations become separated from the main populations.  In addition, merging can always follow an over-clustering step, but splitting of existing clusters is not generally feasible. 
 
-In our setup, over-clustering is also useful when the interest is identifying the "natural" number of clusters present in the data. In addition to heatmaps and t-SNE plots, one could investigate the delta area plot from the `r Biocpkg("ConsensusClusterPlus")` package and the hierarchical clustering dendrogram of the over-clustered subpopulations, as shown in Figure \@ref(fig:plot-clustering-heatmap1m-merging) and \@ref(fig:consensus-plot), respectively.
+In our setup, over-clustering is also useful when the interest is identifying the "natural" number of clusters present in the data. In addition to heatmaps and UMAPs, one could investigate the delta area plot from the `r Biocpkg("ConsensusClusterPlus")` package and the hierarchical clustering dendrogram of the over-clustered subpopulations, as shown in Figure \@ref(fig:plot-clustering-heatmap1m-merging) and \@ref(fig:consensus-plot), respectively.
 
-In our example, we expect around 6 specific cell types, and we have performed `r Biocpkg("FlowSOM")` clustering into 20 groups as a reasonable over-estimate.  After analyzing the heatmaps (Figure \@ref(fig:plot-clustering-heatmap1)) and t-SNE plots (Figure \@ref(fig:tsne-plot-one-clustering1)), we can clearly see that stratification of the data into 20 clusters may be too strong.  In the t-SNE map, many clusters are placed very close to each other, indicating that they could be merged together. The same can be deduced from the heatmaps, highlighting that marker expression patterns for some neighboring clusters are very similar.  Cluster merging and annotating is somewhat manual, based partially on visual inspection of t-SNE plots and heatmaps and thus, benefits from expert knowledge of the cell types.
+In our example, we expect around 6 specific cell types, and we have performed `r Biocpkg("FlowSOM")` clustering into 20 groups as a reasonable over-estimate.  After analyzing the heatmaps (Figure \@ref(fig:plot-clustering-heatmap1)) and UMAPs (Figure \@ref(fig:umap-one-clustering1)), we can clearly see that stratification of the data into 20 clusters may be too strong.  In the UMAP, many clusters are placed very close to each other, indicating that they could be merged together. The same can be deduced from the heatmaps, highlighting that marker expression patterns for some neighboring clusters are very similar.  Cluster merging and annotating is somewhat manual, based partially on visual inspection of UMAPs and heatmaps and thus, benefits from expert knowledge of the cell types.
 
 ### Manual cluster merging and annotating based on heatmaps
 
@@ -408,10 +428,10 @@ daf <- mergeClusters(daf, k = "meta20",
                      table = merging_table1, id = "merging1")
 ```
 
-We can view the t-SNE plot with the new annotated cell populations by specifying `color_by = "merging1"` (Figure \@ref(fig:tsne-plot-one-clustering1m)).
+We can view the UMAP with the new annotated cell populations by specifying `color_by = "merging1"` (Figure \@ref(fig:umap-one-clustering1m)).
 
-```{r tsne-plot-one-clustering1m, fig.cap = "t-SNE plot for the PBMC dataset, where cells are colored according to the manual merging of the 20 cell populations, obtained with FlowSOM, into 8 PBMC populations. As in Figure \\@ref(fig:tsne-plot-one-clustering1), t-SNE analysis uses the arcsinh-transformed expression of the 10 lineage markers in 2000 randomly selected cells from each of the 16 samples."}
-plotSNE(daf, color_by = "merging1")
+```{r umap-one-clustering1m, fig.cap = "UMAP for the PBMC dataset, where cells are colored according to the manual merging of the 20 cell populations, obtained with FlowSOM, into 8 PBMC populations. As in Figure \\@ref(fig:umap-one-clustering1), UMAP uses the arcsinh-transformed expression of the 10 lineage markers in 2000 randomly selected cells from each of the 16 samples."}
+plotDR(daf, "UMAP", color_by = "merging1")
 ```
 
 One of the useful representations of merging is a heatmap of median marker expression in each of the original clusters, which are labeled according to the proposed merging, Figure \@ref(fig:plot-clustering-heatmap1m-merging).  As before, the clustering to use for computing cluster-medians is specified with `k = "meta20"`.  For visualization, we can specify a second layer of cluster annotations with `m = "merging1"`. 
@@ -432,7 +452,7 @@ plotClusterHeatmap(daf, k = "merging1")
 
 The `r Biocpkg("ConsensusClusterPlus")` package provides visualizations that can help to understand the metaclustering process and the characteristics of the analyzed data.  For example, the delta area plot (Figure \@ref(fig:consensus-plot)) highlights the amount of extra cluster stability gained when clustering into k groups as compared to k-1 groups (from k=2 to k=20).  It can be expected that high stability of clusters can be reached when clustering into the number of groups that best fits the data.  Thus, using the delta area plot could help finding the "natural" number of clusters present in the data, which would correspond to the value of k where there is no appreciable increase in stability. This strategy can be referred as the  "elbow criterion".  For more details about the meaning of this plot, the user can refer to the original description of the consensus clustering method [@Monti2003].
 
-The elbow criterion is quite subjective since the "appreciable" increase is not defined exactly.  For example, in the delta plot below, we could say that the last point before plateau is for k=6, or for k=5, or for k=3, depending on our perception of sufficient decrease of the delta area score.  Moreover, the exact point where a plateau is reached may vary for runs with different random seeds, the drop may not always be so sharp and and the function is not guaranteed to be decreasing.  It is advisable to investigate more of those plots and the resulting t-SNE and heatmaps before drawing any conclusions about the final number of "natural" clusters. 
+The elbow criterion is quite subjective since the "appreciable" increase is not defined exactly.  For example, in the delta plot below, we could say that the last point before plateau is for k=6, or for k=5, or for k=3, depending on our perception of sufficient decrease of the delta area score.  Moreover, the exact point where a plateau is reached may vary for runs with different random seeds, the drop may not always be so sharp and and the function is not guaranteed to be decreasing.  It is advisable to investigate more of those plots and the resulting UMAP and heatmaps before drawing any conclusions about the final number of "natural" clusters. 
 
 Manual merging of up to 20 clusters can be laborious.  To simplify this task, one could reduce the strength of over-clustering and allow the metaclustering method to do a part of the merging, which then can be completed manually. Analyzing the delta plot from the right side, we can see how much we can reduce the strength of over-clustering while still obtaining stable clusters.  In parallel, one should check the heatmaps to see whether the less stringent stratification is able to capture cell populations of interest. 
 
@@ -470,11 +490,11 @@ table(manual = cluster_codes(daf)[cluster_ids(daf), "merging2"],
 ```
 
 <!-- [HELENA] I think we can leave this in to have one visual comparison. -->
-In the t-SNE map (Figure \@ref(fig:tsne-plot-one-clustering3)), we can see that part of the new cell populations (cluster 6, 1, 2, 4 and 7) overlap substantially with populations obtained by the means of manual merging (CD4 T-cells, B-cells, surface-, monocytes and DC).  However, cells that belong to clusters 3 and 5 are subdivided in a different manner according to the manual merging.  Cluster 1 consists of both B-cells IgM+ and IgM- and is not further subdivided, whereas cluster 8 is altogether unidentifiable.
+In the UMAP (Figure \@ref(fig:umap-one-clustering3)), we can see that part of the new cell populations (cluster 6, 1, 2, 4 and 7) overlap substantially with populations obtained by the means of manual merging (CD4 T-cells, B-cells, surface-, monocytes and DC).  However, cells that belong to clusters 3 and 5 are subdivided in a different manner according to the manual merging.  Cluster 1 consists of both B-cells IgM+ and IgM- and is not further subdivided, whereas cluster 8 is altogether unidentifiable.
 
-```{r tsne-plot-one-clustering3, fig.height = 8, fig.cap = "t-SNE plots with cells colored according to (A) the expert merging of 12 metaclusters obtained with FlowSOM into 8 PBMC populations; and (B) the 8 automatically detected with FlowSOM metaclusters."}
-p1 <- plotSNE(daf, color_by = "merging2")
-p2 <- plotSNE(daf, color_by = "meta8")
+```{r umap-one-clustering3, fig.height = 8, fig.cap = "UMAP with cells colored according to (A) the expert merging of 12 metaclusters obtained with FlowSOM into 8 PBMC populations; and (B) the 8 automatically detected with FlowSOM metaclusters."}
+p1 <- plotDR(daf, "UMAP", color_by = "merging2")
+p2 <- plotDR(daf, "UMAP", color_by = "meta8")
 plot_grid(p1, p2, ncol = 1, align = "v", labels = c("A", "B"))
 ```
 
@@ -709,7 +729,7 @@ In this workflow, we have presented a pipeline for diverse differential analyses
 
 <!-- Clustering -->
 
-Clustering is one of the most challenging steps in the workflow, and its accuracy is critical to the downstream differential analyses.  Getting the right resolution of clusters is crucial, since there can be situations where a biologically meaningful cell population may be differentially enriched between conditions, but in an automatic clustering, was combined with another cell population that behaves differently. We have shown that some level of over-clustering is convenient for detecting meaningful cell populations, since automatic detection of the number of natural clusters is difficult [@Weber2016].  However, there are tradeoffs between the resolution of clustering and the labor involved in aggregating them to biologically meaningful clusters.  Overall, we take an interactive but flexible algorithm-guided approach together with subject-area experts to arrive at sensible cell populations. In particular, we rely on various visualizations, such as dendrograms, heatmaps, t-SNE maps or other dimension reduction techniques to guide us in the process. Alternative strategies could be combined with the statistical inference we present, such as over-clustering combined with data-driven aggregation to the optimal resolution.
+Clustering is one of the most challenging steps in the workflow, and its accuracy is critical to the downstream differential analyses.  Getting the right resolution of clusters is crucial, since there can be situations where a biologically meaningful cell population may be differentially enriched between conditions, but in an automatic clustering, was combined with another cell population that behaves differently. We have shown that some level of over-clustering is convenient for detecting meaningful cell populations, since automatic detection of the number of natural clusters is difficult [@Weber2016].  However, there are tradeoffs between the resolution of clustering and the labor involved in aggregating them to biologically meaningful clusters.  Overall, we take an interactive but flexible algorithm-guided approach together with subject-area experts to arrive at sensible cell populations. In particular, we rely on various visualizations, such as dendrograms, heatmaps, UMAP embeddings or other dimension reduction techniques to guide us in the process. Alternative strategies could be combined with the statistical inference we present, such as over-clustering combined with data-driven aggregation to the optimal resolution.
 
 While we have a good understanding of how computational algorithms recapitulate manual gating in high dimensions [@Weber2016], one of the open areas of research remains how to best cluster *across* samples. The data analyzed here [@Bodenmiller2012; @Bruggner2014] was generated using sample barcoding; this strategy reduces inter-sample variability, since all samples are exposed to the same antibody cocktail and measured in a single acquisition [@Zunder2015].  Thus, the range of marker expression for each channel should, in principle, be within a similar range across samples. 
 
@@ -739,7 +759,7 @@ In the differential marker expression analysis, we compare the median marker exp
 
 The approach presented in this workflow is not fully automated due to the cluster merging, annotating, and extensive exploratory data analysis steps.  In general, our philosophy is that fully automated analyses are to be avoided, but rather a battery of diagnostic checks can be designed, as we have promoted here.  Cluster annotation remains a manual step in many other approaches as well.  Recently, a tool was proposed for consistent characterization of cell subsets using marker enrichment modeling (MEM) [@Diggins2017].
 
-To keep the analysis of this workflow reproducible, one needs to define a random seed before running `r Biocpkg("FlowSOM")` and t-SNE.  This is especially important in the clustering step, where the order of clusters may change with different seeds, and the cluster merging needs to be matched to the seed used.
+To keep the analysis of this workflow reproducible, one needs to define a random seed before running `r Biocpkg("FlowSOM")` and UMAP.  This is especially important in the clustering step, where the order of clusters may change with different seeds, and the cluster merging needs to be matched to the seed used.
 
 
 # Software availability
