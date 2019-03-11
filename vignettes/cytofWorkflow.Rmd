@@ -333,9 +333,9 @@ One of the most popular plots for representing single cell data are t-SNE plots,
 
 Nevertheless, there are few notes of caution when using t-SNE or any other dimensionality reduction technique. Since they are based on preserving similarities between cells, those that are similar in the original space will be close in the 2D/3D representation, but the opposite does not always hold.  In our experience, t-SNE with default parameters for HDCyto data is often suitable (for more guidance on the specifics of t-SNE, see [How to Use t-SNE Effectively](http://distill.pub/2016/misread-tsne/) [@Wattenberg2016]). 
 
-Another nonlinear dimensionality-reduction technique, uniform manifold approximation and projection (UMAP), has recently been directly compared to t-SNE, and shown to outperform t-SNE in runtime, reproducibility, and its ability to organize cells into meaningful clusters [@Becht2018]. Throughout this workflow, we resolve to using UMAP as our DR method of choice, but other DR techniques, such as PCA, diffusion maps [@Angerer2016], SIMLR [@Wang2017], isomaps or t-SNE could be applied.  
+Another nonlinear dimensionality-reduction technique, uniform manifold approximation and projection (UMAP), has recently been directly compared to t-SNE, and shown to outperform t-SNE in runtime, reproducibility, and its ability to organize cells into meaningful clusters [@Becht2018]. Throughout this workflow, we use UMAP as our DR method of choice, but other DR techniques, such as PCA, diffusion maps [@Angerer2016], SIMLR [@Wang2017], isomaps or t-SNE could be applied.  Alternative algorithms, such as `largeVis` [@Tang2016] (available via the `r Githubpkg("elbamos/largeVis")` package) or Hierarchical Stochastic Neighbor Embedding (HSNE) [@Unen2017], can also be used for dimensionality reduction of very large datasets without downsampling.  Alternatively, the dimensionality reduction can be performed on the *codes* of the SOM, at a resolution (size of the SOM) specified by the user (Figure \@ref(fig:plot-som-codes1-pca)).
 
-To speed up the t-SNE analysis, one could use a multicore version that is available via the `r Githubpkg("RGLab/Rtsne.multicore")` or `r Githubpkg("DmitryUlyanov/Multicore-TSNE")` packages.  Alternative algorithms, such as `largeVis` [@Tang2016] (available via the `r Githubpkg("elbamos/largeVis")` package) or Hierarchical Stochastic Neighbor Embedding (HSNE) [@Unen2017], can be used for dimensionality reduction of very large datasets without downsampling.  Alternatively, the dimensionality reduction can be performed on the *codes* of the SOM, at a resolution (size of the SOM) specified by the user (Figure \@ref(fig:plot-som-codes1-pca)).
+<!-- To speed up the t-SNE analysis, one could use a multicore version that is available via the `r Githubpkg("RGLab/Rtsne.multicore")` or `r Githubpkg("DmitryUlyanov/Multicore-TSNE")` packages.-->
 
 <!-- Due to the stochastic nature of t-SNE optimization, rerunning the method will result in different lower dimensional projections, thus it is advisable to run it a few times to identify the common trends and get a feeling about the variability of the results.  As with other methods, to be sure that the analysis is reproducible, the user can define the random seed. -->
 
@@ -343,7 +343,7 @@ To speed up the t-SNE analysis, one could use a multicore version that is availa
 
 `r Biocpkg("CATALYST")` provides a flexible wrapper, `runDR`, to perform the set of dimensionality reduction (DR) methods availible in the `r Biocpkg("scater")` package. To make results reproducible, the random seed should be set via `set.seed` *prior* to calling `runDR`. The subset of markers to use for computing reduced dimensions is specified via `cols_to_use`, but will default to the set of type-markers defined in input `daFrame` if unspecified (`type_markers(daf)`); the cells to use are specified with `rows_to_use`. When a single numeric value N is provided, `runDR` will draw a random subset of N cells per sample.
 
-Most DR techniques generally require significant computational time to process the data. To keep running times reasonable for larger CyTOF datasets, one may use a subset of cells. DR with `r Biocpkg("CATALYST")` has been implemented in a way that allows using different sets of cells for different DRs. For example, here we use 500 and 1000 cells from each sample to run t-SNE and UMAP, respectively.
+Most DR techniques require significant computational time to process the data. To keep running times reasonable for larger CyTOF datasets, one may use a subset of cells. DR with `r Biocpkg("CATALYST")` has been implemented in a way that allows using different sets of cells for different DRs. For example, here we use 500 and 1000 cells from each sample to run t-SNE and UMAP, respectively.
 
 ```{r run-umap}
 # run t-SNE & UMAP
@@ -352,7 +352,7 @@ daf <- runDR(daf, "TSNE", rows_to_use = 500)
 daf <- runDR(daf, "UMAP", rows_to_use = 1000)
 ```
 
-The UMAP map below is colored according to the expression level of the CD4 marker, highlighting that the CD4+ T-cells are placed at the top-left of the plot (Figure \@ref(fig:umap-one-expr-CD4)). In this way, one can use a collection of markers to highlight where cell types of interest are located on the *map*. If one is loosely interpreting *density* of points in the map, it is recommended to select a fixed number of cells per sample.
+The UMAP map below is colored according to the expression level of the CD4 marker, highlighting the position of CD4+ T-cells (Figure \@ref(fig:umap-one-expr-CD4)). In this way, one can use a set of markers to highlight where cell types of interest are located on the *map*. If one is loosely interpreting *density* of points in the map, it is recommended to select a fixed number of cells per sample.
 
 ```{r umap-one-expr-CD4, fig.cap = "UMAP based on the arcsinh-transformed expression of the 10 lineage markers in the cells from the PBMC dataset. UMAP was run with no PCA step. From each of the 16 samples, 2000 cells were randomly selected. Cells are colored according to the expression level of the CD4 marker."}
 plotDR(daf, "UMAP", color_by = "CD4")
@@ -389,7 +389,7 @@ plotCodes(daf, k = "meta20")
 
 Using heatmaps, we can also visualize median marker expression in the 100 SOM codes as in Figure \@ref(fig:plot-som-codes1-heatmap-complex). Of note, the clustering presented with the dendrogram does not completely agree with the clustering depicted by the 20 colors because the first one is based on the hierarchical clustering with average linkage and Euclidean distance, while the second one results from the consensus clustering.
 
-```{r plot-som-codes1-heatmap-complex, fig.height = 9, fig.cap = "Heatmap of the median marker intensities of the 10 lineage markers (left panel) and one signaling marker pS6 (right panel) across the 100 SOM codes in the PBMC dataset. The color in the heatmap represents the median of the arcsinh, 0-1 transformed marker expression calculated over cells from all the samples, for the lineage markers, and over cells in each sample individually, for the signaling marker. The heat varies from blue for lower expression to red for higher expression. The dendrogram on the left represents the hierarchical similarity between the 100 codes (metric: Euclidean distance; linkage: average). The annotation bar on the left is colored according to the code metaclustering with ConsensusClusterPlus into 20 cell populations. The relative size of the codes is presented with the barplot along the rows and in the brackets next to the cluster numbers."}
+```{r plot-som-codes1-heatmap-complex, fig.height = 11, fig.cap = "Heatmap of the median marker intensities of the 10 lineage markers (left panel) and one signaling marker pS6 (right panel) across the 100 SOM codes in the PBMC dataset. The color in the heatmap represents the median of the arcsinh, 0-1 transformed marker expression calculated over cells from all the samples, for the lineage markers, and over cells in each sample individually, for the signaling marker. The heat varies from blue for lower expression to red for higher expression. The dendrogram on the left represents the hierarchical similarity between the 100 codes (metric: Euclidean distance; linkage: average). The annotation bar on the left is colored according to the code metaclustering with ConsensusClusterPlus into 20 cell populations. The relative size of the codes is presented with the barplot along the rows and in the brackets next to the cluster numbers."}
 plotClusterHeatmap(daf, hm2 = "pS6", k = "som100", m = "meta20", 
                    cluster_anno = FALSE, draw_freqs = TRUE)
 ```
@@ -436,13 +436,13 @@ plotDR(daf, "UMAP", color_by = "merging1")
 
 One of the useful representations of merging is a heatmap of median marker expression in each of the original clusters, which are labeled according to the proposed merging, Figure \@ref(fig:plot-clustering-heatmap1m-merging).  As before, the clustering to use for computing cluster-medians is specified with `k = "meta20"`.  For visualization, we can specify a second layer of cluster annotations with `m = "merging1"`. 
 
-```{r plot-clustering-heatmap1m-merging, fig.height = 5, fig.cap = "Heatmap as in Figure \\@ref(fig:plot-clustering-heatmap1), where the additional color bar on the left indicates how the 20 metaclusters, obtained with FlowSOM, are merged into the 8 PBMC populations."}
+```{r plot-clustering-heatmap1m-merging, fig.height = 8, fig.cap = "Heatmap as in Figure \\@ref(fig:plot-clustering-heatmap1), where the additional color bar on the left indicates how the 20 metaclusters, obtained with FlowSOM, are merged into the 8 PBMC populations."}
 plotClusterHeatmap(daf, k = "meta20", m = "merging1")
 ```
 
 To get a final summary of the annotated cell types, we can plot a heatmap of median marker expressions that are calculated based on the manual merging's cluster annotations (Figure \@ref(fig:plot-clustering-heatmap1m)).
 
-```{r plot-clustering-heatmap1m, fig.height = 3, fig.cap = "Heatmap of the median marker intensities of the 10 lineage markers in the 8 PBMC cell populations obtained by manual merging of the 20 metaclusters generated by FlowSOM. As in Figure \\@ref(fig:plot-clustering-heatmap1), the heat represents the median of arcsinh and 0-1 transformed marker expression calculated over cells from all the samples. The dendrogram on the left represents the hierarchical similarity between the 8 populations calculated using Euclidean distance and average linkage. Values in the brackets indicate the relative size of each of the cell populations across all the samples."}
+```{r plot-clustering-heatmap1m, fig.height = 5, fig.cap = "Heatmap of the median marker intensities of the 10 lineage markers in the 8 PBMC cell populations obtained by manual merging of the 20 metaclusters generated by FlowSOM. As in Figure \\@ref(fig:plot-clustering-heatmap1), the heat represents the median of arcsinh and 0-1 transformed marker expression calculated over cells from all the samples. The dendrogram on the left represents the hierarchical similarity between the 8 populations calculated using Euclidean distance and average linkage. Values in the brackets indicate the relative size of each of the cell populations across all the samples."}
 plotClusterHeatmap(daf, k = "merging1")
 ```
 
@@ -554,9 +554,10 @@ where $\gamma_{i} \sim N(0, \sigma^2_\gamma)$.
 
 ```{r da-formulas}
 ei <- metadata(daf)$experiment_info
-da_formula1 <- createFormula(ei, cols_fixed = "condition", cols_random = "sample_id")
-da_formula2 <- createFormula(ei, cols_fixed = "condition", 
-                             cols_random = c("sample_id", "patient_id"))
+(da_formula1 <- createFormula(ei, cols_fixed = "condition", 
+                              cols_random = "sample_id"))
+(da_formula2 <- createFormula(ei, cols_fixed = "condition",
+                              cols_random = c("sample_id", "patient_id")))
 ```
 
 ```{r design-contrast}
@@ -634,7 +635,8 @@ To present how accounting for the within patient variability with the mixed mode
 
 ```{r ds-formula}
 formula_lm <- createFormula(ei, cols_fixed = "condition")
-formula_lmer <- createFormula(ei, cols_fixed = "condition", cols_random = "sample_id")
+formula_lmer <- createFormula(ei, cols_fixed = "condition", 
+                              cols_random = "patient_id")
 ```
 
 By accounting for the patient effect, we detect almost twice as many cases of differential signaling compared to the regular linear model.  
@@ -661,7 +663,7 @@ topTable(ds_res2, show_meds = TRUE, top_n = 5,
 
 To report the significant results, we use a heatmap (Figure \@ref(fig:diff-expr2-plot-heatmap-with-significant-markers)).  Instead of plotting the absolute expression, we display the normalized expression (`normalize = TRUE`), which better highlights the direction of marker changes.  Additionally, we order cluster-marker instances by their significance (`order = TRUE`).
 
-```{r diff-expr2-plot-heatmap-with-significant-markers, fig.height = 8, fig.cap = "Normalized expression of signaling markers in the 8 PBMC populations that are significantly differentially expressed between BCR/FcR-XL stimulated and unstimulated condition. The heat represents median (arcsinh-transformed) marker expression that was subsequently normalized per cluster-marker (rows) to mean of zero and standard deviation of one. The color of the heat varies from blue representing relative under-expression to orange representing relative over-expression. Shown are only the top 50 cluster-marker combinations."}
+```{r diff-expr2-plot-heatmap-with-significant-markers, fig.height = 10, fig.cap = "Normalized expression of signaling markers in the 8 PBMC populations that are significantly differentially expressed between BCR/FcR-XL stimulated and unstimulated condition. The heat represents median (arcsinh-transformed) marker expression that was subsequently normalized per cluster-marker (rows) to mean of zero and standard deviation of one. The color of the heat varies from blue representing relative under-expression to orange representing relative over-expression. Shown are only the top 50 cluster-marker combinations."}
 plotDiffHeatmap(daf, ds_res2, top_n = 50, order = TRUE, 
                 th = FDR_cutoff, hm1 = FALSE)
 ```
@@ -710,7 +712,7 @@ topTable(ds_res4, show_meds = TRUE, top_n = 5,
          order_by = "p_adj", format_vals = TRUE, digits = 3)
 ```
 
-```{r diff-expr1-plot-heatmap-with-significant-markers, fig.height = 3, fig.cap = "Normalized expression of signaling markers calculated over all the cells in the PBMC dataset that are significantly differentially expressed between BCR/FcR-XL stimulated and unstimulated condition. The heat represents median (arcsinh-transformed) marker expression that was subsequently normalized per marker (rows) to mean of zero and standard deviation of one. The color of the heat varies from blue representing relative under-expression to orange representing relative over-expression. Bar at the top of the heatmap indicates the condition the samples (columns) belong to: violet for the unstimulated (Ref) and orange for the stimulated with BCR/FcR-XL (BCRXL) condition. Numbers in the brackets next to the marker names indicate adjusted p-values and markers are sorted so that markers on the top exhibit the most significant changes between the two conditions. Shown are only the significant markers for which adjusted p-values < 0.05."}
+```{r diff-expr1-plot-heatmap-with-significant-markers, fig.height = 6, fig.cap = "Normalized expression of signaling markers calculated over all the cells in the PBMC dataset that are significantly differentially expressed between BCR/FcR-XL stimulated and unstimulated condition. The heat represents median (arcsinh-transformed) marker expression that was subsequently normalized per marker (rows) to mean of zero and standard deviation of one. The color of the heat varies from blue representing relative under-expression to orange representing relative over-expression. Bar at the top of the heatmap indicates the condition the samples (columns) belong to: violet for the unstimulated (Ref) and orange for the stimulated with BCR/FcR-XL (BCRXL) condition. Numbers in the brackets next to the marker names indicate adjusted p-values and markers are sorted so that markers on the top exhibit the most significant changes between the two conditions. Shown are only the significant markers for which adjusted p-values < 0.05."}
 plotDiffHeatmap(daf, ds_res4, all = TRUE, hm1 = FALSE)
 ```
 
