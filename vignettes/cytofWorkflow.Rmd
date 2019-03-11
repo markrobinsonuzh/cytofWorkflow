@@ -333,7 +333,7 @@ One of the most popular plots for representing single cell data are t-SNE plots,
 
 Nevertheless, there are few notes of caution when using t-SNE or any other dimensionality reduction technique. Since they are based on preserving similarities between cells, those that are similar in the original space will be close in the 2D/3D representation, but the opposite does not always hold.  In our experience, t-SNE with default parameters for HDCyto data is often suitable (for more guidance on the specifics of t-SNE, see [How to Use t-SNE Effectively](http://distill.pub/2016/misread-tsne/) [@Wattenberg2016]). 
 
-Another nonlinear dimensionality-reduction technique, uniform manifold approximation and projection (UMAP), has recently been directly compared to t-SNE, and shown to outperform t-SNE in runtime, reproducibility, and its ability to organize cells into meaningful clusters [Becht2018]. Throughout this workflow, we resolve to using UMAP as our DR method of choice, but other DR techniques, such as PCA, diffusion maps [@Angerer2016], SIMLR [@Wang2017], isomaps or t-SNE could be applied.  
+Another nonlinear dimensionality-reduction technique, uniform manifold approximation and projection (UMAP), has recently been directly compared to t-SNE, and shown to outperform t-SNE in runtime, reproducibility, and its ability to organize cells into meaningful clusters [@Becht2018]. Throughout this workflow, we resolve to using UMAP as our DR method of choice, but other DR techniques, such as PCA, diffusion maps [@Angerer2016], SIMLR [@Wang2017], isomaps or t-SNE could be applied.  
 
 To speed up the t-SNE analysis, one could use a multicore version that is available via the `r Githubpkg("RGLab/Rtsne.multicore")` or `r Githubpkg("DmitryUlyanov/Multicore-TSNE")` packages.  Alternative algorithms, such as `largeVis` [@Tang2016] (available via the `r Githubpkg("elbamos/largeVis")` package) or Hierarchical Stochastic Neighbor Embedding (HSNE) [@Unen2017], can be used for dimensionality reduction of very large datasets without downsampling.  Alternatively, the dimensionality reduction can be performed on the *codes* of the SOM, at a resolution (size of the SOM) specified by the user (Figure \@ref(fig:plot-som-codes1-pca)).
 
@@ -343,13 +343,13 @@ To speed up the t-SNE analysis, one could use a multicore version that is availa
 
 `r Biocpkg("CATALYST")` provides a flexible wrapper, `runDR`, to perform the set of dimensionality reduction (DR) methods availible in the `r Biocpkg("scater")` package. To make results reproducible, the random seed should be set via `set.seed` *prior* to calling `runDR`. The subset of markers to use for computing reduced dimensions is specified via `cols_to_use`, but will default to the set of type-markers defined in input `daFrame` if unspecified (`type_markers(daf)`); the cells to use are specified with `rows_to_use`. When a single numeric value N is provided, `runDR` will draw a random subset of N cells per sample.
 
-While UMAP scales signitifcantly better than, for example, t-SNE, with both the number of cells and features, most DR techniques generally require significant computational time to process the data. To keep running times reasonable for larger CyTOF datasets, one may use a subset of cells. DR with `r Biocpkg("CATALYST")` has been implemented in a way that allows using different sets of cells for different DRs. For example, here we use 500 and 2000 cells from each sample to run t-SNE and UMAP, respectively (`rows_to_use = 500/2000`).
+Most DR techniques generally require significant computational time to process the data. To keep running times reasonable for larger CyTOF datasets, one may use a subset of cells. DR with `r Biocpkg("CATALYST")` has been implemented in a way that allows using different sets of cells for different DRs. For example, here we use 500 and 1000 cells from each sample to run t-SNE and UMAP, respectively.
 
 ```{r run-umap}
 # run t-SNE & UMAP
 set.seed(1234)
 daf <- runDR(daf, "TSNE", rows_to_use = 500)
-daf <- runDR(daf, "UMAP", rows_to_use = 2000)
+daf <- runDR(daf, "UMAP", rows_to_use = 1000)
 ```
 
 The UMAP map below is colored according to the expression level of the CD4 marker, highlighting that the CD4+ T-cells are placed at the top-left of the plot (Figure \@ref(fig:umap-one-expr-CD4)). In this way, one can use a collection of markers to highlight where cell types of interest are located on the *map*. If one is loosely interpreting *density* of points in the map, it is recommended to select a fixed number of cells per sample.
@@ -554,8 +554,9 @@ where $\gamma_{i} \sim N(0, \sigma^2_\gamma)$.
 
 ```{r da-formulas}
 ei <- metadata(daf)$experiment_info
-da_formula1 <- createFormula(ei, cols_fixed = 3, cols_random = 2)
-da_formula2 <- createFormula(ei, cols_fixed = 3, cols_random = c(2, 4))
+da_formula1 <- createFormula(ei, cols_fixed = "condition", cols_random = "sample_id")
+da_formula2 <- createFormula(ei, cols_fixed = "condition", 
+                             cols_random = c("sample_id", "patient_id"))
 ```
 
 ```{r design-contrast}
@@ -632,8 +633,8 @@ p
 To present how accounting for the within patient variability with the mixed model increases sensitivity, we also fit a regular linear model.  The linear mixed model has a random intercept for each patient.
 
 ```{r ds-formula}
-formula_lm <- createFormula(ei, cols_fixed = 3)
-formula_lmer <- createFormula(ei, cols_fixed = 3, cols_random = 4)
+formula_lm <- createFormula(ei, cols_fixed = "condition")
+formula_lmer <- createFormula(ei, cols_fixed = "condition", cols_random = "sample_id")
 ```
 
 By accounting for the patient effect, we detect almost twice as many cases of differential signaling compared to the regular linear model.  
