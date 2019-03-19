@@ -356,13 +356,13 @@ daf <- runDR(daf, "UMAP", rows_to_use = 1000)
 
 The UMAP map below is colored according to the expression level of the CD4 marker, highlighting the position of CD4+ T-cells (Figure \@ref(fig:umap-one-expr-CD4)). In this way, one can use a set of markers to highlight where cell types of interest are located on the map. If one is loosely interpreting *density* of points in the map, it is recommended to select a fixed number of cells per sample.
 
-```{r umap-one-expr-CD4, fig.cap = "UMAP based on the arcsinh-transformed expression of the 10 lineage markers in the cells from the PBMC dataset. UMAP was run with no PCA step. From each of the 16 samples, 2000 cells were randomly selected. Cells are colored according to the expression level of the CD4 marker."}
+```{r umap-one-expr-CD4, fig.cap = "UMAP based on the arcsinh-transformed expression of the 10 lineage markers in the cells from the PBMC dataset. UMAP was run with no PCA step. From each of the 16 samples, 1000 cells were randomly selected. Cells are colored according to the expression level of the CD4 marker."}
 plotDR(daf, "UMAP", color_by = "CD4")
 ```
 
 Alternatively, we can color the cells by any resolution of clustering available in the codes. Here, we compare the t-SNE and UMAP projections of cells colored by the 20 metaclusters.  Ideally, cells of the same color should be close to each other (Figure \@ref(fig:umap-one-clustering1)). When the plots are further stratified by sample (Figure \@ref(fig:umap-facet-sample)), we can verify whether similar cell populations are present in all replicates, which can help in identifying outlying samples. Optionally, stratification can be done by condition (Figure \@ref(fig:umap-facet-condition)). With such a spot-check plot, we can inspect whether differences in cell abundance are strong between conditions, and we can visualize and identify distinguishing clusters before applying formal statistical testing. A similar approach of data exploration was proposed in studies of treatment-specific differences of polyfunctional antigen-specific T-cells [@Lin2015a].
 
-```{r umap-one-clustering1, fig.cap = "t-SNE and UMAP based on the arcsinh-transformed expression of the 10 lineage markers in the cells from the PBMC dataset. From each of the 16 samples, 500 (t-SNE) and 2000 (UMAP) cells were randomly selected. Cells are colored according to the 20 cell populations obtained with FlowSOM after the metaclustering step with ConsensusClusterPlus."}
+```{r umap-one-clustering1, fig.cap = "t-SNE and UMAP based on the arcsinh-transformed expression of the 10 lineage markers in the cells from the PBMC dataset. From each of the 16 samples, 500 (t-SNE) and 1000 (UMAP) cells were randomly selected. Cells are colored according to the 20 cell populations obtained with FlowSOM after the metaclustering step with ConsensusClusterPlus."}
 p1 <- plotDR(daf, "TSNE", color_by = "meta20") + 
         theme(legend.position = "none")
 p2 <- plotDR(daf, "UMAP", color_by = "meta20")
@@ -432,7 +432,7 @@ daf <- mergeClusters(daf, k = "meta20",
 
 We can view the UMAP with the new annotated cell populations by specifying `color_by = "merging1"` (Figure \@ref(fig:umap-one-clustering1m)).
 
-```{r umap-one-clustering1m, fig.cap = "UMAP for the PBMC dataset, where cells are colored according to the manual merging of the 20 cell populations, obtained with FlowSOM, into 8 PBMC populations. As in Figure \\@ref(fig:umap-one-clustering1), UMAP uses the arcsinh-transformed expression of the 10 lineage markers in 2000 randomly selected cells from each of the 16 samples."}
+```{r umap-one-clustering1m, fig.cap = "UMAP for the PBMC dataset, where cells are colored according to the manual merging of the 20 cell populations, obtained with FlowSOM, into 8 PBMC populations. As in Figure \\@ref(fig:umap-one-clustering1), UMAP uses the arcsinh-transformed expression of the 10 lineage markers in 1000 randomly selected cells from each of the 16 samples."}
 plotDR(daf, "UMAP", color_by = "merging1")
 ```
 
