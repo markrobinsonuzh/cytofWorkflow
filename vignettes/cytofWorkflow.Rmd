@@ -704,7 +704,7 @@ table(rowData(ds_res3$res)$p_adj < FDR_cutoff)
 table(rowData(ds_res4$res)$p_adj < FDR_cutoff)
 ```
 
-As before, we create a summary table displaying the results (raw and adjusted p-values) together with the observed median marker expression in each sample, and plot a heatmap with the markers sorted according to adjusted p-value (Figure \@ref(fig:diff-expr1-plot-heatmap-with-significant-markers)).
+As before, we create a summary table displaying the results.
 
 ```{r ds-output-overall}
 topTable(ds_res4, show_meds = TRUE, top_n = 5,
