@@ -795,7 +795,8 @@ No competing interests were disclosed.
 
 # Grant information
 
-MN acknowledges the funding from a Swiss Institute of Bioinformatics (SIB) Fellowship. LMW was supported by a Forschungskredit (Candoc) grant from the University of Zurich (FK-17-100).
+MN acknowledges the funding from a Swiss Institute of Bioinformatics (SIB) Fellowship. LMW was supported by a Forschungskredit (Candoc) grant from the University of Zurich (FK-17-100). MDR acknowledges support from the University Research Priority
+Program Evolution in Action at the University of Zurich and from the Swiss National Science Foundation (310030_175841).
 
 *The funders had no role in study design, data collection and analysis, decision to publish, or preparation of the manuscript.*
 
