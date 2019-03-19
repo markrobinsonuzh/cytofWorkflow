@@ -638,7 +638,7 @@ ds_formula2 <- createFormula(ei, cols_fixed = "condition",
                              cols_random = "patient_id")
 ```
 
-Using the `r Biocpkg("diffcyt")` package, we calculate differential tests using method `diffcyt-DS-LMM`, which implements the DS methodology based on mixed models. This method can be selected by providing the arguments `method = "DS"` and `method_DS = "diffcyt-DS-LMM"` to the `diffcyt()` wrapper function. The remaining arguments are the same as for the DA tests.
+Using `r Biocpkg("diffcyt")`, we calculate differential tests using method `diffcyt-DS-LMM`, which implements the DS methodology based on mixed models. This method can be selected by providing the arguments `method = "DS"` and `method_DS = "diffcyt-DS-LMM"` to the `diffcyt()` wrapper function. The remaining arguments are the same as for the DA tests.
 
 By accounting for the patient effect, we detect almost twice as many cases of differential signaling compared to the regular linear model.  
 
@@ -653,7 +653,7 @@ ds_res2 <- diffcyt(daf, formula = ds_formula2, contrast = contrast,
 table(rowData(ds_res2$res)$p_adj < FDR_cutoff)
 ```
 
-A summary table displaying the results (raw and adjusted p-values) together with the observed median marker expression in each cluster and sample can be generated using `r Biocpkg("diffcyt")`'s `topTable()` function.
+`topTable()` is again used to assemble a summary table.
 
 ```{r ds-output}
 topTable(ds_res2, show_meds = TRUE, top_n = 5,
