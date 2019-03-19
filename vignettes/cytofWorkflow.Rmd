@@ -556,7 +556,7 @@ $$E(Y_{ij}|\beta_0, \beta_1, \gamma_i, \xi_{ij}) = logit^{-1}(\beta_0 + \beta_1 
 <!-- $$ logit(\pi_{ij}) = \beta_0 + \beta_1 x_{ij} + \xi_{ij},$$-->
 where $\gamma_{i} \sim N(0, \sigma^2_\gamma)$.
 
-We set up the model formulas and contrast matrix using the `createFormula()` and `createContrast()` functions from the `r Biocpkg("diffcyt")` package. These functions create the model formulas and contrast matrix in the required format for the `r Biocpkg("diffcyt")` testing functions. For more details, see `?createFormula` and `?createContrast`, or refer to the extended documentation in the `r Biocpkg("diffcyt")` Bioconductor vignette ([diffcyt workflow](http://bioconductor.org/packages/release/bioc/vignettes/diffcyt/inst/doc/diffcyt_workflow.html)).
+We set up the model formulas and contrast matrix using the `createFormula()` and `createContrast()` functions from the `r Biocpkg("diffcyt")` package. These functions create the model formulas and contrast matrix in the required format for the `r Biocpkg("diffcyt")` testing functions. For more details, see `?createFormula` and `?createContrast`, or refer to the extended documentation in the `r Biocpkg("diffcyt")` vignette ([diffcyt workflow](http://bioconductor.org/packages/release/bioc/vignettes/diffcyt/inst/doc/diffcyt_workflow.html)).
 
 ```{r da-formulas}
 ei <- metadata(daf)$experiment_info
