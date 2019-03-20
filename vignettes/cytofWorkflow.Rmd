@@ -696,14 +696,12 @@ Similar to the analysis above, we identify more markers being differentially exp
 
 ```{r ds-analysis-overall}
 # fit linear model
-ds_res3 <- diffcyt(daf, experiment_info = ei, 
-    formula = ds_formula1, contrast = contrast,
+ds_res3 <- diffcyt(daf, formula = ds_formula1, contrast = contrast,
     analysis_type = "DS", method_DS = "diffcyt-DS-LMM",
     clustering_to_use = "merging_all", verbose = FALSE)
 
 # fit linear mixed model with patient ID as random effect
-ds_res4 <- diffcyt(daf, experiment_info = ei, 
-    formula = ds_formula2, contrast = contrast,
+ds_res4 <- diffcyt(daf, formula = ds_formula2, contrast = contrast,
     analysis_type = "DS", method_DS = "diffcyt-DS-LMM",
     clustering_to_use = "merging_all", verbose = FALSE)
 
