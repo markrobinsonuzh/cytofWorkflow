@@ -768,7 +768,7 @@ In the differential marker expression analysis, we compare the median marker exp
 
 The approach presented in this workflow is not fully automated due to the cluster merging, annotating, and extensive exploratory data analysis steps.  In general, our philosophy is that fully automated analyses are to be avoided, but rather a battery of diagnostic checks can be designed, as we have promoted here.  Cluster annotation remains a manual step in many other approaches as well.  Recently, a tool was proposed for consistent characterization of cell subsets using marker enrichment modeling (MEM) [@Diggins2017].
 
-To keep the analysis of this workflow reproducible, one needs to define a random seed before running `r Biocpkg("FlowSOM")` and UMAP.  This is especially important in the clustering step, where the order of clusters may change with different seeds, and the cluster merging needs to be matched to the seed used.
+To keep the analysis of this workflow reproducible, one needs to define a random seed when running `r Biocpkg("FlowSOM")` and UMAP.  This is especially important in the clustering step, where the order of clusters may change with different seeds, and the cluster merging needs to be matched to the seed used.
 
 
 # Software availability
