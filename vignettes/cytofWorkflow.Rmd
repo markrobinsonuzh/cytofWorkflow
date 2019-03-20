@@ -508,7 +508,7 @@ For the dataset used in this workflow [@Bodenmiller2012; @Bruggner2014], we perf
 
 The PBMC subsets analyzed in this workflow originate from a paired experiment, where samples from 8 patients were treated with 12 different stimulation conditions for 30 minutes, together with unstimulated reference samples [@Bodenmiller2012]. This is a natural example where one would choose a mixed model to model the response (abundance or marker signal), and patients would be treated as a random effect. In this way, one can formally account for within-patient variability, observed to be quite strong in the MDS plot ([MDS plot](#mds-plot) section), and this should give a gain in power to detect differences between conditions. 
 
-We use the `r Biocpkg("diffcyt")` package [@Weber2018] to perform the differential analyses, which includes implementations of various  methods for differential testing, such as linear mixed models. The mixed models methodology uses the `stats` and `r CRANpkg("lme4")` packages to fit the fixed and mixed models, respectively, and the `r CRANpkg("multcomp")` package for hypothesis testing.
+We use the `r Biocpkg("diffcyt")` package [@Weber2018] to perform the differential analyses. This package includes implementations of various methods for differential testing, including linear mixed models. The mixed models methodology uses the `stats` and `r CRANpkg("lme4")` packages to fit the fixed and mixed models, respectively, and the `r CRANpkg("multcomp")` package for hypothesis testing.
 
 In all differential analyses here, we want to test for differences between the reference (`Ref`) and BCR/FcR-XL treatment (`BCRXL`). The fixed model formula is straightforward: `~ condition`, where `condition` indicates the treatment group. The corresponding full model design matrix consists of the intercept and dummy variable indicating the treated samples. In the presence of covariates (e.g., batch), one can include them in the model by using a formula `~ condition + covariate`, or if they affect the treatment, a formula with interactions `~ condition * covariate`. When using the `r Biocpkg("diffcyt")` package, the model formula can be set up in the required format using the `createFormula()` function.
 
@@ -704,7 +704,7 @@ table(rowData(ds_res3$res)$p_adj < FDR_cutoff)
 table(rowData(ds_res4$res)$p_adj < FDR_cutoff)
 ```
 
-As before, we create a summary table displaying the results.
+As before, we create a summary table and heatmap displaying the results.
 
 ```{r ds-output-overall}
 topTable(ds_res4, show_meds = TRUE, top_n = 5,
@@ -795,8 +795,7 @@ No competing interests were disclosed.
 
 # Grant information
 
-MN acknowledges the funding from a Swiss Institute of Bioinformatics (SIB) Fellowship. LMW was supported by a Forschungskredit (Candoc) grant from the University of Zurich (FK-17-100). MDR acknowledges support from the University Research Priority
-Program Evolution in Action at the University of Zurich and from the Swiss National Science Foundation (310030_175841).
+MN acknowledges funding from a Swiss Institute of Bioinformatics (SIB) Fellowship. LMW was supported by a Forschungskredit (Candoc) grant from the University of Zurich (FK-17-100). MDR acknowledges support from the University Research Priority Program Evolution in Action at the University of Zurich and from the Swiss National Science Foundation (310030_175841).
 
 *The funders had no role in study design, data collection and analysis, decision to publish, or preparation of the manuscript.*
 
