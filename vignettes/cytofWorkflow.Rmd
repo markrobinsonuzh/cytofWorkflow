@@ -168,7 +168,7 @@ md <- read_excel(md)
 head(data.frame(md))
 ```
 
-In our example, the .fcs files listed in the metadata can be loaded from the `r Biocpkg("HDCytoData")` package [@Weber2019].
+In our example, the data from the .fcs files listed in the metadata can be loaded from the `r Biocpkg("HDCytoData")` package [@Weber2019].
 
 ```{r load-flowSet}
 library(HDCytoData)
