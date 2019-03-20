@@ -728,7 +728,7 @@ If the number of expected cell types is higher, the user can increase the size o
 
 One could also use a strategy based on subsequent clustering of identified clusters, which we refer to as *reclustering*. In the starting step, one uses the presented workflow to identify the main cell types. In the following steps, the same clustering workflow is applied individually to the cell populations for which more resolution is desired. Restricting to one subpopulation at a time results in easier cluster annotation. The differential analysis can be applied to the final clusters in the same way as described in the workflow assuming tables with cell counts and median marker expression are available. 
 
-The differential analysis could be also conducted on the unmerged (20) consensus clusters and the manual annotation could be done at the end. 
+The differential analysis could also be conducted on the unmerged (20) consensus clusters and the manual annotation could be done at the end. 
 
 # Discussion
 
