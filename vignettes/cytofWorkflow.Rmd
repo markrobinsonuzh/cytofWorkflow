@@ -302,13 +302,11 @@ The subset of markers to use for clustering is specified with argument `cols_to_
 
 In our example, we have specified marker classes in the input `panel`, and `cluster` will default to using `"type"` markers for clustering.  For clarity, we specify this explicitly via `cols_to_use = type_markers(daf)`.  We call `ConsensusClusterPlus` with maximum number of clusters `maxK = 20`.
 
-`r Biocpkg("FlowSOM")` output can be sensitive to random starts [@Weber2016].  To make results reproducible, the seed for random number generation should be set *prior* to running `cluster`, via R's `set.seed` function.  It is advisable to rerun analyses with multiple random seeds, for two reasons.  First, one can see how robust the detected clusters are, and second, when the goal is to find smaller cell populations, it may happen that, in some runs, random starting points do not represent rare cell populations, as the chance of selecting starting cells from them is low and they are merged into a larger cluster.
-
-<!--HELENA: BioC no-longer likes set.seed inside functions, so this has been changed-->
+`r Biocpkg("FlowSOM")` output can be sensitive to random starts [@Weber2016].  To make results reproducible, `cluster` takes a `seed` argument that is passed to `set.seed` for random number generation, prior to calling `BuildSOM`.  It is advisable to rerun analyses with multiple random seeds, for two reasons.  First, one can see how robust the detected clusters are, and second, when the goal is to find smaller cell populations, it may happen that, in some runs, random starting points do not represent rare cell populations, as the chance of selecting starting cells from them is low and they are merged into a larger cluster.
 
 ```{r}
 daf <- cluster(daf, cols_to_use = type_markers(daf),
-               xdim = 10, ydim = 10, maxK = 20)
+               xdim = 10, ydim = 10, maxK = 20, seed = 1234)
 ```
 
 Automatic approaches for selecting the number of clusters in HDCyto data do not always succeed [@Weber2016].  In general, we therefore recommend some level of over-clustering, and if desired, manual merging of clusters.  Such a hierarchical approach is especially suited when the goal is to detect smaller cell populations.
