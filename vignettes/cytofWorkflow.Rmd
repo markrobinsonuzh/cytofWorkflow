@@ -775,7 +775,7 @@ All software packages used in this workflow are publicly available from the Comp
 The specific version numbers of the packages used are shown below, along with the version of the R installation.
 
 ```{r, results = 'asis', eval = !on.bioc, echo = FALSE}
-cat("Version numbers of all the Bioconductor packages correspond to the release version 3.5 of the Bioconductor project. ")
+cat("Version numbers of all the Bioconductor packages correspond to the release version 3.9 of the Bioconductor project. ")
 ```
 
 ```{r, results = 'asis', eval = !on.bioc, echo = FALSE}
