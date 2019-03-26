@@ -49,7 +49,11 @@ editor_options:
 
 <!-- To render this document: -->
 
-<!-- rmarkdown::render('cytofWorkflow.Rmd') -->
+<!-- 
+rmarkdown::render('vignettes/cytofWorkflow.Rmd', 
+                  output_format = rmarkdown::pdf_document(), 
+                  clean = FALSE)
+-->
 
 <!-- To extract the R code: -->
 
@@ -769,17 +773,15 @@ To keep the analysis of this workflow reproducible, one needs to define a random
 
 # Software availability
 
-<!-- Took that from https://www.bioconductor.org/help/workflows/simpleSingleCell/ -->
-
 All software packages used in this workflow are publicly available from the Comprehensive R Archive Network (https://cran.r-project.org) or the Bioconductor project (http://bioconductor.org).
 The specific version numbers of the packages used are shown below, along with the version of the R installation.
 
 ```{r, results = 'asis', eval = !on.bioc, echo = FALSE}
-cat("Version numbers of all the Bioconductor packages correspond to the release version 3.5 of the Bioconductor project. ")
+cat("Version numbers of all the Bioconductor packages correspond to the release version 3.9 of the Bioconductor project.")
 ```
 
 ```{r, results = 'asis', eval = !on.bioc, echo = FALSE}
-cat("Users can install all required packages and execute the workflow by following the instructions at https://www.bioconductor.org/help/workflows/cytofWorkflow.\n")
+cat("Users can install all required packages and execute the workflow by following the instructions at https://www.bioconductor.org/packages/cytofWorkflow.")
 ```
 
 
@@ -790,7 +792,8 @@ sessionInfo()
 
 # Author contributions
 
-MN and MDR designed methodology and designed and ran analyses. MN drafted the manuscript with input from MDR. HC implemented code and contributed to drafting. CK and SG performed experiments, analyzed data and gave feedback on clinical applications. CK performed the cluster merging. LMW contributed code and ideas for the analyses, and contributed to drafting. FJH contributed code and ideas for the analyses. MPL interpreted data and provided clinical perspective. BB gave feedback on the manuscript and the bioinformatics. All authors read and approved the final manuscript and have agreed to the content.
+
+MN and MDR designed methodology and designed and ran analyses. MN drafted the manuscript with input from MDR. HLC implemented code and contributed to drafting. CK and SG performed experiments, analyzed data and gave feedback on clinical applications. CK performed the cluster merging. LMW implemented code, contributed ideas for analyses, and contributed to drafting. FJH contributed code and ideas for analyses. MPL interpreted data and provided clinical perspective. BB gave feedback on the manuscript and the bioinformatics. All authors read and approved the final manuscript and have agreed to the content.
 
 # Competing interests
 
