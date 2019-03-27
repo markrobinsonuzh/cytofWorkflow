@@ -1,6 +1,5 @@
 # CyTOF workflow: differential discovery in high-throughput high-dimensional cytometry datasets
 
-
 ## Abstract
 
 High dimensional mass and flow cytometry (HDCyto) experiments have become a
@@ -62,10 +61,3 @@ BiocManager::install("gosianow/cytofWorkflow", dependencies = TRUE)
 The workflow can be executed by following the instructions in the
 cytofWorkflow.Rmd file available in the
 [vignettes directory](https://github.com/gosianow/cytofWorkflow/blob/master/vignettes/cytofWorkflow.Rmd).
-
-
-
-
-
-
-
