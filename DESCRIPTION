@@ -1,11 +1,12 @@
 Package: cytofWorkflow
 Title: CyTOF workflow: differential discovery in high-throughput
         high-dimensional cytometry datasets
-Version: 1.7.1
-Date: 2017-10-19
-Authors@R: c(person(role=c("aut", "cre"), "Malgorzata", "Nowicka",
-        email = "gosia.nowicka.uzh@gmail.com"), person(role=c("aut"), "Mark
-        D.", "Robinson", email = "mark.robinson@imls.uzh.ch"))
+Version: 1.7.2
+Date: 2019-03-25
+Authors@R: c(
+	person(role=c("aut", "cre"), "Malgorzata", "Nowicka", email = "gosia.nowicka.uzh@gmail.com"), 
+	person(role="aut", "Helena L.", "Crowell", email = "helena.crowell@uzh.ch"), 
+	person(role="aut", "Mark D.", "Robinson", email = "mark.robinson@imls.uzh.ch"))
 Description: High dimensional mass and flow cytometry (HDCyto)
         experiments have become a method of choice for high throughput
         interrogation and characterization of cell populations. Here,
