@@ -218,7 +218,7 @@ Argument `cols_to_use` specifies which columns (channels) to retain from the inp
 
 It is important to carefully check whether variables are of the desired type (factor, numeric, character), since input methods may convert columns into different data types.  This is taken care of by the `daFrame` constructor.  For the statistical modeling, we want to make the condition variable a factor with the reference (`Ref`) being the reference level.  The order of factor levels can be defined with the `levels` parameter of the `factor` function or via `relevel`.
 
-As a final note, the `daFrame` constructor requires the input `flowSet`'s or .fcs files' names to match with the filenames listed in the `md$file` column.
+As a final note, the `daFrame` constructor requires the filenames listed in the `md$file` column to match those in the `flowSet`.
 
 ```{r}
 # specify levels for conditions & sample IDs to assure desired ordering
