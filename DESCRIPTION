@@ -41,7 +41,8 @@ biocViews: ImmunoOncologyWorkflow, Workflow, SingleCellWorkflow
 VignetteBuilder: knitr
 Imports: BiocStyle, knitr, readxl, matrixStats, flowCore, ggplot2, ggridges,
         reshape2, dplyr, limma, ggrepel, RColorBrewer, pheatmap, ComplexHeatmap,
-        FlowSOM, ConsensusClusterPlus, Rtsne, cowplot, lme4, multcomp, CATALYST, diffcyt, HDCytoData
+        FlowSOM, ConsensusClusterPlus, Rtsne, cowplot, lme4, multcomp, CATALYST, 
+        diffcyt, HDCytoData, uwot
 Suggests: knitcitations
 NeedsCompilation: no
 Workflow: true
