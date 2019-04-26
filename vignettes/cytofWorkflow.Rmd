@@ -678,15 +678,15 @@ plotDiffHeatmap(daf, ds_res2, top_n = 50, order = TRUE,
 
 ## Differential analysis of overall marker expression
 
-The analysis of *overall* expression is analogous to the previous section, except that median marker expression is aggregated from all the cells in a given sample (Figure \@ref(fig:diff-expr1-plot-median-expr)).
-
-For this, we generate an artificial clustering with all cells assigned to a single cluster.
+The analysis of *overall* expression is analogous to the previous section, except that median marker expression is aggregated from all the cells in a given sample. For this, we generate an artificial clustering with all cells assigned to a single cluster.
 
 ```{r}
 daf <- mergeClusters(daf, k = "meta20", id = "merging_all",
                      table = data.frame(old_cluster = seq_len(20), 
                                         new_cluster = "all"))
 ```
+
+As before, the median expression can be plotted (Figure \@ref(fig:diff-expr1-plot-median-expr)).
 
 ```{r diff-expr1-plot-median-expr, fig.height = 8, fig.cap = "Median (arcsinh-transformed) expression of 14 signaling markers calculated from all the cells in a given sample in the PBMC dataset. Values for the two conditions are indicated with different colors: red for the unstimulated (Ref) and blue for the stimulated with BCR/FcR-XL (BCRXL) samples. Values for each patient are indicated with different shape."}
 p <- plotMedExprs(daf[, state_markers(daf)])
@@ -711,7 +711,7 @@ table(rowData(ds_res3$res)$p_adj < FDR_cutoff)
 table(rowData(ds_res4$res)$p_adj < FDR_cutoff)
 ```
 
-As before, we create a summary table and heatmap displaying the results.
+As before, we create a summary table and heatmap displaying the results (\@ref(fig:diff-expr1-plot-heatmap-with-significant-markers)).
 
 ```{r ds-output-overall}
 topTable(ds_res4, show_meds = TRUE, top_n = 5,
