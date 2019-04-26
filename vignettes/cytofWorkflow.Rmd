@@ -711,7 +711,7 @@ table(rowData(ds_res3$res)$p_adj < FDR_cutoff)
 table(rowData(ds_res4$res)$p_adj < FDR_cutoff)
 ```
 
-As before, we create a summary table and heatmap displaying the results (\@ref(fig:diff-expr1-plot-heatmap-with-significant-markers)).
+As before, we create a summary table and heatmap displaying the results (Figure \@ref(fig:diff-expr1-plot-heatmap-with-significant-markers)).
 
 ```{r ds-output-overall}
 topTable(ds_res4, show_meds = TRUE, top_n = 5,
