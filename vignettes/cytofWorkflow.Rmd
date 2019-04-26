@@ -134,6 +134,15 @@ cat("***Note:*** *To cite this workflow, please refer to this F1000 article
 ```
 
 
+# Reproducibility
+
+To generate reproducible results, we set random seeds in several steps of the workflow. However, the default methods for random number generation in R were updated in R version 3.6.0 (released in April 2019; see [R News](https://cran.r-project.org/doc/manuals/r-devel/NEWS.html) for details). Therefore, for consistency with earlier versions of the workflow, we use the function `RNGversion()` to use the random number generation methods from the previous version of R. Note that this step is not required when running a standard analysis on a new dataset; it is included here for reproducibility and backward compatibility only.
+
+```{r RNGversion}
+RNGversion("3.5.3")
+```
+
+
 # Data description
 
 We use a subset of CyTOF data originating from Bodenmiller *et al.* [@Bodenmiller2012] that was also used in the `r Githubpkg("nolanlab/Citrus")` paper [@Bruggner2014]. In the original study, peripheral blood mononuclear cells (PBMCs) in unstimulated and after 11 different stimulation conditions were measured for 8 healthy donors. For each sample, expression of 10 cell surface markers and 14 signaling markers was recorded. We perform our analysis on samples from the reference and one stimulated condition where cells were crosslinked for 30 minutes with B cell receptor/Fc receptor known as BCR/FcR-XL, resulting in 16 samples in total (8 patients, unstimulated and stimulated for each).
@@ -768,7 +777,7 @@ In the differential marker expression analysis, we compare the median marker exp
 
 The approach presented in this workflow is not fully automated due to the cluster merging, annotating, and extensive exploratory data analysis steps.  In general, our philosophy is that fully automated analyses are to be avoided, but rather a battery of diagnostic checks can be designed, as we have promoted here.  Cluster annotation remains a manual step in many other approaches as well.  Recently, a tool was proposed for consistent characterization of cell subsets using marker enrichment modeling (MEM) [@Diggins2017].
 
-To keep the analysis of this workflow reproducible, one needs to define a random seed when running `r Biocpkg("FlowSOM")` and UMAP.  This is especially important in the clustering step, where the order of clusters may change with different seeds, and the cluster merging needs to be matched to the seed used.
+To keep the analysis of this workflow reproducible, one needs to define a random seed when running `r Biocpkg("FlowSOM")`, t-SNE and UMAP.  This is especially important in the clustering step, where the order of clusters may change with different seeds, and the cluster merging needs to be matched to the seed used.  (Note that as mentioned at the start of the workflow, we also use the function `RNGversion()` to ensure backward compatibility with earlier versions of the workflow, due to changes to the default random number generation methods in R.)
 
 
 # Software availability
