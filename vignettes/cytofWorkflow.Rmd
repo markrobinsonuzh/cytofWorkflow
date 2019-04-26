@@ -21,7 +21,7 @@ author:
   - *IEI
 - name: Silvia Guglietta
   affiliation: 
-  - &EIO Department of Experimental Oncology, European Institute of Oncology, Via Adamello 16, I-20139 Milan, Italy
+  - &EIO Department of Experimental Oncology, European Institute of Oncology, I-20139 Milan, Italy
 - name: Burkhard Becher
   affiliation:  
 - name: Mitchell P. Levesque
