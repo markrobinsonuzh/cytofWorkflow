@@ -337,7 +337,7 @@ plotClusterHeatmap(daf, hm2 = NULL, k = "meta20", m = NULL,
                    fun = "median", cluster_anno = TRUE, draw_freqs = TRUE)
 ```
 
-```{r plot-clustering-distribution1, fig.height = 8, fig.cap = "Distributions of marker intensities (arcsinh-transformed) of the 10 lineage markers in the 20 cell populations obtained with FlowSOM after the metaclustering step with ConsensusClusterPlus (PBMC data). Red densities represent marker expression for cells in a given cluster. Green densities are calculated over all the cells and serve as a reference."}
+```{r plot-clustering-distribution1, fig.height = 8, fig.cap = "Distributions of marker intensities (arcsinh-transformed) of the 10 lineage markers in the 20 cell populations obtained with FlowSOM after the metaclustering step with ConsensusClusterPlus (PBMC data). Red densities represent marker expression for cells in a given cluster. Blue densities are calculated over all the cells and serve as a reference."}
 plotClusterExprs(daf, k = "meta20", markers = "type")
 ```
 
