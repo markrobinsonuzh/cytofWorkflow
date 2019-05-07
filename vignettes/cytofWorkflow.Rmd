@@ -70,8 +70,9 @@ on.bioc <- TRUE
 library(knitr)
 # Use fig.width = 7 for html and fig.width = 6 for pdf
 fig.width <- ifelse(on.bioc, 8, 6)
-knitr::opts_chunk$set(cache = 2, warning = FALSE, message = FALSE, error = FALSE,
-  cache.path = "cache/", fig.path = "figure/", fig.width = fig.width)
+knitr::opts_chunk$set(cache = 2, cache.path = "cache/",
+    warning = FALSE, message = FALSE, error = FALSE,
+    fig.path = "figure/", fig.width = fig.width)
 ```
 
 ```{r load-packages, echo = FALSE, results = "hide"}
@@ -134,7 +135,7 @@ Notably, this workflow is equally applicable to flow or mass cytometry datasets,
 
 ```{r, results = 'asis', eval = on.bioc, echo = FALSE}
 cat("***Note:*** *To cite this workflow, please refer to this F1000 article 
-  https://f1000research.com/articles/6-748/v3 .*")
+    https://f1000research.com/articles/6-748/v3 .*")
 ```
 
 
@@ -237,7 +238,7 @@ As a final note, the `daFrame()` constructor requires the filenames listed in th
 # specify levels for conditions & sample IDs to assure desired ordering
 md$condition <- factor(md$condition, levels = c("Ref", "BCRXL"))
 md$sample_id <- factor(md$sample_id, 
-                       levels = md$sample_id[order(md$condition)])
+    levels = md$sample_id[order(md$condition)])
 
 # construct daFrame
 daf <- daFrame(fs, panel, md, cols_to_use = panel$fcs_colname)
@@ -323,7 +324,7 @@ In our example, we have specified marker classes in the input `panel`, and `clus
 
 ```{r}
 daf <- cluster(daf, cols_to_use = type_markers(daf),
-               xdim = 10, ydim = 10, maxK = 20, seed = 1234)
+    xdim = 10, ydim = 10, maxK = 20, seed = 1234)
 ```
 
 Automatic approaches for selecting the number of clusters in HDCyto data do not always succeed [@Weber2016].  In general, we therefore recommend some level of over-clustering, and if desired, manual merging of clusters.  Such a hierarchical approach is especially suited when the goal is to detect smaller cell populations.
@@ -337,8 +338,9 @@ We can then investigate characteristics of identified clusters with heatmaps tha
 Instead of using only medians, which do not give a full representation of cluster specifics, one can plot the entire marker expression distribution in each cluster (Figure \@ref(fig:plot-clustering-distribution1)). Such a plot gives more detailed profile of each cluster, but represents a larger amount of information to interpret. Heatmaps give an overall overview of clusters, are quicker and easier to interpret, and together with the dendrogram can be a good basis for further cluster merging (see [Cluster merging and annotation](#cluster-merging-and-annotation) section).
 
 ```{r plot-clustering-heatmap1, fig.cap = "Heatmap of the median marker intensities of the 10 lineage markers across the 20 cell populations obtained with FlowSOM after the metaclustering step with ConsensusClusterPlus (PBMC data). The color in the heatmap represents the median of the arcsinh, 0-1 transformed marker expression calculated over cells from all the samples, varying from blue for lower expression to red for higher expression. The dendrogram on the left represents the hierarchical similarity between the 20 metaclusters (metric: Euclidean distance; linkage: average). Each cluster has a unique color assigned (bar on the left) which is identical in other visualizations of these 20 clusters (e.g., the UMAP shown in Figure \\@ref(fig:umap-one-clustering1)) facilitating the figure interpretation. Barplot along the rows (clusters) and values in brackets on the right indicate the relative sizes of clusters."}
-plotClusterHeatmap(daf, hm2 = NULL, k = "meta20", m = NULL,
-                   fun = "median", cluster_anno = TRUE, draw_freqs = TRUE)
+plotClusterHeatmap(daf, 
+    hm2 = NULL, k = "meta20", m = NULL,
+    cluster_anno = TRUE, draw_freqs = TRUE)
 ```
 
 ```{r plot-clustering-distribution1, fig.height = 8, fig.cap = "Distributions of marker intensities (arcsinh-transformed) of the 10 lineage markers in the 20 cell populations obtained with FlowSOM after the metaclustering step with ConsensusClusterPlus (PBMC data). Red densities represent marker expression for cells in a given cluster. Blue densities are calculated over all the cells and serve as a reference."}
@@ -386,7 +388,7 @@ Alternatively, we can color the cells by any resolution of clustering available 
 
 ```{r umap-one-clustering1, fig.cap = "t-SNE and UMAP based on the arcsinh-transformed expression of the 10 lineage markers in the cells from the PBMC dataset. From each of the 16 samples, 500 (t-SNE) and 1000 (UMAP) cells were randomly selected. Cells are colored according to the 20 cell populations obtained with FlowSOM after the metaclustering step with ConsensusClusterPlus."}
 p1 <- plotDR(daf, "TSNE", color_by = "meta20") + 
-        theme(legend.position = "none")
+    theme(legend.position = "none")
 p2 <- plotDR(daf, "UMAP", color_by = "meta20")
 lgd <- get_legend(p2)
 p2 <- p2 + theme(legend.position = "none")
@@ -414,8 +416,9 @@ plotCodes(daf, k = "meta20")
 Using heatmaps, we can also visualize median marker expression in the 100 SOM codes as in Figure \@ref(fig:plot-som-codes1-heatmap-complex). Of note, the clustering presented with the dendrogram does not completely agree with the clustering depicted by the 20 colors because the first one is based on the hierarchical clustering with average linkage and Euclidean distance, while the second one results from the consensus clustering.
 
 ```{r plot-som-codes1-heatmap-complex, fig.height = 14, fig.cap = "Heatmap of the median marker intensities of the 10 lineage markers (left panel) and one signaling marker pS6 (right panel) across the 100 SOM codes in the PBMC dataset. The color in the heatmap represents the median of the arcsinh, 0-1 transformed marker expression calculated over cells from all the samples, for the lineage markers, and over cells in each sample individually, for the signaling marker. The heat varies from blue for lower expression to red for higher expression. The dendrogram on the left represents the hierarchical similarity between the 100 codes (metric: Euclidean distance; linkage: average). The annotation bar on the left is colored according to the code metaclustering with ConsensusClusterPlus into 20 cell populations. The relative size of the codes is shown in parentheses next to the cluster numbers."}
-plotClusterHeatmap(daf, hm2 = "pS6", k = "som100", m = "meta20", 
-                   cluster_anno = FALSE, draw_freqs = TRUE)
+plotClusterHeatmap(daf, 
+    hm2 = "pS6", k = "som100", m = "meta20", 
+    cluster_anno = FALSE, draw_freqs = TRUE)
 ```
 
 ## Cluster merging and annotation
@@ -439,17 +442,17 @@ In this example, our expert has annotated 8 cell populations: CD8 T-cells, CD4 T
 ```{r cluster-merging1}
 merging_table1 <- "PBMC8_cluster_merging1.xlsx"
 download.file(file.path(url, merging_table1), 
-              destfile = merging_table1, mode = "wb")
+    destfile = merging_table1, mode = "wb")
 merging_table1 <- read_excel(merging_table1)
 head(data.frame(merging_table1))
 
 # convert to factor with merged clusters in desired order
 merging_table1$new_cluster <- factor(merging_table1$new_cluster, 
     levels = c("B-cells IgM+", "B-cells IgM-", "CD4 T-cells",
-               "CD8 T-cells", "DC", "NK cells", "monocytes", "surface-"))
+        "CD8 T-cells", "DC", "NK cells", "monocytes", "surface-"))
 
 daf <- mergeClusters(daf, k = "meta20", 
-                     table = merging_table1, id = "merging1")
+    table = merging_table1, id = "merging1")
 ```
 
 We can view the UMAP plot with the new annotated cell populations by specifying `color_by = "merging1"` (Figure \@ref(fig:umap-one-clustering1m)).
@@ -489,7 +492,7 @@ As an example, we consider the metaclustering to 12 groups. Clustering into as f
 ```{r cluster-merging2}
 merging_table2 <- "PBMC8_cluster_merging2_v3.xlsx"
 download.file(file.path(url, merging_table2), 
-              destfile = merging_table2, mode = "wb")
+    destfile = merging_table2, mode = "wb")
 merging_table2 <- read_excel(merging_table2)
 data.frame(merging_table2)
 
@@ -500,7 +503,7 @@ merging_table2$new_cluster <- factor(
 
 # apply 2nd manual merging
 daf <- mergeClusters(daf, k = "meta12", 
-                     table = merging_table2, id = "merging2")
+    table = merging_table2, id = "merging2")
 ```
 
 ### Comparison of automated and manual merging
@@ -510,7 +513,7 @@ The manual merging of 20 (or 12) clusters by an expert resulted in identificatio
 ```{r flowsom-meta-clustering3}
 # tabular comparison of algorithmic & manual merging
 table(manual = cluster_codes(daf)[cluster_ids(daf), "merging2"],
-      algorithm = cluster_codes(daf)[cluster_ids(daf), "meta8"] )
+    algorithm = cluster_codes(daf)[cluster_ids(daf), "meta8"] )
 ```
 
 <!-- [HELENA] I think we can leave this in to have one visual comparison. -->
@@ -582,10 +585,12 @@ We set up the model formulas and contrast matrix using the `createFormula()` and
 
 ```{r da-formulas}
 ei <- metadata(daf)$experiment_info
-(da_formula1 <- createFormula(ei, cols_fixed = "condition", 
-                              cols_random = "sample_id"))
-(da_formula2 <- createFormula(ei, cols_fixed = "condition",
-                              cols_random = c("sample_id", "patient_id")))
+(da_formula1 <- createFormula(ei, 
+    cols_fixed = "condition", 
+    cols_random = "sample_id"))
+(da_formula2 <- createFormula(ei, 
+    cols_fixed = "condition", 
+    cols_random = c("sample_id", "patient_id")))
 ```
 
 ```{r design-contrast}
@@ -595,10 +600,12 @@ contrast <- createContrast(c(0, 1))
 The `r Biocpkg("diffcyt")` package provides three methods for differential abundance (DA) analyses, and two methods for differential state (DS) analyses. For an explanation and comparison of the different methods, see @Weber2018. Here, we use the DA methodology based on mixed models, which is implemented in the method `diffcyt-DA-GLMM`. This method can be selected by providing the arguments `method = "DA"` and `method_DA = "diffcyt-DA-GLMM"` to the `diffcyt()` wrapper function (for more details, see `?diffcyt`). As our `daFrame` contains a total of 22 clusterings (1 high-resolution, 19 consensus mergings, and 2 manual mergings), we also specify the clustering of interest via `clustering_to_use = "merging1"`.
 
 ```{r da-analysis}
-da_res1 <- diffcyt(daf, formula = da_formula1, contrast = contrast,
+da_res1 <- diffcyt(daf, 
+    formula = da_formula1, contrast = contrast,
     analysis_type = "DA", method_DA = "diffcyt-DA-GLMM",
     clustering_to_use = "merging1", verbose = FALSE)
-da_res2 <- diffcyt(daf, formula = da_formula2, contrast = contrast,
+da_res2 <- diffcyt(daf, 
+    formula = da_formula2, contrast = contrast,
     analysis_type = "DA", method_DA = "diffcyt-DA-GLMM",
     clustering_to_use = "merging1", verbose = FALSE)
 ```
@@ -657,8 +664,8 @@ To present how accounting for the between patient variability with the mixed mod
 
 ```{r ds-formula}
 ds_formula1 <- createFormula(ei, cols_fixed = "condition")
-ds_formula2 <- createFormula(ei, cols_fixed = "condition", 
-                             cols_random = "patient_id")
+ds_formula2 <- createFormula(ei, 
+    cols_fixed = "condition", cols_random = "patient_id")
 ```
 
 Using `r Biocpkg("diffcyt")`, we calculate differential tests using method `diffcyt-DS-LMM`, which implements the DS methodology based on mixed models. This method can be selected by providing the arguments `method = "DS"` and `method_DS = "diffcyt-DS-LMM"` to the `diffcyt()` wrapper function. The remaining arguments are the same as for the DA tests.
@@ -681,15 +688,15 @@ table(rowData(ds_res2$res)$p_adj < FDR_cutoff)
 `topTable()` is again used to assemble a summary table.
 
 ```{r ds-output}
-topTable(ds_res2, show_meds = TRUE, top_n = 5,
-         order_by = "cluster_id", format_vals = TRUE, digits = 3)
+topTable(ds_res2, top_n = 5, order_by = "cluster_id", 
+    show_meds = TRUE, format_vals = TRUE, digits = 3)
 ```
 
 We use a heatmap to report the differential signals (Figure \@ref(fig:diff-expr2-plot-heatmap-with-significant-markers)).  Instead of plotting the absolute expression, we display the normalized expression, which better highlights the direction of marker changes.  In addition, the cluster-marker combinations are sorted according to adjusted p-value.
 
 ```{r diff-expr2-plot-heatmap-with-significant-markers, fig.height = 10, fig.cap = "DS test results and normalized expression of signaling markers in PBMC populations in BCR/FcR-XL stimulated and unstimulated conditions. The heat represents median (arcsinh-transformed) marker expression that was subsequently normalized per cluster-marker combination (rows) to mean of zero and standard deviation of one. The color of the heat varies from blue representing relative under-expression to orange representing relative over-expression. Bars at the top of the heatmap indicate patient IDs and the condition the samples (columns) belong to: red for the unstimulated (Ref) and brown for the stimulated with BCR/FcR-XL (BCRXL) condition. Bar and numbers at the right indicate significant differential cluster-marker combinations (green) and adjusted p-values. Cluster-marker combinations are sorted according to adjusted p-value, so that the cluster-marker combinations at the top show the most significant differential signals between the two conditions. Shown are only the top 50 most highly significant cluster-marker combinations."}
 plotDiffHeatmap(daf, ds_res2, top_n = 50, order = TRUE, 
-                th = FDR_cutoff, normalize = TRUE, hm1 = FALSE)
+    th = FDR_cutoff, normalize = TRUE, hm1 = FALSE)
 ```
 
 ## Differential analysis of overall marker expression
@@ -698,8 +705,7 @@ The analysis of *overall* expression is analogous to the previous section, excep
 
 ```{r}
 daf <- mergeClusters(daf, k = "meta20", id = "merging_all",
-                     table = data.frame(old_cluster = seq_len(20), 
-                                        new_cluster = "all"))
+    table = data.frame(old_cluster = seq_len(20), new_cluster = "all"))
 ```
 
 As before, the median expression can be plotted (Figure \@ref(fig:diff-expr1-plot-median-expr)).
@@ -714,12 +720,14 @@ Similar to the analysis above, we identify more markers being differentially exp
 
 ```{r ds-analysis-overall}
 # fit linear model
-ds_res3 <- diffcyt(daf, formula = ds_formula1, contrast = contrast,
+ds_res3 <- diffcyt(daf, 
+    formula = ds_formula1, contrast = contrast,
     analysis_type = "DS", method_DS = "diffcyt-DS-LMM",
     clustering_to_use = "merging_all", verbose = FALSE)
 
 # fit linear mixed model with patient ID as random effect
-ds_res4 <- diffcyt(daf, formula = ds_formula2, contrast = contrast,
+ds_res4 <- diffcyt(daf, 
+    formula = ds_formula2, contrast = contrast,
     analysis_type = "DS", method_DS = "diffcyt-DS-LMM",
     clustering_to_use = "merging_all", verbose = FALSE)
 
@@ -730,8 +738,8 @@ table(rowData(ds_res4$res)$p_adj < FDR_cutoff)
 As before, we create a summary table and heatmap displaying the results (Figure \@ref(fig:diff-expr1-plot-heatmap-with-significant-markers)).
 
 ```{r ds-output-overall}
-topTable(ds_res4, show_meds = TRUE, top_n = 5,
-         order_by = "p_adj", format_vals = TRUE, digits = 3)
+topTable(ds_res4, top_n = 5, order_by = "p_adj",
+    show_meds = TRUE, format_vals = TRUE, digits = 3)
 ```
 
 ```{r diff-expr1-plot-heatmap-with-significant-markers, fig.height = 6, fig.cap = "DS test results and normalized expression of signaling markers calculated over all cells in PBMC populations in BCR/FcR-XL stimulated and unstimulated conditions. The heat represents median (arcsinh-transformed) marker expression that was subsequently normalized per marker (rows) to mean of zero and standard deviation of one. The color of the heat varies from blue representing relative under-expression to orange representing relative over-expression. Bars at the top of the heatmap indicate patient IDs and the condition the samples (columns) belong to: red for the unstimulated (Ref) and brown for the stimulated with BCR/FcR-XL (BCRXL) condition. Bar and numbers at the right indicate significant differential markers (green) and adjusted p-values. Markers are sorted according to adjusted p-value, so that the marker at the top shows the most significant change between the two conditions."}
