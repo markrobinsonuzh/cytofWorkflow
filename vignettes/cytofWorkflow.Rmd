@@ -50,6 +50,10 @@ editor_options:
 <!-- To render this document: -->
 
 <!-- 
+rmarkdown::render('vignettes/cytofWorkflow.Rmd')
+-->
+
+<!-- 
 rmarkdown::render('vignettes/cytofWorkflow.Rmd', 
                   output_format = rmarkdown::pdf_document(), 
                   clean = FALSE)
@@ -524,7 +528,7 @@ The brief example above highlights the difference between automatic clustering a
 
 For the dataset used in this workflow [@Bodenmiller2012; @Bruggner2014], we perform three types of analyses that aim to identify subsets of PBMCs and signaling markers that respond to BCR/FcR-XL stimulation, by comparing stimulated samples to unstimulated samples. We first describe differential abundance of the defined cell populations, followed by differential analysis of marker expression within each cluster. Finally, differential analysis of the overall aggregated marker expression could also be of interest.
 
-The PBMC subsets analyzed in this workflow originate from a paired experiment, where samples from 8 patients were treated with 12 different stimulation conditions for 30 minutes, together with unstimulated reference samples [@Bodenmiller2012]. This is a natural example where one would choose a mixed model to model the response (abundance or marker signal), and patients would be treated as a random effect. In this way, one can formally account for within-patient variability, observed to be quite strong in the MDS plot ([MDS plot](#mds-plot) section), and this should give a gain in power to detect differences between conditions. 
+The PBMC subsets analyzed in this workflow originate from a paired experiment, where samples from 8 patients were treated with 12 different stimulation conditions for 30 minutes, together with unstimulated reference samples [@Bodenmiller2012]. This is a natural example where one would choose a mixed model to model the response (abundance or marker signal), and patients would be treated as a random effect. In this way, one can formally account for between-patient variability, observed to be quite strong in the MDS plot ([MDS plot](#mds-plot) section), and this should give a gain in power to detect differences between conditions. 
 
 We use the `r Biocpkg("diffcyt")` package [@Weber2018] to perform the differential analyses. This package includes implementations of various methods for differential testing, including linear mixed models. The mixed models methodology uses the [_stats_](https://stat.ethz.ch/R-manual/R-patched/library/stats/html/00Index.html) and `r CRANpkg("lme4")` packages to fit the fixed and mixed models, respectively, and the `r CRANpkg("multcomp")` package for hypothesis testing.
 
@@ -649,7 +653,7 @@ p$facet$params$ncol <- 2
 p
 ```
 
-To present how accounting for the within patient variability with the mixed model increases sensitivity, we also fit a regular linear model.  The linear mixed model has a random intercept for each patient.
+To present how accounting for the between patient variability with the mixed model increases sensitivity, we also fit a regular linear model.  The linear mixed model has a random intercept for each patient.
 
 ```{r ds-formula}
 ds_formula1 <- createFormula(ei, cols_fixed = "condition")
@@ -706,7 +710,7 @@ p$facet$params$ncol <- 3
 p
 ```
 
-Similar to the analysis above, we identify more markers being differentially expressed with the LMM, which accounts for the within patient variability.
+Similar to the analysis above, we identify more markers being differentially expressed with the LMM, which accounts for the between patient variability.
 
 ```{r ds-analysis-overall}
 # fit linear model
