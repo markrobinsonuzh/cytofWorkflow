@@ -653,9 +653,9 @@ There might be instances of small cell populations for which no cells are observ
 
 It is helpful to plot the median expression of all markers in each cluster for each sample colored by condition, to get a rough image of how strong the differences might be (Figure \@ref(fig:diff-expr2-plot-median-expr)).  We do this by combining boxplots and jitter.
 
-```{r diff-expr2-plot-median-expr, fig.height = 8, fig.cap = "Median (arcsinh-transformed) expression of 14 signaling markers (x-axis) across the 8 identified PBMC cell populations (individual panels). Values for the two conditions are indicated with different colors: red for the unstimulated (Ref) and blue for the stimulated with BCR/FcR-XL (BCRXL) samples. Values for each patient are indicated with different shape. The 8 cell populations are a result of manual merging of the 20 FlowSOM metaclusters."}
-p <- plotMedExprs(daf, k = "merging1", 
-    facet = "cluster_id", shape_by = "patient_id")
+```{r diff-expr2-plot-median-expr, fig.height = 8, fig.width=10, fig.cap = "Median (arcsinh-transformed) expression of 14 signaling markers (x-axis) across the 8 identified PBMC cell populations (individual panels). Values for the two conditions are indicated with different colors: red for the unstimulated (Ref) and blue for the stimulated with BCR/FcR-XL (BCRXL) samples. Values for each patient are indicated with different shape. The 8 cell populations are a result of manual merging of the 20 FlowSOM metaclusters."}
+p <- plotMedExprs(daf, k = "merging1", facet = "cluster_id",
+    shape_by = "patient_id")
 p$facet$params$ncol <- 2
 p
 ```
