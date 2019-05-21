@@ -1,7 +1,7 @@
 Package: cytofWorkflow
 Title: CyTOF workflow: differential discovery in high-throughput
         high-dimensional cytometry datasets
-Version: 1.9.0
+Version: 1.9.1
 Date: 2019-03-25
 Authors@R: c(
 	person(role=c("aut", "cre"), "Malgorzata", "Nowicka", email = "gosia.nowicka.uzh@gmail.com"), 
@@ -17,5 +17,5 @@ VignetteBuilder: knitr
 Suggests: knitcitations
 NeedsCompilation: no
 Workflow: true
-URL: https://github.com/gosianow/cytofWorkflow
-BugReports: https://github.com/gosianow/cytofWorkflow/issues
+URL: https://github.com/markrobinsonuzh/cytofWorkflow
+BugReports: https://github.com/markrobinsonuzh/cytofWorkflow/issues
