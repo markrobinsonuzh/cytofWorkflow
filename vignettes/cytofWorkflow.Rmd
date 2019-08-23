@@ -82,6 +82,7 @@ options(width=75)
 suppressPackageStartupMessages({
     library(CATALYST)
     library(cowplot)
+    library(ggplot2)
     library(diffcyt)
     library(flowCore)
     library(readxl)
