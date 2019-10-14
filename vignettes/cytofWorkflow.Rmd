@@ -325,9 +325,11 @@ The subset of markers to use for clustering is specified with argument `features
 
 In our example, we have specified marker classes in the input `panel`, and `cluster()` will default to using `"type"` markers for clustering.  For clarity, we specify this explicitly via `features = type_markers(sce)`.  We call `ConsensusClusterPlus()` with maximum number of clusters `maxK = 20`.
 
-`r Biocpkg("FlowSOM")` output can be sensitive to random starts [@Weber2016].  To make results reproducible, `cluster()` takes a `seed` argument that is passed to `set.seed` for random number generation, prior to calling `BuildSOM()`.  It is advisable to rerun analyses with multiple random seeds, for two reasons.  First, one can see how robust the detected clusters are, and second, when the goal is to find smaller cell populations, it may happen that, in some runs, random starting points do not represent rare cell populations, as the chance of selecting starting cells from them is low and they are merged into a larger cluster.
+`r Biocpkg("FlowSOM")` output can be sensitive to random starts [@Weber2016]. To make results reproducible, we first set a seed for random number generation prior to calling `cluster()`, and, secondly, specifcy a `seed` argument inside `cluster()`. Unfortunately, this is necessary as the `ConsensusClusterPlus()` function internally calls `set.seed()` and will, when not provided with a seed, overwrite our seed using the current system time (`set.seed(as.numeric(Sys.time()))`).  
+In general, it is advisable to rerun analyses with multiple random seeds, for two reasons.  First, one can see how robust the detected clusters are, and second, when the goal is to find smaller cell populations, it may happen that, in some runs, random starting points do not represent rare cell populations, as the chance of selecting starting cells from them is low and they are merged into a larger cluster.
 
 ```{r}
+set.seed(1234)
 sce <- cluster(sce, features = type_markers(sce),
     xdim = 10, ydim = 10, maxK = 20, seed = 1234)
 ```
@@ -377,10 +379,8 @@ A variety of dimension reduction methods are available in the `r Biocpkg("scater
 Most dimensionality reduction techniques require significant computational time to process the data. To keep running times reasonable for larger CyTOF datasets, one may use a subset of cells. Here, we first split the vector of cell indices by sample ID and sample at most 500 cells per sample for dimension reduction.
 
 ```{r run-umap}
-# set random seed for reproducibility
+# run t-SNE/UMAP on at most 500/1000 cells per sample
 set.seed(1234)
-
-# run t-SNE & UMAP on at most 500 and 1000 cells per sample, respectively
 sce <- runDR(sce, dr = "TSNE", cells = 500, features = "type")
 sce <- runDR(sce, dr = "UMAP", cells = 1e3, features = "type")
 ```
