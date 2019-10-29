@@ -45,7 +45,7 @@ vignette: >
   %\VignetteEncoding{UTF-8}
   %\VignetteEngine{knitr::rmarkdown}
 editor_options: 
-  chunk_output_type: console
+  chunk_output_type: inline
 ---
 
 <!-- To render this document: -->
@@ -86,6 +86,7 @@ suppressPackageStartupMessages({
     library(diffcyt)
     library(flowCore)
     library(readxl)
+    library(scater)
 })
 ```
 
@@ -204,7 +205,7 @@ In our example, information about the panel is also available in a file called `
 The isotope, metal and antigen information that the instrument receives is also stored in the `flowFrame` (container for one sample) or `flowSet` (container for multiple samples) objects.  One can type `fs[[1]]` to see the first `flowFrame`, which contains a table with columns `name` and `desc`.  Their content can be retrieved with accessors `pData(parameters(fs[[1]]))`.  The variable `name` corresponds to the column names in the `flowSet` object, and can be viewed in R via `colnames(fs)`.
 
 It should be checked that elements from `panel` can be matched to their corresponding entries in the `flowSet` object. Specifically, the entries in `panel$Antigen` must have an equivalent in the `desc` columns of the `flowFrame` objects. 
-In the following analysis, we will often use marker IDs as column names in the tables containing expression values. As a cautionary note, during object conversion from one type to another (e.g., in the creation of data.frame from a matrix), some characters (e.g., dashes) in the dimension names are replaced with dots, which may cause problems in matching.  To avoid this problem, we will replace problematic characters (dashes with underscores; colons with dots) when organizing all data (measurement data, panel, and experimental metadata) into a so-called `daFrame` (Differential Analysis Frame; see [below](#data-organization)).
+In the following analysis, we will often use marker IDs as column names in the tables containing expression values. As a cautionary note, during object conversion from one type to another (e.g., in the creation of data.frame from a matrix), some characters (e.g., dashes) in the dimension names are replaced with dots, which may cause problems in matching.  To avoid this problem, we will replace problematic characters (dashes with underscores; colons with dots) when organizing all data (measurement data, panel, and experimental metadata) into a `SingleCellExperiment` (SCE) object (see [below](#data-organization)).
 
 ```{r load-panel}
 panel <- "PBMC8_panel_v3.xlsx"
@@ -220,23 +221,23 @@ all(panel$fcs_colname %in% colnames(fs))
 
 <!-- [VITO] An important point I am missing here is that a key reason why the arcsinh transformation is used, is because this data is often log-normally distributed (likely because of the multiplicative noise and the central limit theorem), however log transformation is not possible because of the 0s. Arcsinh transformation is compatible with 0 and approximately equal to log transformation for large numbers. Thus it should make the data approximately normal distributed, at least for large numbers, which is of importance for downstream statistics (you even mention in the differential analysis part that you assume the data to be gaussian in arcsinh space). -->
 
-Usually, the raw marker intensities read by a cytometer have strongly skewed distributions with varying ranges of expression, thus making it difficult to  distinguish between the negative and positive cell populations.  It is common practice to transform CyTOF marker intensities using, for example, arcsinh (inverse hyperbolic sine) with cofactor 5 [@Bendall687 Figure S2; @Bruggner2014] to make the distributions more symmetric and to map them to a comparable range of expression, which is important for clustering. A cofactor of 150 has been promoted for flow cytometry, but users are free to implement alternative transformations, some of which are available from the `transform()` function of the `r Biocpkg("flowCore")` package. By default, the `daFrame()` constructor (see [next section](#data-organization)) arcsinh transforms marker expressions with a cofactor of 5.
+Usually, the raw marker intensities read by a cytometer have strongly skewed distributions with varying ranges of expression, thus making it difficult to  distinguish between the negative and positive cell populations.  It is common practice to transform CyTOF marker intensities using, for example, arcsinh (inverse hyperbolic sine) with cofactor 5 [@Bendall687 Figure S2; @Bruggner2014] to make the distributions more symmetric and to map them to a comparable range of expression, which is important for clustering. A cofactor of 150 has .been promoted for flow cytometry, but users are free to implement alternative transformations, some of which are available from the `transform()` function of the `r Biocpkg("flowCore")` package. By default, the `prepData()` SCE constructor (see [next section](#data-organization)) arcsinh transforms marker expressions with a cofactor of 5.
 
 As the ranges of marker intensities can vary substantially, for visualization, we apply another transformation that scales the expression of all markers to values between 0 and 1 using low (e.g., 1\%) and high (e.g., 99\%) percentiles as the boundary.  This additional transformation of the arcsinh-transformed data can sometimes give better visual representation of relative differences in marker expression between annotated cell populations.  However, all computations (differential testing, hierarchical clustering etc.) are still performed on arcsinh-transformed not scaled expressions.  Whether scaled expression values should be plotted is specified with argument `scale = TRUE` or `FALSE` in the respective visualizations (e.g., `plotExprHeatmap()` and `plotClusterHeatmap()`). 
 
 # Data organization
 
-We will store all data used and returned throughout differential analysis in an object of class `daFrame` from the `r Biocpkg("CATALYST")` package. The `daFrame` requires the following inputs:
+We will store all data used and returned throughout differential analysis in an object of the `r Biocpkg("SingleCellExperiment")` (SCE) class. For this, `r Biocpkg("CATALYST")` provides the wrapper `prepData()` to construct a SCE object from the following inputs:
 
 - `x`: a `flowSet` containing the raw measurement data, or a character string that specifies the path to a set of .fcs files.
 - `panel`: a `data.frame` containing, for each marker, i) its column name in the input raw data, ii) its targeted protein markers, and, optionally, iii) its class (type, state, or none).
 - `md`: a `data.frame` with columns describing the experimental design. 
 
-Argument `cols_to_use` specifies which columns (channels) to retain from the input data. By default, all measurement parameters will be kept (`cols_to_use = NULL`). Here, we only keep the channels listed in `panel`.
+Argument `features` specifies which columns (channels) to retain from the input data. By default, all measurement parameters will be kept (`features = NULL`). Here, we only keep the channels listed in `panel`.
 
-It is important to carefully check whether variables are of the desired type (factor, numeric, character), since input methods may convert columns into different data types.  This is taken care of by the `daFrame()` constructor.  For the statistical modeling, we want to make the condition variable a factor with the reference (`Ref`) being the reference level.  The order of factor levels can be defined with the `levels` parameter of the `factor` function or via `relevel()`.
+It is important to carefully check whether variables are of the desired type (factor, numeric, character), since input methods may convert columns into different data types.  This is taken care of by the `prepData()` SCE constructor.  For the statistical modeling, we want to make the condition variable a factor with the reference (`Ref`) being the reference level.  The order of factor levels can be defined with the `levels` parameter of the `factor` function or via `relevel()`.
 
-As a final note, the `daFrame()` constructor requires the filenames listed in the `md$file_name` column to match those in the `flowSet`.
+As a final note, `prepData()` requires the filenames listed in the `md$file_name` column to match those in the `flowSet`.
 
 ```{r}
 # specify levels for conditions & sample IDs to assure desired ordering
@@ -244,8 +245,8 @@ md$condition <- factor(md$condition, levels = c("Ref", "BCRXL"))
 md$sample_id <- factor(md$sample_id, 
     levels = md$sample_id[order(md$condition)])
 
-# construct daFrame
-daf <- daFrame(fs, panel, md, cols_to_use = panel$fcs_colname)
+# construct SingleCellExperiment
+sce <- prepData(fs, panel, md, features = panel$fcs_colname)
 ```
 
 # Diagnostic plots
@@ -255,17 +256,17 @@ We propose some quick checks to verify whether the data we analyze globally repr
 The step below generates a plot with per-sample marker expression distributions, colored by condition (Figure \@ref(fig:plot-marker-expression-distribution)). Here, we can already see distinguishing markers, such as pNFkB and CD20, between stimulated and unstimulated conditions. 
 
 ```{r plot-marker-expression-distribution, fig.cap = "Per-sample smoothed densities of marker expression (arcsinh-transformed) of 10 lineage markers and 14 functional markers in the PBMC dataset. Two conditions: unstimulated (Ref) and stimulated with BCR/FcR-XL (BCRXL) for each of the 8 healthy donors are presented and colored by experimental condition."}
-p <- plotExprs(daf, color_by = "condition")
+p <- plotExprs(sce, color_by = "condition")
 p$facet$params$ncol <- 6
 p
 ```
 
-Another spot check is the number of cells per sample (Figure \@ref(fig:plot-number-of-cells)). This plot can be used as a guide together with other readouts to identify samples where not enough cells were assayed. The number of cells measured in each sample is also stored in the `experiment_info` slot of the `daFrame`'s `metadata`.
+Another spot check is the number of cells per sample (Figure \@ref(fig:plot-number-of-cells)). This plot can be used as a guide together with other readouts to identify samples where not enough cells were assayed. The number of cells measured in each sample is also stored in the `experiment_info` slot of the `SingleCellExperiment`'s `metadata`, and can be accessed directly via `n_cells()`.
 <!-- [CARSTEN] What is the minimum amount of cells recommended for analysis???? What is the maximum??? -->
 
 ```{r plot-number-of-cells, fig.height = 4, fig.cap = "Barplot showing the number of cells measured for each sample in the PBMC dataset. Bars are colored by experimental condition: unstimulated (Ref) and stimulated with BCR/FcR-XL (BCRXL). Numbers in the names on the x-axis indicate patient IDs. Numbers on top of the bars indicate the cell counts."}
-metadata(daf)$experiment_info$n_cells
-plotCounts(daf, color_by = "condition")
+n_cells(sce) # or, equivalently, `metadata(sce)$experiment_info$n_cells`
+plotCounts(sce, color_by = "condition")
 ```
 
 ## MDS plot
@@ -275,7 +276,7 @@ In transcriptomics applications, one of the most utilized exploratory plots is t
 In our MDS plot on median marker expression values (Figure \@ref(fig:plot-mds)), we can also see that the first dimension (MDS1) separates the unstimulated and stimulated samples reasonably well.  The second dimension (MDS2) represents, to some degree, differences between patients. Most of the samples that originate from the same patient are placed at a similar point along the y-axis, for example, samples from patients 7, 5, and 8  are at the bottom of the plot, while samples from patient 4 are located at the top of the plot.  This also indicates that the marker expression of individual patients is driving similarity and perhaps should be formally accounted for in the downstream statistical modeling.
 
 ```{r plot-mds, fig.cap = "MDS plot for the unstimulated (Ref) and stimulated with BCR/FcR-XL (BCRXL) samples obtained for each of the 8 healthy donors in the PBMC dataset. Calculations are based on the median (arcsinh-transformed) marker expression of 10 lineage markers and 14 functional markers across all cells measured for each sample.  Distances between samples in the plot approximate the typical change in medians. Numbers in the label names indicate patient IDs."}
-plotMDS(daf, color_by = "condition")
+CATALYST::plotMDS(sce, color_by = "condition")
 ```
 
 In contrast to genomic applications, the number of variables measured for each sample is much lower in HDCyto data. In the former, thousands of genes are surveyed, whereas in the latter, ~20-50 antigens are typically targeted. Similar to the MDS plot above, a heatmap of the same data also gives insight into the structure of the data.  The heatmap shows median marker intensities with clustered columns (markers) and rows (samples). We have used hierarchical clustering with average linkage and Euclidean distance, but also Ward's linkage could be used [@Bruggner2014], and in CyTOF applications, a cosine distance shows good performance [@Bendall2014]. In this plot, we can see which markers drive the observed clustering of samples (Figure \@ref(fig:plot-dendogram)).
@@ -288,7 +289,7 @@ HELENA: except for 1-2, this is not really true, I think?
 -->
 
 ```{r plot-dendogram, fig.cap = "Heatmap of the median (arcsinh-transformed) marker expression of 10 lineage markers and 14 functional markers across all cells measured for each sample in the PBMC dataset. Color-coded with yellow for lower expression and blue for higher expression. The numbers in the heatmap represent the actual expression values. Dendrograms present clustering of samples (rows) and markers (columns) which is based on hierarchical clustering with Euclidean distance metric and average linkage. Row annotations on the left of the heatmap represent the two conditions: unstimulated (Ref) and stimulated with BCR/FcR-XL (BCRXL), and patient IDs for each of the 8 healthy donors."}
-plotExprHeatmap(daf, bin_anno = TRUE, row_anno = TRUE)
+plotExprHeatmap(sce, bin_anno = TRUE, row_anno = TRUE)
 ```
 
 # Marker ranking based on the non-redundancy score
@@ -300,7 +301,7 @@ The average NRS can be used to select a subset of markers that are non-redundant
 In the dataset considered here [@Bodenmiller2012; @Bruggner2014], we want to use all the 10 lineage markers, so there is no explicit need to restrict the set of cell surface markers, and the NRS serve as another quality control step. There may be other situations where this feature selection step would be of interest, for example, in panel design [@Levine2015].
 
 ```{r nrs, fig.height = 4, fig.cap = "Non-redundancy scores for each of the 10 lineage markers and all samples in the PBMC dataset. The full points represent the per-sample NR scores (colored by experimental conditions), while empty black circles indicate the mean NR scores from all the samples. Markers on the x-axis are sorted according to the decreasing average NRS."}
-plotNRS(daf, markers = type_markers(daf), color_by = "condition")
+plotNRS(sce, features = type_markers(sce), color_by = "condition")
 ```
 
 # Cell population identification with FlowSOM and ConsensusClusterPlus
@@ -318,16 +319,18 @@ The `r Biocpkg("FlowSOM")` workflow consists of three steps: i) building a  self
 It is important to point out that we cluster all cells from all samples together. This strategy is beneficial, since we directly obtain cluster assignment for each cell, we label cell populations only once and the mapping of cell types between samples is automatically consistent. For a list of alternative approaches and their advantages and disadvantages, please refer to the [Discussion](#discussion) section, where we consider: clustering per sample, clustering of data from different measurement batches and down-sampling in case of widely varying numbers of cells per sample.
 
 
-`r Biocpkg("CATALYST")` provides the wrapper function `cluster()` to perform both `r Biocpkg("FlowSOM")` clustering and `r Biocpkg("ConsensusClusterPlus")` metaclustering.  The clustering IDs obtained after the first high-dimensional clustering step are added to the input `daFrame`'s `rowData` in the `cluster_id` column.  The cluster codes for the lower dimensional metaclusterings to 2 through `maxK` clusters are stored as list element `cluster_codes` in the `metadata`.  In this way, all levels of clustering are computed once and kept accessible for further investigation, visualization, and differential analysis. 
+`r Biocpkg("CATALYST")` provides the wrapper function `cluster()` to perform both `r Biocpkg("FlowSOM")` clustering and `r Biocpkg("ConsensusClusterPlus")` metaclustering.  The clustering IDs obtained after the first high-dimensional clustering step are added to the input SCE's `colData` in the `cluster_id` column.  The cluster codes for the lower dimensional metaclusterings to 2 through `maxK` clusters are stored as list element `cluster_codes` in the `metadata`.  In this way, all levels of clustering are computed once and kept accessible for further investigation, visualization, and differential analysis. 
 
-The subset of markers to use for clustering is specified with argument `cols_to_use`.  For future reference, the specified markers will be assigned class `"type"`, and the remainder of markers will be assigned to be `"state"` markers.  The sets of type and state markers can be accessed at any point with the `type_markers()` and `state_markers()` accessor functions, respectively.
+The subset of markers to use for clustering is specified with argument `features`.  For future reference, the specified markers will be assigned class `"type"`, and the remainder of markers will be assigned to be `"state"` markers.  The sets of type and state markers can be accessed at any point with the `type_markers()` and `state_markers()` accessor functions, respectively.
 
-In our example, we have specified marker classes in the input `panel`, and `cluster()` will default to using `"type"` markers for clustering.  For clarity, we specify this explicitly via `cols_to_use = type_markers(daf)`.  We call `ConsensusClusterPlus()` with maximum number of clusters `maxK = 20`.
+In our example, we have specified marker classes in the input `panel`, and `cluster()` will default to using `"type"` markers for clustering.  For clarity, we specify this explicitly via `features = type_markers(sce)`.  We call `ConsensusClusterPlus()` with maximum number of clusters `maxK = 20`.
 
-`r Biocpkg("FlowSOM")` output can be sensitive to random starts [@Weber2016].  To make results reproducible, `cluster()` takes a `seed` argument that is passed to `set.seed` for random number generation, prior to calling `BuildSOM()`.  It is advisable to rerun analyses with multiple random seeds, for two reasons.  First, one can see how robust the detected clusters are, and second, when the goal is to find smaller cell populations, it may happen that, in some runs, random starting points do not represent rare cell populations, as the chance of selecting starting cells from them is low and they are merged into a larger cluster.
+`r Biocpkg("FlowSOM")` output can be sensitive to random starts [@Weber2016]. To make results reproducible, we first set a seed for random number generation prior to calling `cluster()`, and, secondly, specifcy a `seed` argument inside `cluster()`. Unfortunately, this is necessary as the `ConsensusClusterPlus()` function internally calls `set.seed()` and will, when not provided with a seed, overwrite our seed using the current system time (`set.seed(as.numeric(Sys.time()))`).  
+In general, it is advisable to rerun analyses with multiple random seeds, for two reasons.  First, one can see how robust the detected clusters are, and second, when the goal is to find smaller cell populations, it may happen that, in some runs, random starting points do not represent rare cell populations, as the chance of selecting starting cells from them is low and they are merged into a larger cluster.
 
 ```{r}
-daf <- cluster(daf, cols_to_use = type_markers(daf),
+set.seed(1234)
+sce <- cluster(sce, features = type_markers(sce),
     xdim = 10, ydim = 10, maxK = 20, seed = 1234)
 ```
 
@@ -342,19 +345,19 @@ We can then investigate characteristics of identified clusters with heatmaps tha
 Instead of using only medians, which do not give a full representation of cluster specifics, one can plot the entire marker expression distribution in each cluster (Figure \@ref(fig:plot-clustering-distribution1)). Such a plot gives more detailed profile of each cluster, but represents a larger amount of information to interpret. Heatmaps give an overall overview of clusters, are quicker and easier to interpret, and together with the dendrogram can be a good basis for further cluster merging (see [Cluster merging and annotation](#cluster-merging-and-annotation) section).
 
 ```{r plot-clustering-heatmap1, fig.cap = "Heatmap of the median marker intensities of the 10 lineage markers across the 20 cell populations obtained with FlowSOM after the metaclustering step with ConsensusClusterPlus (PBMC data). The color in the heatmap represents the median of the arcsinh, 0-1 transformed marker expression calculated over cells from all the samples, varying from blue for lower expression to red for higher expression. The dendrogram on the left represents the hierarchical similarity between the 20 metaclusters (metric: Euclidean distance; linkage: average). Each cluster has a unique color assigned (bar on the left) which is identical in other visualizations of these 20 clusters (e.g., the UMAP shown in Figure \\@ref(fig:umap-one-clustering1)) facilitating the figure interpretation. Barplot along the rows (clusters) and values in brackets on the right indicate the relative sizes of clusters."}
-plotClusterHeatmap(daf, 
+plotClusterHeatmap(sce, 
     hm2 = NULL, k = "meta20", m = NULL,
     cluster_anno = TRUE, draw_freqs = TRUE)
 ```
 
 ```{r plot-clustering-distribution1, fig.height = 8, fig.cap = "Distributions of marker intensities (arcsinh-transformed) of the 10 lineage markers in the 20 cell populations obtained with FlowSOM after the metaclustering step with ConsensusClusterPlus (PBMC data). Red densities represent marker expression for cells in a given cluster. Blue densities are calculated over all the cells and serve as a reference."}
-plotClusterExprs(daf, k = "meta20", markers = "type")
+plotClusterExprs(sce, k = "meta20", features = "type")
 ```
 
 In addition to investigating expression of the lineage markers, we can also have a look at expression of the functional markers. We propose a heatmap that depicts median expression of functional markers in each sample (Figure \@ref(fig:plot-clustering-heatmap1-complex)) such that the potential differential expression can be investigated already at this data exploration step before the formal testing is done. In order to plot all the heatmaps in one panel, we use the `r Biocpkg("ComplexHeatmap")` package [@Gu2016].
 
 ```{r plot-clustering-heatmap1-complex, fig.cap = "Heatmap of the median marker intensities of the 10 lineage markers and one signaling marker (pS6) across the 20 cell populations obtained with FlowSOM after the metaclustering step with ConsensusClusterPlus (PBMC data). The left panel presents a heatmap analogous to the one in Figure \\@ref(fig:plot-clustering-heatmap1). Heatmap on the right represents the median of the arcsinh, 0-1 transformed marker expression for a signaling marker pS6 calculated over cells in each sample (columns) individually."}
-plotClusterHeatmap(daf, hm2 = "pS6", k = "meta20", draw_freqs = TRUE)
+plotClusterHeatmap(sce, hm2 = "pS6", k = "meta20", draw_freqs = TRUE)
 ```
 
 ## Visual representation with UMAP
@@ -371,42 +374,45 @@ Another nonlinear dimensionality reduction technique, uniform manifold approxima
 
 <!-- [This is super important! Also: mention the relation to the amount of neighboring cells. Biologists tend to put too many neighbors!!!] -->
 
-`r Biocpkg("CATALYST")` provides a flexible wrapper, `runDR()`, to perform the set of dimensionality reduction methods available in the `r Biocpkg("scater")` package. To make results reproducible, the random seed should be set via `set.seed` *prior* to calling `runDR()`. The subset of markers to use for computing reduced dimensions is specified via `cols_to_use`, but will default to the set of type-markers defined in the input `daFrame` if unspecified (`type_markers(daf)`); the cells to use are specified with `rows_to_use`. When a single numeric value N is provided, `runDR()` will draw a random subset of N cells per sample.
+A variety of dimension reduction methods are available in the `r Biocpkg("scater")` package and can be run via `runX()`, where `X = "PCA", "TSNE", "UMAP", "MDS"` or ` "DiffusionMap"` (see `?"scater-red-dim-args"` for details). To make results reproducible, the random seed should be set via `set.seed` *prior* to dimension reduction. The assay containing expression values (default `logcounts`) should be specified via argument `exprs_values`, and the subset of markers to use for computing reduced dimensions is specified via `subset_row`. Here, we will use the set of type-markers accessible via `type_markers(sce)`.
 
-Most dimensionality reduction techniques require significant computational time to process the data. To keep running times reasonable for larger CyTOF datasets, one may use a subset of cells. The methods in `r Biocpkg("CATALYST")` have been implemented in a way that allows using different sets of cells for different algorithms. For example, here we use 500 and 1000 cells from each sample to run t-SNE and UMAP, respectively.
+Most dimensionality reduction techniques require significant computational time to process the data. To keep running times reasonable for larger CyTOF datasets, one may use a subset of cells. Here, we first split the vector of cell indices by sample ID and sample at most 500 cells per sample for dimension reduction.
 
 ```{r run-umap}
-# run t-SNE & UMAP
+# run t-SNE/UMAP on at most 500/1000 cells per sample
 set.seed(1234)
-daf <- runDR(daf, "TSNE", rows_to_use = 500)
-daf <- runDR(daf, "UMAP", rows_to_use = 1000)
+sce <- runDR(sce, dr = "TSNE", cells = 500, features = "type")
+sce <- runDR(sce, dr = "UMAP", cells = 1e3, features = "type")
 ```
 
 The UMAP map below is colored according to the expression level of the CD4 marker, highlighting the position of CD4+ T-cells (Figure \@ref(fig:umap-one-expr-CD4)). In this way, one can use a set of markers to highlight where cell types of interest are located on the map. If one is loosely interpreting *density* of points in the map, it is recommended to select a fixed number of cells per sample.
 
-```{r umap-one-expr-CD4, fig.cap = "UMAP based on the arcsinh-transformed expression of the 10 lineage markers in the cells from the PBMC dataset. UMAP was run with no PCA step. From each of the 16 samples, 1000 cells were randomly selected. Cells are colored according to the expression level of the CD4 marker."}
-plotDR(daf, "UMAP", color_by = "CD4")
+```{r umap-one-expr-CD4, warning = FALSE, fig.cap = "UMAP based on the arcsinh-transformed expression of the 10 lineage markers in the cells from the PBMC dataset. UMAP was run with no PCA step. From each of the 16 samples, 1000 cells were randomly selected. Cells are colored according to the expression level of the CD4 marker."}
+plotDR(sce, "UMAP", color_by = "CD4")
 ```
 
 Alternatively, we can color the cells by any resolution of clustering available in the codes. Here, we compare the t-SNE and UMAP projections of cells colored by the 20 metaclusters.  Ideally, cells of the same color should be close to each other (Figure \@ref(fig:umap-one-clustering1)). When the plots are further stratified by sample (Figure \@ref(fig:umap-facet-sample)), we can verify whether similar cell populations are present in all replicates, which can help in identifying outlying samples. Optionally, stratification can be done by condition (Figure \@ref(fig:umap-facet-condition)). With such a spot-check plot, we can inspect whether differences in cell abundance are strong between conditions, and we can visualize and identify distinguishing clusters before applying formal statistical testing. A similar approach of data exploration was proposed in studies of treatment-specific differences of polyfunctional antigen-specific T-cells [@Lin2015a].
 
-```{r umap-one-clustering1, fig.cap = "t-SNE and UMAP based on the arcsinh-transformed expression of the 10 lineage markers in the cells from the PBMC dataset. From each of the 16 samples, 500 (t-SNE) and 1000 (UMAP) cells were randomly selected. Cells are colored according to the 20 cell populations obtained with FlowSOM after the metaclustering step with ConsensusClusterPlus."}
-p1 <- plotDR(daf, "TSNE", color_by = "meta20") + 
+```{r umap-one-clustering1, warning = FALSE, fig.cap = "t-SNE and UMAP based on the arcsinh-transformed expression of the 10 lineage markers in the cells from the PBMC dataset. From each of the 16 samples, 500 (t-SNE) and 1000 (UMAP) cells were randomly selected. Cells are colored according to the 20 cell populations obtained with FlowSOM after the metaclustering step with ConsensusClusterPlus."}
+p1 <- plotDR(sce, "TSNE", color_by = "meta20") + 
     theme(legend.position = "none")
-p2 <- plotDR(daf, "UMAP", color_by = "meta20")
-lgd <- get_legend(p2)
+p2 <- plotDR(sce, "UMAP", color_by = "meta20")
+lgd <- get_legend(p2 + 
+    guides(color = guide_legend(ncol = 2, override.aes = list(size = 3))))
 p2 <- p2 + theme(legend.position = "none")
 plot_grid(p1, p2, lgd, nrow = 1, rel_widths = c(5, 5, 2))
 ```
 
-```{r umap-facet-sample, fig.cap = "UMAP as in Figure \\@ref(fig:umap-one-clustering1), but stratified by sample."}
+```{r umap-facet-sample, warning = FALSE, fig.cap = "UMAP as in Figure \\@ref(fig:umap-one-clustering1), but stratified by sample."}
 ## Facet per sample
-plotDR(daf, "UMAP", color_by = "meta20", facet = "sample_id") 
+plotDR(sce, "UMAP", color_by = "meta20") + facet_wrap("sample_id") +
+    guides(color = guide_legend(ncol = 2, override.aes = list(size = 3)))
 ```
 
-```{r umap-facet-condition, fig.height = 3, fig.cap = "UMAP as in Figure \\@ref(fig:umap-one-clustering1), but stratified by condition."}
+```{r umap-facet-condition, warning = FALSE, fig.height = 3, fig.cap = "UMAP as in Figure \\@ref(fig:umap-one-clustering1), but stratified by condition."}
 ## Facet per condition
-plotDR(daf, "UMAP", color_by = "meta20", facet = "condition")
+plotDR(sce, "UMAP", color_by = "meta20") + facet_wrap("condition") +
+    guides(color = guide_legend(ncol = 2, override.aes = list(size = 3)))
 ```
 
 The SOM codes represent characteristics of the 100 (by default) clusters generated in the first step of the `r Biocpkg("FlowSOM")` pipeline.  Their visualization can also be helpful in understanding the cell population structure and determining the number of clusters.  Ultimately, the metaclustering step uses the codes and not the original cells.  We treat the codes as new representative cells and apply the t-SNE dimension reduction to visualize them in 2D (Figure \@ref(fig:plot-som-codes1-pca)).  The size of the points corresponds to the number of cells that were assigned to a given code.  The points are colored according to the results of metaclustering.  Since we have only 100 data points, the t-SNE analysis is fast.
@@ -414,13 +420,13 @@ The SOM codes represent characteristics of the 100 (by default) clusters generat
 As there are multiple ways to mathematically define similarity in high-dimensional space, it is always good practice visualizing projections from other methods to see how consistent the observed patterns are.  For instance, we also represent the `r Biocpkg("FlowSOM")` codes via the first two principal components (Figure \@ref(fig:plot-som-codes1-pca)). 
 
 ```{r plot-som-codes1-pca, fig.height = 6, fig.width = 10, fig.cap = "The 100 SOM codes in the PBMC dataset colored according to the metaclustering with ConsensusClusterPlus into 20 cell populations presented after the dimension reduction with (A) t-SNE and (B) PCA. The SOM codes represent characteristics of the 100 (by default) clusters generated in the first step of the FlowSOM pipeline. The size of the points corresponds to the number of cells that were assigned to a given code."}
-plotCodes(daf, k = "meta20")
+plotCodes(sce, k = "meta20")
 ```
 
 Using heatmaps, we can also visualize median marker expression in the 100 SOM codes as in Figure \@ref(fig:plot-som-codes1-heatmap-complex). Of note, the clustering presented with the dendrogram does not completely agree with the clustering depicted by the 20 colors because the first one is based on the hierarchical clustering with average linkage and Euclidean distance, while the second one results from the consensus clustering.
 
 ```{r plot-som-codes1-heatmap-complex, fig.height = 14, fig.cap = "Heatmap of the median marker intensities of the 10 lineage markers (left panel) and one signaling marker pS6 (right panel) across the 100 SOM codes in the PBMC dataset. The color in the heatmap represents the median of the arcsinh, 0-1 transformed marker expression calculated over cells from all the samples, for the lineage markers, and over cells in each sample individually, for the signaling marker. The heat varies from blue for lower expression to red for higher expression. The dendrogram on the left represents the hierarchical similarity between the 100 codes (metric: Euclidean distance; linkage: average). The annotation bar on the left is colored according to the code metaclustering with ConsensusClusterPlus into 20 cell populations. The relative size of the codes is shown in parentheses next to the cluster numbers."}
-plotClusterHeatmap(daf, 
+plotClusterHeatmap(sce, 
     hm2 = "pS6", k = "som100", m = "meta20", 
     cluster_anno = FALSE, draw_freqs = TRUE)
 ```
@@ -434,9 +440,9 @@ In our setup, over-clustering is also useful when the interest is identifying th
 In our example, we expect around 6 specific cell types, and we have performed `r Biocpkg("FlowSOM")` clustering into 20 groups as a reasonable over-estimate.  After analyzing the heatmaps (Figure \@ref(fig:plot-clustering-heatmap1)) and UMAP plots (Figure \@ref(fig:umap-one-clustering1)), we can clearly see that stratification of the data into 20 clusters may be too strong.  In the UMAP plot, many clusters are placed very close to each other, indicating that they could be merged together. The same can be deduced from the heatmaps, highlighting that marker expression patterns for some neighboring clusters are very similar.  Cluster merging and annotation is somewhat manual, based partially on visual inspection of UMAP plots and heatmaps and thus, benefits from expert knowledge of the cell types.
 
 ### Manual cluster merging and annotation based on heatmaps
-<!--HELENA: we use "in our experience" in the paragraph above already...-->
+
 Our main reference for manual merging of clusters is the heatmap of marker characteristics across metaclusters (e.g., Figure \@ref(fig:plot-clustering-heatmap1)), with dendrograms showing the hierarchy of similarities. Such plots show cluster- or cluster-sample level information, and thus aggregate marker expression across many cells.  Together with dimensionality reduction, these plots give good insight into the relationships between clusters and the marker levels within each cluster. Given expert knowledge of the cell types and markers, it is then left to the researcher to decide how exactly to merge clusters (e.g., with higher weight given to some markers).
-<!--HELENA: we use medians; to me, "average" is confusing here-->
+
 The dendrogram highlights the similarity between the metaclusters and can be used explicitly for the merging.  However, there are reasons why we would not always follow the dendrogram exactly.  In general, when it comes to clustering, blindly following the hierarchy of codes will lead to identification of populations of similar cells, but it does not necessarily mean that they are of biological interest.  The distances between metaclusters are calculated across all the markers, and it may be that some markers carry higher weight for certain cell types.  In addition, different linkage methods may lead to a different hierarchy, especially when clusters are not fully distinct.  Another aspect to consider in cluster merging is the cluster size, represented in the parentheses next to the cluster label in our plots. If the cluster size is very small, but the cluster seems relevant and distinct, one can keep it as separate.  However, if it is small and different from the neighboring clustering only in a somewhat unimportant marker, it could be merged.  And, if some of the metaclusters do not represent any specific cell types, they could be dropped out of the downstream analysis instead of being merged.   However, in case an automated solution for cluster merging is truly needed, one could use the `cutree()` function applied to the dendrogram.
 
 Based on the set random seed, a manual merging of the 20 metaclusters is defined in `PBMC8_cluster_merging1.xlsx` available at the [Robinson Lab server](http://imlspenticton.uzh.ch/robinson_lab/cytofWorkflow).  This merging table contains, for each of the original clusters, an ID to newly assign to cells assigned to the given cluster.  Clusters may be merged with the `mergeClusters()` function from `r Biocpkg("CATALYST")`.  For future reference, each manual merging is assigned an ID specified with argument `id`.  Note that, if multiple old clusters are given the same new label, the respective clusters will be merged.
@@ -455,26 +461,27 @@ merging_table1$new_cluster <- factor(merging_table1$new_cluster,
     levels = c("B-cells IgM+", "B-cells IgM-", "CD4 T-cells",
         "CD8 T-cells", "DC", "NK cells", "monocytes", "surface-"))
 
-daf <- mergeClusters(daf, k = "meta20", 
+# apply manual merging
+sce <- mergeClusters(sce, k = "meta20", 
     table = merging_table1, id = "merging1")
 ```
 
 We can view the UMAP plot with the new annotated cell populations by specifying `color_by = "merging1"` (Figure \@ref(fig:umap-one-clustering1m)).
 
-```{r umap-one-clustering1m, fig.cap = "UMAP plot for the PBMC dataset, where cells are colored according to the manual merging of the 20 cell populations, obtained with FlowSOM, into 8 PBMC populations. As in Figure \\@ref(fig:umap-one-clustering1), UMAP uses the arcsinh-transformed expression of the 10 lineage markers in 1000 randomly selected cells from each of the 16 samples."}
-plotDR(daf, "UMAP", color_by = "merging1")
+```{r umap-one-clustering1m, warning = FALSE, fig.cap = "UMAP plot for the PBMC dataset, where cells are colored according to the manual merging of the 20 cell populations, obtained with FlowSOM, into 8 PBMC populations. As in Figure \\@ref(fig:umap-one-clustering1), UMAP uses the arcsinh-transformed expression of the 10 lineage markers in 1000 randomly selected cells from each of the 16 samples."}
+plotDR(sce, "UMAP", color_by = "merging1")
 ```
 
 One of the useful representations of merging is a heatmap of median marker expression in each of the original clusters, which are labeled according to the proposed merging, Figure \@ref(fig:plot-clustering-heatmap1m-merging).  As before, the clustering to use for computing cluster medians is specified with `k = "meta20"`.  For visualization, we can specify a second layer of cluster annotations with `m = "merging1"`. 
 
 ```{r plot-clustering-heatmap1m-merging, fig.height = 8, fig.cap = "Heatmap as in Figure \\@ref(fig:plot-clustering-heatmap1), where the additional color bar on the left indicates how the 20 metaclusters, obtained with FlowSOM, are merged into the 8 PBMC populations."}
-plotClusterHeatmap(daf, k = "meta20", m = "merging1")
+plotClusterHeatmap(sce, k = "meta20", m = "merging1")
 ```
 
 To get a final summary of the annotated cell types, we can plot a heatmap of median marker expressions that are calculated based on the manual merging's cluster annotations (Figure \@ref(fig:plot-clustering-heatmap1m)).
 
 ```{r plot-clustering-heatmap1m, fig.height = 5, fig.cap = "Heatmap of the median marker intensities of the 10 lineage markers in the 8 PBMC cell populations obtained by manual merging of the 20 metaclusters generated by FlowSOM. As in Figure \\@ref(fig:plot-clustering-heatmap1), the heat represents the median of arcsinh and 0-1 transformed marker expression calculated over cells from all the samples. The dendrogram on the left represents the hierarchical similarity between the 8 populations calculated using Euclidean distance and average linkage."}
-plotClusterHeatmap(daf, k = "merging1")
+plotClusterHeatmap(sce, k = "merging1")
 ```
 
 ### Reducing the number of clusters in ConsensusClusterPlus
@@ -488,7 +495,7 @@ The elbow criterion is quite subjective since the "appreciable" increase is not 
 Manual merging of up to 20 clusters can be laborious.  To simplify this task, one could reduce the strength of over-clustering and allow the metaclustering method to do a part of the merging, which then can be completed manually. Analyzing the delta plot from the right side, we can see how much we can reduce the strength of over-clustering while still obtaining stable clusters.  In parallel, one should check the heatmaps to see whether the less stringent stratification is able to capture cell populations of interest. 
 
 ```{r consensus-plot, echo = FALSE, out.width = '70%', fig.align = 'center', fig.cap = "The delta area plot generated in the metaclustering step by the ConsensusClusterPlus function. The delta area score (y-axis) indicates the relative increase in cluster stability obtained when clustering the 100 SOM codes generated by FlowSOM into k groups (x-axis)."}
-metadata(daf)$delta_area
+metadata(sce)$delta_area
 ```
 
 As an example, we consider the metaclustering to 12 groups. Clustering into as few as 12 groups still allows us to identify the same 8 cell populations as when merging 20 clusters, but these are simpler to define since fewer profiles need to be manually scanned. The expert-based merging of the 12 metaclusters into 8 PBMC cell populations is saved in the `PBMC8_cluster_merging2_v3.xlsx` file on the [Robinson Lab server](http://imlspenticton.uzh.ch/robinson_lab/cytofWorkflow).
@@ -505,8 +512,8 @@ merging_table2$new_cluster <- factor(
     merging_table2$new_cluster, 
     levels = levels(merging_table1$new_cluster))
 
-# apply 2nd manual merging
-daf <- mergeClusters(daf, k = "meta12", 
+# apply manual merging
+sce <- mergeClusters(sce, k = "meta12", 
     table = merging_table2, id = "merging2")
 ```
 
@@ -516,16 +523,16 @@ The manual merging of 20 (or 12) clusters by an expert resulted in identificatio
 
 ```{r flowsom-meta-clustering3}
 # tabular comparison of algorithmic & manual merging
-table(manual = cluster_codes(daf)[cluster_ids(daf), "merging2"],
-    algorithm = cluster_codes(daf)[cluster_ids(daf), "meta8"] )
+table(manual = cluster_codes(sce)[cluster_ids(sce), "merging2"],
+    algorithm = cluster_codes(sce)[cluster_ids(sce), "meta8"] )
 ```
 
 <!-- [HELENA] I think we can leave this in to have one visual comparison. -->
 In the UMAP plot (Figure \@ref(fig:umap-one-clustering3)), we can see that part of the new cell populations (cluster 6, 1, 2, 4 and 7) overlap substantially with populations obtained by the means of manual merging (CD4 T-cells, B-cells, surface-, monocytes and DC).  However, cells that belong to clusters 3 and 5 are subdivided in a different manner according to the manual merging.  Cluster 1 consists of both B-cells IgM+ and IgM- and is not further subdivided, whereas cluster 8 is altogether unidentifiable.
 
-```{r umap-one-clustering3, fig.height = 8, fig.cap = "UMAP plot with cells colored according to (A) the expert merging of 12 metaclusters obtained with FlowSOM into 8 PBMC populations; and (B) the 8 automatically detected with FlowSOM metaclusters."}
-p1 <- plotDR(daf, "UMAP", color_by = "merging2")
-p2 <- plotDR(daf, "UMAP", color_by = "meta8")
+```{r umap-one-clustering3, warning = FALSE, fig.height = 8, fig.cap = "UMAP plot with cells colored according to (A) the expert merging of 12 metaclusters obtained with FlowSOM into 8 PBMC populations; and (B) the 8 automatically detected with FlowSOM metaclusters."}
+p1 <- plotDR(sce, "UMAP", color_by = "merging2")
+p2 <- plotDR(sce, "UMAP", color_by = "meta8")
 plot_grid(p1, p2, ncol = 1, align = "v", labels = c("A", "B"))
 ```
 
@@ -556,13 +563,13 @@ Differential analysis of cell population abundance compares the proportions of c
 For each sample, we plot its PBMC cell type composition represented with colored bars, where the size of a given stripe reflects the proportion of the corresponding cell type in a given sample (Figure \@ref(fig:diff-freqs-plot-props-barplot)).
 
 ```{r diff-freqs-plot-props-barplot, fig.cap = "Relative abundance of the 8 PBMC populations in each sample (x-axis), in the PBMC dataset, represented with a barplot. The 8 cell populations are a result of manual merging of the 20 FlowSOM metaclusters."}
-plotAbundances(daf, k = "merging1", by = "sample_id")
+plotAbundances(sce, k = "merging1", by = "sample_id")
 ```
 
 It may be quite hard to see the differences in cluster abundances in the plot above, especially for clusters with very low frequency.  And, since boxplots cannot represent multimodal distributions, we show boxplots with jittered points of the sample-level cluster proportions overlaid (Figure \@ref(fig:diff-freqs-plot-props-boxplot)).  The y-axes are scaled to the range of data plotted for each cluster, to better visualize the differences in frequency of lower abundance clusters. For this experiment, it may be interesting to additionally depict the patient information. We do this by plotting a different point shape for each patient. Indeed, we can see that often the direction of abundance changes between the two conditions are concordant among the patients.
 
 ```{r diff-freqs-plot-props-boxplot, fig.height = 4, fig.cap = "Relative abundance of the 8 PBMC populations in each sample, in the PBMC dataset, represented with boxplots. Values for the two conditions are indicated with different colors: red for the unstimulated (Ref) and blue for the stimulated with BCR/FcR-XL (BCRXL) samples. Values for each patient are indicated with different shape. The 8 cell populations are a result of manual merging of the 20 FlowSOM metaclusters."}
-plotAbundances(daf, k = "merging1", by = "cluster_id", shape = "patient_id")
+plotAbundances(sce, k = "merging1", by = "cluster_id", shape = "patient_id")
 ```
 
 <!-- A more suitable model would be based on the beta-binomial distribution, or similar results can be achieved by modeling the extra variance of ratios as random effects for each individual sample in the -->
@@ -588,7 +595,7 @@ where $\gamma_{i} \sim N(0, \sigma^2_\gamma)$.
 We set up the model formulas and contrast matrix using the `createFormula()` and `createContrast()` functions from the `r Biocpkg("diffcyt")` package. These functions create the model formulas and contrast matrix in the required format for the `r Biocpkg("diffcyt")` testing functions. For more details, see `?createFormula` and `?createContrast`, or refer to the extended documentation in the `r Biocpkg("diffcyt")` vignette ([diffcyt workflow](http://bioconductor.org/packages/release/bioc/vignettes/diffcyt/inst/doc/diffcyt_workflow.html)).
 
 ```{r da-formulas}
-ei <- metadata(daf)$experiment_info
+ei <- metadata(sce)$experiment_info
 (da_formula1 <- createFormula(ei, 
     cols_fixed = "condition", 
     cols_random = "sample_id"))
@@ -601,14 +608,14 @@ ei <- metadata(daf)$experiment_info
 contrast <- createContrast(c(0, 1))
 ```
 
-The `r Biocpkg("diffcyt")` package provides three methods for differential abundance (DA) analyses, and two methods for differential state (DS) analyses. For an explanation and comparison of the different methods, see @Weber2019a. Here, we use the DA methodology based on mixed models, which is implemented in the method `diffcyt-DA-GLMM`. This method can be selected by providing the arguments `method = "DA"` and `method_DA = "diffcyt-DA-GLMM"` to the `diffcyt()` wrapper function (for more details, see `?diffcyt`). As our `daFrame` contains a total of 22 clusterings (1 high-resolution, 19 consensus mergings, and 2 manual mergings), we also specify the clustering of interest via `clustering_to_use = "merging1"`.
+The `r Biocpkg("diffcyt")` package provides three methods for differential abundance (DA) analyses, and two methods for differential state (DS) analyses. For an explanation and comparison of the different methods, see @Weber2019a. Here, we use the DA methodology based on mixed models, which is implemented in the method `diffcyt-DA-GLMM`. This method can be selected by providing the arguments `method = "DA"` and `method_DA = "diffcyt-DA-GLMM"` to the `diffcyt()` wrapper function (for more details, see `?diffcyt`). As our SCE contains a total of 22 clusterings (1 high-resolution, 19 consensus mergings, and 2 manual mergings), we also specify the clustering of interest via `clustering_to_use = "merging1"`.
 
 ```{r da-analysis}
-da_res1 <- diffcyt(daf, 
+da_res1 <- diffcyt(sce, 
     formula = da_formula1, contrast = contrast,
     analysis_type = "DA", method_DA = "diffcyt-DA-GLMM",
     clustering_to_use = "merging1", verbose = FALSE)
-da_res2 <- diffcyt(daf, 
+da_res2 <- diffcyt(sce, 
     formula = da_formula2, contrast = contrast,
     analysis_type = "DA", method_DA = "diffcyt-DA-GLMM",
     clustering_to_use = "merging1", verbose = FALSE)
@@ -637,7 +644,7 @@ topTable(da_res2, show_props = TRUE, format_vals = TRUE, digits = 2)
 We use a heatmap to report the differential cell populations (Figure \@ref(fig:diff-freqs-plot-heatmap-with-significant-clusters)).  Proportions are first scaled with the arcsine-square-root transformation (as an alternative to logit that cannot be calculated on ratios of zero or one). Then, z-score normalization is applied to each population to better highlight the relative differences between compared conditions.  In addition, the clusters are sorted according to adjusted p-values.
 
 ```{r diff-freqs-plot-heatmap-with-significant-clusters, fig.height = 4, fig.cap = "DA test results and normalized proportions for PBMC cell populations in BCR/FcR-XL stimulated and unstimulated conditions. The heat represents arcsine-square-root transformed cell frequencies that were subsequently normalized per cluster (rows) to mean of zero and standard deviation of one. The color of the heat varies from blue indicating relative under-representation to orange indicating relative over-representation. Bars at the top of the heatmap indicate patient IDs and the condition the samples (columns) belong to: red for the unstimulated (Ref) and brown for the stimulated with BCR/FcR-XL (BCRXL) condition. Bar and numbers at the right indicate significant differentially abundant clusters (green) and adjusted p-values. Clusters are sorted according to adjusted p-values, so that the cluster at the top shows the most significant abundance changes between the two conditions."}
-plotDiffHeatmap(daf, da_res2, th = FDR_cutoff, normalize = TRUE, hm1 = FALSE)
+plotDiffHeatmap(sce, da_res2, th = FDR_cutoff, normalize = TRUE, hm1 = FALSE)
 ```
 
 ## Differential analysis of marker expression stratified by cell population
@@ -658,8 +665,8 @@ There might be instances of small cell populations for which no cells are observ
 It is helpful to plot the median expression of all markers in each cluster for each sample colored by condition, to get a rough image of how strong the differences might be (Figure \@ref(fig:diff-expr2-plot-median-expr)).  We do this by combining boxplots and jitter.
 
 ```{r diff-expr2-plot-median-expr, fig.height = 8, fig.width=10, fig.cap = "Median (arcsinh-transformed) expression of 14 signaling markers (x-axis) across the 8 identified PBMC cell populations (individual panels). Values for the two conditions are indicated with different colors: red for the unstimulated (Ref) and blue for the stimulated with BCR/FcR-XL (BCRXL) samples. Values for each patient are indicated with different shape. The 8 cell populations are a result of manual merging of the 20 FlowSOM metaclusters."}
-p <- plotMedExprs(daf, k = "merging1", facet = "cluster_id",
-    shape_by = "patient_id")
+p <- plotMedExprs(sce, k = "merging1", 
+  facet = "cluster_id", shape_by = "patient_id")
 p$facet$params$ncol <- 2
 p
 ```
@@ -677,12 +684,12 @@ Using `r Biocpkg("diffcyt")`, we calculate differential tests using method `diff
 By accounting for the patient effect, we detect almost twice as many cases of differential signaling compared to the regular linear model.  
 
 ```{r ds-analysis}
-ds_res1 <- diffcyt(daf, 
+ds_res1 <- diffcyt(sce, 
     formula = ds_formula1, contrast = contrast,
     analysis_type = "DS", method_DS = "diffcyt-DS-LMM",
     clustering_to_use = "merging1", verbose = FALSE)
 table(rowData(ds_res1$res)$p_adj < FDR_cutoff)
-ds_res2 <- diffcyt(daf, 
+ds_res2 <- diffcyt(sce, 
     formula = ds_formula2, contrast = contrast,
     analysis_type = "DS", method_DS = "diffcyt-DS-LMM",
     clustering_to_use = "merging1", verbose = FALSE)
@@ -699,7 +706,7 @@ topTable(ds_res2, top_n = 5, order_by = "cluster_id",
 We use a heatmap to report the differential signals (Figure \@ref(fig:diff-expr2-plot-heatmap-with-significant-markers)).  Instead of plotting the absolute expression, we display the normalized expression, which better highlights the direction of marker changes.  In addition, the cluster-marker combinations are sorted according to adjusted p-value.
 
 ```{r diff-expr2-plot-heatmap-with-significant-markers, fig.height = 10, fig.cap = "DS test results and normalized expression of signaling markers in PBMC populations in BCR/FcR-XL stimulated and unstimulated conditions. The heat represents median (arcsinh-transformed) marker expression that was subsequently normalized per cluster-marker combination (rows) to mean of zero and standard deviation of one. The color of the heat varies from blue representing relative under-expression to orange representing relative over-expression. Bars at the top of the heatmap indicate patient IDs and the condition the samples (columns) belong to: red for the unstimulated (Ref) and brown for the stimulated with BCR/FcR-XL (BCRXL) condition. Bar and numbers at the right indicate significant differential cluster-marker combinations (green) and adjusted p-values. Cluster-marker combinations are sorted according to adjusted p-value, so that the cluster-marker combinations at the top show the most significant differential signals between the two conditions. Shown are only the top 50 most highly significant cluster-marker combinations."}
-plotDiffHeatmap(daf, ds_res2, top_n = 50, order = TRUE, 
+plotDiffHeatmap(sce, ds_res2, top_n = 50, order = TRUE, 
     th = FDR_cutoff, normalize = TRUE, hm1 = FALSE)
 ```
 
@@ -708,14 +715,14 @@ plotDiffHeatmap(daf, ds_res2, top_n = 50, order = TRUE,
 The analysis of *overall* expression is analogous to the previous section, except that median marker expression is aggregated from all the cells in a given sample. For this, we generate an artificial clustering with all cells assigned to a single cluster.
 
 ```{r}
-daf <- mergeClusters(daf, k = "meta20", id = "merging_all",
+sce <- mergeClusters(sce, k = "meta20", id = "merging_all",
     table = data.frame(old_cluster = seq_len(20), new_cluster = "all"))
 ```
 
 As before, the median expression can be plotted (Figure \@ref(fig:diff-expr1-plot-median-expr)).
 
 ```{r diff-expr1-plot-median-expr, fig.height = 8, fig.cap = "Median (arcsinh-transformed) expression of 14 signaling markers calculated from all the cells in a given sample in the PBMC dataset. Values for the two conditions are indicated with different colors: red for the unstimulated (Ref) and blue for the stimulated with BCR/FcR-XL (BCRXL) samples. Values for each patient are indicated with different shape."}
-p <- plotMedExprs(daf[, state_markers(daf)], shape_by = "patient_id")
+p <- plotMedExprs(sce[state_markers(sce), ], shape_by = "patient_id")
 p$facet$params$ncol <- 3
 p
 ```
@@ -724,13 +731,13 @@ Similar to the analysis above, we identify more markers being differentially exp
 
 ```{r ds-analysis-overall}
 # fit linear model
-ds_res3 <- diffcyt(daf, 
+ds_res3 <- diffcyt(sce, 
     formula = ds_formula1, contrast = contrast,
     analysis_type = "DS", method_DS = "diffcyt-DS-LMM",
     clustering_to_use = "merging_all", verbose = FALSE)
 
 # fit linear mixed model with patient ID as random effect
-ds_res4 <- diffcyt(daf, 
+ds_res4 <- diffcyt(sce, 
     formula = ds_formula2, contrast = contrast,
     analysis_type = "DS", method_DS = "diffcyt-DS-LMM",
     clustering_to_use = "merging_all", verbose = FALSE)
@@ -747,7 +754,7 @@ topTable(ds_res4, top_n = 5, order_by = "p_adj",
 ```
 
 ```{r diff-expr1-plot-heatmap-with-significant-markers, fig.height = 6, fig.cap = "DS test results and normalized expression of signaling markers calculated over all cells in PBMC populations in BCR/FcR-XL stimulated and unstimulated conditions. The heat represents median (arcsinh-transformed) marker expression that was subsequently normalized per marker (rows) to mean of zero and standard deviation of one. The color of the heat varies from blue representing relative under-expression to orange representing relative over-expression. Bars at the top of the heatmap indicate patient IDs and the condition the samples (columns) belong to: red for the unstimulated (Ref) and brown for the stimulated with BCR/FcR-XL (BCRXL) condition. Bar and numbers at the right indicate significant differential markers (green) and adjusted p-values. Markers are sorted according to adjusted p-value, so that the marker at the top shows the most significant change between the two conditions."}
-plotDiffHeatmap(daf, ds_res4, all = TRUE, hm1 = FALSE)
+plotDiffHeatmap(sce, ds_res4, all = TRUE, hm1 = FALSE)
 ```
 
 # Obtaining higher resolution
