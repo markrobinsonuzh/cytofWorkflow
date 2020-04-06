@@ -51,7 +51,9 @@ editor_options:
 <!-- To render this document: -->
 
 <!-- 
+
 rmarkdown::render('vignettes/cytofWorkflow.Rmd')
+
 -->
 
 <!-- 
