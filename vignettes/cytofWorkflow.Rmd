@@ -347,11 +347,8 @@ We can then investigate characteristics of identified clusters with heatmaps tha
 Instead of using only medians, which do not give a full representation of cluster specifics, one can plot the entire marker expression distribution in each cluster (Figure \@ref(fig:plot-clustering-distribution1)). Such a plot gives more detailed profile of each cluster, but represents a larger amount of information to interpret. Heatmaps give an overall overview of clusters, are quicker and easier to interpret, and together with the dendrogram can be a good basis for further cluster merging (see [Cluster merging and annotation](#cluster-merging-and-annotation) section).
 
 ```{r plot-clustering-heatmap1, fig.cap = "Heatmap of the median marker intensities of the 10 lineage markers across the 20 cell populations obtained with FlowSOM after the metaclustering step with ConsensusClusterPlus (PBMC data). The color in the heatmap represents the median of the arcsinh, 0-1 transformed marker expression calculated over cells from all the samples, varying from blue for lower expression to red for higher expression. The dendrogram on the left represents the hierarchical similarity between the 20 metaclusters (metric: Euclidean distance; linkage: average). Each cluster has a unique color assigned (bar on the left) which is identical in other visualizations of these 20 clusters (e.g., the UMAP shown in Figure \\@ref(fig:umap-one-clustering1)) facilitating the figure interpretation. Barplot along the rows (clusters) and values in brackets on the right indicate the relative sizes of clusters."}
-# plotClusterHeatmap(sce, 
-#     hm2 = NULL, k = "meta20", m = NULL,
-#     row_anno = TRUE, bars = TRUE)
-plotClusterHeatmap(sce, k = "meta20", hm2 = "state", m = NULL,
-    row_anno = FALSE, bars = TRUE)
+plotExprHeatmap(sce, features="type", by="cluster_id", 
+                k="meta20", bars = TRUE, perc = TRUE)
 ```
 
 ```{r plot-clustering-distribution1, fig.height = 8, fig.cap = "Distributions of marker intensities (arcsinh-transformed) of the 10 lineage markers in the 20 cell populations obtained with FlowSOM after the metaclustering step with ConsensusClusterPlus (PBMC data). Red densities represent marker expression for cells in a given cluster. Blue densities are calculated over all the cells and serve as a reference."}
@@ -361,7 +358,7 @@ plotClusterExprs(sce, k = "meta20", features = "type")
 In addition to investigating expression of the lineage markers, we can also have a look at expression of the functional markers. We propose a heatmap that depicts median expression of functional markers in each sample (Figure \@ref(fig:plot-clustering-heatmap1-complex)) such that the potential differential expression can be investigated already at this data exploration step before the formal testing is done. In order to plot all the heatmaps in one panel, we use the `r Biocpkg("ComplexHeatmap")` package [@Gu2016].
 
 ```{r plot-clustering-heatmap1-complex, fig.cap = "Heatmap of the median marker intensities of the 10 lineage markers and one signaling marker (pS6) across the 20 cell populations obtained with FlowSOM after the metaclustering step with ConsensusClusterPlus (PBMC data). The left panel presents a heatmap analogous to the one in Figure \\@ref(fig:plot-clustering-heatmap1). Heatmap on the right represents the median of the arcsinh, 0-1 transformed marker expression for a signaling marker pS6 calculated over cells in each sample (columns) individually."}
-plotClusterHeatmap(sce, hm2 = "pS6", k = "meta20", draw_freqs = TRUE)
+#plotClusterHeatmap(sce, hm2 = "pS6", k = "meta20", bars = TRUE)
 ```
 
 ## Visual representation with UMAP
@@ -430,9 +427,9 @@ plotCodes(sce, k = "meta20")
 Using heatmaps, we can also visualize median marker expression in the 100 SOM codes as in Figure \@ref(fig:plot-som-codes1-heatmap-complex). Of note, the clustering presented with the dendrogram does not completely agree with the clustering depicted by the 20 colors because the first one is based on the hierarchical clustering with average linkage and Euclidean distance, while the second one results from the consensus clustering.
 
 ```{r plot-som-codes1-heatmap-complex, fig.height = 14, fig.cap = "Heatmap of the median marker intensities of the 10 lineage markers (left panel) and one signaling marker pS6 (right panel) across the 100 SOM codes in the PBMC dataset. The color in the heatmap represents the median of the arcsinh, 0-1 transformed marker expression calculated over cells from all the samples, for the lineage markers, and over cells in each sample individually, for the signaling marker. The heat varies from blue for lower expression to red for higher expression. The dendrogram on the left represents the hierarchical similarity between the 100 codes (metric: Euclidean distance; linkage: average). The annotation bar on the left is colored according to the code metaclustering with ConsensusClusterPlus into 20 cell populations. The relative size of the codes is shown in parentheses next to the cluster numbers."}
-plotClusterHeatmap(sce, 
-    hm2 = "pS6", k = "som100", m = "meta20", 
-    cluster_anno = FALSE, draw_freqs = TRUE)
+#plotClusterHeatmap(sce, 
+#    hm2 = "pS6", k = "som100", m = "meta20", 
+#    row_anno = FALSE, bars = TRUE)
 ```
 
 ## Cluster merging and annotation
@@ -479,13 +476,13 @@ plotDR(sce, "UMAP", color_by = "merging1")
 One of the useful representations of merging is a heatmap of median marker expression in each of the original clusters, which are labeled according to the proposed merging, Figure \@ref(fig:plot-clustering-heatmap1m-merging).  As before, the clustering to use for computing cluster medians is specified with `k = "meta20"`.  For visualization, we can specify a second layer of cluster annotations with `m = "merging1"`. 
 
 ```{r plot-clustering-heatmap1m-merging, fig.height = 8, fig.cap = "Heatmap as in Figure \\@ref(fig:plot-clustering-heatmap1), where the additional color bar on the left indicates how the 20 metaclusters, obtained with FlowSOM, are merged into the 8 PBMC populations."}
-plotClusterHeatmap(sce, k = "meta20", m = "merging1")
+#plotClusterHeatmap(sce, k = "meta20", m = "merging1")
 ```
 
 To get a final summary of the annotated cell types, we can plot a heatmap of median marker expressions that are calculated based on the manual merging's cluster annotations (Figure \@ref(fig:plot-clustering-heatmap1m)).
 
 ```{r plot-clustering-heatmap1m, fig.height = 5, fig.cap = "Heatmap of the median marker intensities of the 10 lineage markers in the 8 PBMC cell populations obtained by manual merging of the 20 metaclusters generated by FlowSOM. As in Figure \\@ref(fig:plot-clustering-heatmap1), the heat represents the median of arcsinh and 0-1 transformed marker expression calculated over cells from all the samples. The dendrogram on the left represents the hierarchical similarity between the 8 populations calculated using Euclidean distance and average linkage."}
-plotClusterHeatmap(sce, k = "merging1")
+#plotClusterHeatmap(sce, k = "merging1")
 ```
 
 ### Reducing the number of clusters in ConsensusClusterPlus
@@ -648,7 +645,7 @@ topTable(da_res2, show_props = TRUE, format_vals = TRUE, digits = 2)
 We use a heatmap to report the differential cell populations (Figure \@ref(fig:diff-freqs-plot-heatmap-with-significant-clusters)).  Proportions are first scaled with the arcsine-square-root transformation (as an alternative to logit that cannot be calculated on ratios of zero or one). Then, z-score normalization is applied to each population to better highlight the relative differences between compared conditions.  In addition, the clusters are sorted according to adjusted p-values.
 
 ```{r diff-freqs-plot-heatmap-with-significant-clusters, fig.height = 4, fig.cap = "DA test results and normalized proportions for PBMC cell populations in BCR/FcR-XL stimulated and unstimulated conditions. The heat represents arcsine-square-root transformed cell frequencies that were subsequently normalized per cluster (rows) to mean of zero and standard deviation of one. The color of the heat varies from blue indicating relative under-representation to orange indicating relative over-representation. Bars at the top of the heatmap indicate patient IDs and the condition the samples (columns) belong to: red for the unstimulated (Ref) and brown for the stimulated with BCR/FcR-XL (BCRXL) condition. Bar and numbers at the right indicate significant differentially abundant clusters (green) and adjusted p-values. Clusters are sorted according to adjusted p-values, so that the cluster at the top shows the most significant abundance changes between the two conditions."}
-plotDiffHeatmap(sce, da_res2, th = FDR_cutoff, normalize = TRUE, hm1 = FALSE)
+plotDiffHeatmap(sce, da_res2, th = FDR_cutoff, normalize = TRUE)
 ```
 
 ## Differential analysis of marker expression stratified by cell population
@@ -711,7 +708,7 @@ We use a heatmap to report the differential signals (Figure \@ref(fig:diff-expr2
 
 ```{r diff-expr2-plot-heatmap-with-significant-markers, fig.height = 10, fig.cap = "DS test results and normalized expression of signaling markers in PBMC populations in BCR/FcR-XL stimulated and unstimulated conditions. The heat represents median (arcsinh-transformed) marker expression that was subsequently normalized per cluster-marker combination (rows) to mean of zero and standard deviation of one. The color of the heat varies from blue representing relative under-expression to orange representing relative over-expression. Bars at the top of the heatmap indicate patient IDs and the condition the samples (columns) belong to: red for the unstimulated (Ref) and brown for the stimulated with BCR/FcR-XL (BCRXL) condition. Bar and numbers at the right indicate significant differential cluster-marker combinations (green) and adjusted p-values. Cluster-marker combinations are sorted according to adjusted p-value, so that the cluster-marker combinations at the top show the most significant differential signals between the two conditions. Shown are only the top 50 most highly significant cluster-marker combinations."}
 plotDiffHeatmap(sce, ds_res2, top_n = 50, order = TRUE, 
-    th = FDR_cutoff, normalize = TRUE, hm1 = FALSE)
+    th = FDR_cutoff, normalize = TRUE)
 ```
 
 ## Differential analysis of overall marker expression
@@ -758,7 +755,7 @@ topTable(ds_res4, top_n = 5, order_by = "p_adj",
 ```
 
 ```{r diff-expr1-plot-heatmap-with-significant-markers, fig.height = 6, fig.cap = "DS test results and normalized expression of signaling markers calculated over all cells in PBMC populations in BCR/FcR-XL stimulated and unstimulated conditions. The heat represents median (arcsinh-transformed) marker expression that was subsequently normalized per marker (rows) to mean of zero and standard deviation of one. The color of the heat varies from blue representing relative under-expression to orange representing relative over-expression. Bars at the top of the heatmap indicate patient IDs and the condition the samples (columns) belong to: red for the unstimulated (Ref) and brown for the stimulated with BCR/FcR-XL (BCRXL) condition. Bar and numbers at the right indicate significant differential markers (green) and adjusted p-values. Markers are sorted according to adjusted p-value, so that the marker at the top shows the most significant change between the two conditions."}
-plotDiffHeatmap(sce, ds_res4, all = TRUE, hm1 = FALSE)
+plotDiffHeatmap(sce, ds_res4, all = TRUE)
 ```
 
 # Obtaining higher resolution
