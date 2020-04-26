@@ -648,7 +648,7 @@ topTable(da_res2, show_props = TRUE, format_vals = TRUE, digits = 2)
 We use a heatmap to report the differential cell populations (Figure \@ref(fig:diff-freqs-plot-heatmap-with-significant-clusters)).  Proportions are first scaled with the arcsine-square-root transformation (as an alternative to logit that cannot be calculated on ratios of zero or one). Then, z-score normalization is applied to each population to better highlight the relative differences between compared conditions.  In addition, the clusters are sorted according to adjusted p-values.
 
 ```{r diff-freqs-plot-heatmap-with-significant-clusters, fig.height = 4, fig.cap = "DA test results and normalized proportions for PBMC cell populations in BCR/FcR-XL stimulated and unstimulated conditions. The heat represents arcsine-square-root transformed cell frequencies that were subsequently normalized per cluster (rows) to mean of zero and standard deviation of one. The color of the heat varies from blue indicating relative under-representation to orange indicating relative over-representation. Bars at the top of the heatmap indicate patient IDs and the condition the samples (columns) belong to: red for the unstimulated (Ref) and brown for the stimulated with BCR/FcR-XL (BCRXL) condition. Bar and numbers at the right indicate significant differentially abundant clusters (green) and adjusted p-values. Clusters are sorted according to adjusted p-values, so that the cluster at the top shows the most significant abundance changes between the two conditions."}
-plotDiffHeatmap(sce, da_res2, th = FDR_cutoff, normalize = TRUE)
+plotDiffHeatmap(sce, rowData(da_res2$res), all = TRUE, fdr = FDR_cutoff)
 ```
 
 ## Differential analysis of marker expression stratified by cell population
@@ -710,7 +710,7 @@ topTable(ds_res2, top_n = 5, order_by = "cluster_id",
 We use a heatmap to report the differential signals (Figure \@ref(fig:diff-expr2-plot-heatmap-with-significant-markers)).  Instead of plotting the absolute expression, we display the normalized expression, which better highlights the direction of marker changes.  In addition, the cluster-marker combinations are sorted according to adjusted p-value.
 
 ```{r diff-expr2-plot-heatmap-with-significant-markers, fig.height = 10, fig.cap = "DS test results and normalized expression of signaling markers in PBMC populations in BCR/FcR-XL stimulated and unstimulated conditions. The heat represents median (arcsinh-transformed) marker expression that was subsequently normalized per cluster-marker combination (rows) to mean of zero and standard deviation of one. The color of the heat varies from blue representing relative under-expression to orange representing relative over-expression. Bars at the top of the heatmap indicate patient IDs and the condition the samples (columns) belong to: red for the unstimulated (Ref) and brown for the stimulated with BCR/FcR-XL (BCRXL) condition. Bar and numbers at the right indicate significant differential cluster-marker combinations (green) and adjusted p-values. Cluster-marker combinations are sorted according to adjusted p-value, so that the cluster-marker combinations at the top show the most significant differential signals between the two conditions. Shown are only the top 50 most highly significant cluster-marker combinations."}
-plotDiffHeatmap(sce, ds_res2, top_n = 50, th = FDR_cutoff)
+plotDiffHeatmap(sce, rowData(ds_res2$res), top_n = 50, fdr = FDR_cutoff)
 ```
 
 ## Differential analysis of overall marker expression
@@ -757,7 +757,7 @@ topTable(ds_res4, top_n = 5, order_by = "p_adj",
 ```
 
 ```{r diff-expr1-plot-heatmap-with-significant-markers, fig.height = 6, fig.cap = "DS test results and normalized expression of signaling markers calculated over all cells in PBMC populations in BCR/FcR-XL stimulated and unstimulated conditions. The heat represents median (arcsinh-transformed) marker expression that was subsequently normalized per marker (rows) to mean of zero and standard deviation of one. The color of the heat varies from blue representing relative under-expression to orange representing relative over-expression. Bars at the top of the heatmap indicate patient IDs and the condition the samples (columns) belong to: red for the unstimulated (Ref) and brown for the stimulated with BCR/FcR-XL (BCRXL) condition. Bar and numbers at the right indicate significant differential markers (green) and adjusted p-values. Markers are sorted according to adjusted p-value, so that the marker at the top shows the most significant change between the two conditions."}
-plotDiffHeatmap(sce, ds_res4, all = TRUE)
+plotDiffHeatmap(sce, rowData(ds_res4$res), all = TRUE)
 ```
 
 # Obtaining higher resolution
