@@ -24,6 +24,7 @@ author:
   - &EIO Department of Experimental Oncology, European Institute of Oncology, I-20139 Milan, Italy
 - name: Burkhard Becher
   affiliation:  
+  - *IEI 
 - name: Mitchell P. Levesque
   affiliation: 
   - &DERM Department of Dermatology, University Hospital Zurich, CH-8091 Zurich, Switzerland
@@ -128,11 +129,11 @@ Step by step, this workflow presents differential discovery analyses assembled f
 
 To be able to analyze arbitrary experimental designs (e.g., batch effects, paired experiments, etc.), we show how to conduct differential analysis of cell population abundances using generalized linear mixed models (GLMM) and of marker intensities using linear models (LM) and linear mixed models (LMM).  For both differential abundance and expression analysis, we use methods implemented in the `r Biocpkg("diffcyt")` package [@Weber2019a].  Internally, model fitting is performed with packages `r CRANpkg("lme4")` and [_stats_](https://stat.ethz.ch/R-manual/R-patched/library/stats/html/00Index.html), and hypothesis testing with the `r CRANpkg("multcomp")` package.
 
-For visualization, we use new plotting functions from the `r Biocpkg("CATALYST")` package that employ `r CRANpkg("ggplot2")` as their graphical engine.  Notably, `r Biocpkg("CATALYST")` delivers a suite of useful visual representations of HDCyto data characteristics, such as an MDS (multidimensional scaling) plot of aggregated signal for exploring sample similarities.  The obtained cell populations are visualized using dimension reduction techniques (e.g., UMAP via the `r CRANpkg("umap")` package) and heatmaps (via the `r Biocpkg("ComplexHeatmap")` package [@Gu2016]) to represent characteristics of the annotated cell populations and identified biomarkers. (Note that an alternative R implementation of the UMAP algorithm with additional functionality is also available in the `r Githubpkg("jlmelville/uwot")` package.)
+For visualization, we use new plotting functions from the `r Biocpkg("CATALYST")` package that employ `r CRANpkg("ggplot2")` as their graphical engine.  Notably, `r Biocpkg("CATALYST")` delivers a suite of useful visual representations of HDCyto data characteristics, such as an MDS (multidimensional scaling) plot of aggregated signal for exploring sample similarities.  The obtained cell populations are visualized using dimension reduction techniques (e.g., UMAP via the `r CRANpkg("umap")` package) and heatmaps (via the `r Biocpkg("ComplexHeatmap")` package [@Gu2016]) to represent characteristics of the annotated cell populations and identified biomarkers. (Note that an alternative R implementation of the UMAP algorithm with additional functionality is also available in the `r CRANpkg("uwot")` package.)
 
 <!-- [HELENA:] 
 currently, CATALYST uses scater which uses umap; 
-`r Githubpkg("jlmelville/uwot")` [@McInnes2018; @Diggins2017]
+`r CRANpkg("uwot")` [@McInnes2018; @Diggins2017]
 -->
 
 The workflow is intentionally not fully automatic.  First, we strongly advocate for exploratory data analysis to get an understanding of data characteristics before formal statistical modeling.  Second, the workflow involves an optional step where the user can manually merge and annotate clusters (see [Cluster merging and annotation](#cluster-merging-and-annotation) section) but in a way that is easily reproducible.  The CyTOF data used here (see [Data description](#data-description) section) is already preprocessed; i.e., the normalization and de-barcoding, as well as removal of doublets, debris and dead cells, were already performed; further details are available in the [Data preprocessing](#data-preprocessing) section.
