@@ -1,7 +1,7 @@
 Package: cytofWorkflow
 Title: CyTOF workflow: differential discovery in high-throughput
         high-dimensional cytometry datasets
-Version: 1.15.0
+Version: 1.16.0
 Date: 2019-06-11
 Authors@R: c(
 	person(role=c("aut"), "Malgorzata", "Nowicka", email = "gosia.nowicka.uzh@gmail.com"), 
