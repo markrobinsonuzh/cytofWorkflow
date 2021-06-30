@@ -14,7 +14,7 @@ Encoding: UTF-8
 LazyData: true
 biocViews: ImmunoOncologyWorkflow, Workflow, SingleCellWorkflow
 VignetteBuilder: knitr
-Suggests: knitcitations, rmarkdown
+Suggests: knitcitations, markdown, rmarkdown
 NeedsCompilation: no
 Workflow: true
 URL: https://github.com/markrobinsonuzh/cytofWorkflow
