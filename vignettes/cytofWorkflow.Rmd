@@ -173,7 +173,7 @@ Second, it estimates a spillover matrix from the identified populations and its 
 
 # Data import
 
-We recommend as standard practice to keep an independent record of all samples collected, with additional information about the experimental condition, including sample or patient identifiers, processing batch and so on.  That is, we recommend having a trail of metadata for each experiment. In our example, the metadata file, `PBMC8_metadata.xlsx`, can be downloaded from the [Robinson Lab server](http://imlspenticton.uzh.ch/robinson_lab/cytofWorkflow) with the `download.file()` function. For the workflow, the user should place it in the current working directory (`getwd()`).  Here, we load it into R with the `read_excel()` function from the `r CRANpkg("readxl")` package and save it into a variable called `md`, but other file types and interfaces to read them in are also possible.
+We recommend as standard practice to keep an independent record of all samples collected, with additional information about the experimental condition, including sample or patient identifiers, processing batch and so on.  That is, we recommend having a trail of metadata for each experiment. In our example, the metadata file, `PBMC8_metadata.xlsx`, can be downloaded from the [Zenodo](https://zenodo.org/records/10039274) with the `download.file()` function. For the workflow, the user should place it in the current working directory (`getwd()`).  Here, we load it into R with the `read_excel()` function from the `r CRANpkg("readxl")` package and save it into a variable called `md`, but other file types and interfaces to read them in are also possible.
 
 The data frame `md` contains the following columns: 
 
@@ -187,7 +187,7 @@ The data frame `md` contains the following columns:
 
 ```{r load-metadata}
 library(readxl)
-url <- "http://imlspenticton.uzh.ch/robinson_lab/cytofWorkflow"
+url <- "https://zenodo.org/records/10039274/files"
 md <- "PBMC8_metadata.xlsx"
 download.file(file.path(url, md), destfile = md, mode = "wb")
 md <- read_excel(md)
@@ -203,7 +203,7 @@ fs <- Bodenmiller_BCR_XL_flowSet()
 
 Alternatively, the files can be downloaded manually from the [Citrus Cytobank repository](https://community.cytobank.org/cytobank/experiments/15713/download_files) and loaded into R as a `flowSet` using `read.flowSet()` from the `r Biocpkg("flowCore")` package [@Hahne2009]. Importantly, `read.flowSet()` and the underlying  `read.FCS()` functions, by default, may transform the marker intensities and remove cells with extreme positive values. This behavior can be controlled with arguments `transformation` and `truncate_max_range`, respectively.
 
-In our example, information about the panel is also available in a file called `PBMC8_panel.xlsx`, and can be downloaded from the [Robinson Lab server](http://imlspenticton.uzh.ch/robinson_lab/cytofWorkflow) and loaded into a variable called `panel`.  It contains columns for `Isotope` and `Metal` that define the atomic mass number and the symbol of the chemical element conjugated to the antibody, respectively, and `Antigen`, which specifies the protein marker that was targeted; two additional columns specify whether a channel belongs to the lineage or functional type of marker.
+In our example, information about the panel is also available in a file called `PBMC8_panel.xlsx`, and can be downloaded from the [Zenodo](https://zenodo.org/records/10039274) and loaded into a variable called `panel`.  It contains columns for `Isotope` and `Metal` that define the atomic mass number and the symbol of the chemical element conjugated to the antibody, respectively, and `Antigen`, which specifies the protein marker that was targeted; two additional columns specify whether a channel belongs to the lineage or functional type of marker.
 
 The isotope, metal and antigen information that the instrument receives is also stored in the `flowFrame` (container for one sample) or `flowSet` (container for multiple samples) objects.  One can type `fs[[1]]` to see the first `flowFrame`, which contains a table with columns `name` and `desc`.  Their content can be retrieved with accessors `pData(parameters(fs[[1]]))`.  The variable `name` corresponds to the column names in the `flowSet` object, and can be viewed in R via `colnames(fs)`.
 
@@ -362,8 +362,8 @@ In addition to investigating expression of the lineage markers, we can also have
 
 ```{r plot-clustering-heatmap1-complex, fig.cap = "Heatmap of the median marker intensities of the 10 lineage markers and one signaling marker (pS6) across the 20 cell populations obtained with FlowSOM after the metaclustering step with ConsensusClusterPlus (PBMC data). The left panel presents a heatmap analogous to the one in Figure \\@ref(fig:plot-clustering-heatmap1). Heatmap on the right represents the median of the arcsinh, 0-1 transformed marker expression for a signaling marker pS6 calculated over cells in each sample (columns) individually."}
 plotMultiHeatmap(sce, 
-    hm1 = "type", hm2 = "pS6", k = "meta20", 
-    row_anno = FALSE, bars = TRUE, perc = TRUE)
+    hm1 = "type", hm2 = c("pS6","pNFkB", "CD20"), k = "meta12", 
+    row_anno = FALSE, bars = TRUE, perc = TRUE, scale=c("never","never"))
 ```
 
 ## Visual representation with UMAP
@@ -448,7 +448,7 @@ Our main reference for manual merging of clusters is the heatmap of marker chara
 
 The dendrogram highlights the similarity between the metaclusters and can be used explicitly for the merging.  However, there are reasons why we would not always follow the dendrogram exactly.  In general, when it comes to clustering, blindly following the hierarchy of codes will lead to identification of populations of similar cells, but it does not necessarily mean that they are of biological interest.  The distances between metaclusters are calculated across all the markers, and it may be that some markers carry higher weight for certain cell types.  In addition, different linkage methods may lead to a different hierarchy, especially when clusters are not fully distinct.  Another aspect to consider in cluster merging is the cluster size, represented in the parentheses next to the cluster label in our plots. If the cluster size is very small, but the cluster seems relevant and distinct, one can keep it as separate.  However, if it is small and different from the neighboring clustering only in a somewhat unimportant marker, it could be merged.  And, if some of the metaclusters do not represent any specific cell types, they could be dropped out of the downstream analysis instead of being merged.   However, in case an automated solution for cluster merging is truly needed, one could use the `cutree()` function applied to the dendrogram.
 
-Based on the set random seed, a manual merging of the 20 metaclusters is defined in `PBMC8_cluster_merging1.xlsx` available at the [Robinson Lab server](http://imlspenticton.uzh.ch/robinson_lab/cytofWorkflow).  This merging table contains, for each of the original clusters, an ID to newly assign to cells assigned to the given cluster.  Clusters may be merged with the `mergeClusters()` function from `r Biocpkg("CATALYST")`.  For future reference, each manual merging is assigned an ID specified with argument `id`.  Note that, if multiple old clusters are given the same new label, the respective clusters will be merged.
+Based on the set random seed, a manual merging of the 20 metaclusters is defined in `PBMC8_cluster_merging1.xlsx` available at the [Zenodo](https://zenodo.org/records/10039274).  This merging table contains, for each of the original clusters, an ID to newly assign to cells assigned to the given cluster.  Clusters may be merged with the `mergeClusters()` function from `r Biocpkg("CATALYST")`.  For future reference, each manual merging is assigned an ID specified with argument `id`.  Note that, if multiple old clusters are given the same new label, the respective clusters will be merged.
 
 In this example, our expert has annotated 8 cell populations: CD8 T-cells, CD4 T-cells, B-cells IgM-, B-cells IgM+, NK cells, dendritic cells (DCs), monocytes and surface negative cells; monocytes could be further subdivided based on HLA-DR into high, medium and low subtypes.
 
@@ -503,7 +503,7 @@ Manual merging of up to 20 clusters can be laborious.  To simplify this task, on
 delta_area(sce)
 ```
 
-As an example, we consider the metaclustering to 12 groups. Clustering into as few as 12 groups still allows us to identify the same 8 cell populations as when merging 20 clusters, but these are simpler to define since fewer profiles need to be manually scanned. The expert-based merging of the 12 metaclusters into 8 PBMC cell populations is saved in the `PBMC8_cluster_merging2_v3.xlsx` file on the [Robinson Lab server](http://imlspenticton.uzh.ch/robinson_lab/cytofWorkflow).
+As an example, we consider the metaclustering to 12 groups. Clustering into as few as 12 groups still allows us to identify the same 8 cell populations as when merging 20 clusters, but these are simpler to define since fewer profiles need to be manually scanned. The expert-based merging of the 12 metaclusters into 8 PBMC cell populations is saved in the `PBMC8_cluster_merging2_v3.xlsx` file on the [Zenodo](https://zenodo.org/records/10039274).
 
 ```{r cluster-merging2}
 merging_table2 <- "PBMC8_cluster_merging2_v3.xlsx"
